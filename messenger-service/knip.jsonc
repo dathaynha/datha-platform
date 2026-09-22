@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // streams.ts is an entry because its exports are the cross-repo sync surface
+  // for subject and durable names (platform-nats owns the topology) — consumed
+  // by review, not by imports, so knip cannot see they are used.
+  // Unlike file-service, migrate.ts is NOT listed: this repo has a `migrate:dev`
+  // script pointing at it, so knip already resolves it and an explicit entry is
+  // reported as redundant.
+  "entry": ["src/nats/streams.ts", "src/**/*.test.ts"],
+  // Exported but referenced only inside its own file is NOT dead: model files
+  // legitimately export the constituent types of an exported interface or union
+  // (deleting them would break the union; un-exporting them hurts consumers).
+  "ignoreExportsUsedInFile": true,
+  "project": ["src/**/*.ts"],
+  // Named as a pino transport `target` string, which knip cannot resolve.
+  "ignoreDependencies": ["pino-opentelemetry-transport"],
+}

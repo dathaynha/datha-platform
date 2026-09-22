@@ -1,0 +1,72 @@
+# Bot Review — Angular repos on karma (+ optional Playwright E2E).
+#
+# Genuinely framework-shaped: ng, karma and Playwright. Separate from
+# stack-node-vitest because the job shape differs, not the language.
+#
+# `e2e` is the one boolean switch here on purpose: the three apps ship a
+# Playwright suite, the shared library does not. Anything else team-specific
+# goes through preSteps/extraSteps rather than new flags — a template with
+# twenty booleans is worse than duplication.
+parameters:
+  - name: service
+    type: string
+  - name: nodeVersion
+    type: string
+    default: '24.x'
+  - name: npmAuth
+    type: boolean
+    default: true
+  - name: knip
+    type: boolean
+    default: true
+  - name: e2e
+    type: boolean
+    default: true
+  - name: testCommand
+    type: string
+    default: 'pnpm exec ng test --no-watch --browsers=ChromeHeadless --no-progress'
+  - name: preSteps
+    type: stepList
+    default: []
+  - name: extraSteps
+    type: stepList
+    default: []
+
+jobs:
+  - job: BotReview
+    displayName: Bot Review — ${{ parameters.service }}
+    # SYSTEM_ACCESSTOKEN: job OAuth for Git/PR REST API. YAML enables it via step env: below — not the Classic
+    # Agent-job "Allow scripts to access the OAuth token" checkbox. Masked in logs; never echo value; curl -fsS.
+    # MegaLinter -e pass-through required for AZURE_COMMENT_REPORTER. PR-Agent uses ADO_PAT,
+    # sourced from the Key Vault-linked platform-bot-review variable group. See bot-review-pipelines.md.
+    steps:
+      - template: steps/setup.yml
+        parameters:
+          nodeVersion: ${{ parameters.nodeVersion }}
+          npmAuth: ${{ parameters.npmAuth }}
+
+      - ${{ parameters.preSteps }}
+
+      - template: steps/unit-tests.yml
+        parameters:
+          service: ${{ parameters.service }}
+          # karma writes junit.xml into JUNIT_OUTPUT_DIR rather than taking a path
+          preTestShell: 'export JUNIT_OUTPUT_DIR="${AGENT_TEMPDIRECTORY}"'
+          testCommand: ${{ parameters.testCommand }}
+          publishTitle: 'Karma unit tests (${{ parameters.service }})'
+
+      - ${{ if parameters.knip }}:
+          - template: steps/knip.yml
+
+      - ${{ if parameters.e2e }}:
+          - template: steps/e2e-playwright.yml
+            parameters:
+              service: ${{ parameters.service }}
+
+      - ${{ parameters.extraSteps }}
+
+      - template: steps/megalinter.yml
+
+      - template: steps/pr-agent.yml
+        parameters:
+          service: ${{ parameters.service }}

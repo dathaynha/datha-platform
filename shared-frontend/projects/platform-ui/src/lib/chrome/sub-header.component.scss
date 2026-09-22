@@ -1,0 +1,85 @@
+/* Component styles, not a global utility: a hosted remote never loads its own
+   global stylesheet, so chrome CSS must ship with the MF module. Token
+   fallbacks keep the bar readable if a consumer forgets the lib globals. */
+/* Declared, not inherited: the host is only blockified for free when the
+   parent happens to be a flex container. */
+:host {
+  display: block;
+}
+
+.datha-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  min-height: var(--datha-toolbar-height, 3.5rem);
+  padding: 0 1rem;
+  color: var(--datha-chrome-text, var(--p-surface-600));
+
+  /* backdrop-filter creates a stacking context — the bar must sit above its own
+     content (z 1) so its overlays are not trapped, but below the shell toolbar
+     (z 20) or it paints over the shell's open dropdowns when hosted. */
+  position: relative;
+  z-index: 10;
+}
+
+.datha-sub-header__tabs,
+.datha-sub-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.datha-sub-header__tabs {
+  gap: 0.5rem;
+}
+
+.datha-sub-header__actions {
+  gap: 0.75rem;
+
+  /* Projected PrimeNG text buttons: chrome text stays neutral, primary marks
+     state only. Scoped rules cannot reach PrimeNG-rendered internals, but the
+     variable inherits into them. */
+  --p-button-text-primary-color: var(--datha-chrome-text, var(--p-surface-600));
+}
+
+.datha-sub-header__tab {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--p-button-border-radius, 0.5rem);
+  padding: 0.4rem 0.75rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+  color: inherit;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.datha-sub-header__tab:hover {
+  background-color: var(--datha-chrome-hover-bg, var(--p-surface-100));
+}
+
+.datha-sub-header__tab:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+/* Active tab: tinted pill + primary text. Same recipe as the shell sidebar —
+   both read the tokens, so the two navigations cannot drift. */
+.datha-sub-header__tab--active {
+  background-color: var(
+    --datha-chrome-active-bg,
+    color-mix(in srgb, var(--p-primary-color) 14%, var(--p-surface-0))
+  );
+  color: var(--datha-chrome-text-active, var(--p-primary-600));
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .datha-sub-header__tab {
+    transition: none;
+  }
+}

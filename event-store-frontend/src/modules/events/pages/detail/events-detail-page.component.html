@@ -1,0 +1,103 @@
+<section
+  class="events-detail-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="events-detail-title"
+>
+  <div class="events-detail-aurora" aria-hidden="true"></div>
+  <div class="events-detail-noise" aria-hidden="true"></div>
+
+  <div
+    class="ops-detail-body relative z-10 flex w-full min-w-0 flex-1 flex-col overflow-y-auto"
+  >
+    <header class="mb-6 flex flex-wrap items-center gap-3">
+      <p-button
+        type="button"
+        icon="pi pi-arrow-left"
+        [rounded]="true"
+        [text]="true"
+        [ariaLabel]="'EVENTS_PAGE.DETAIL.BACK' | translate"
+        [pTooltip]="'EVENTS_PAGE.DETAIL.BACK' | translate"
+        tooltipPosition="bottom"
+        (onClick)="goBack()"
+      />
+      <h1
+        id="events-detail-title"
+        class="events-detail-title ops-detail-title m-0 font-bold tracking-tight"
+      >
+        {{ "EVENTS_PAGE.DETAIL.TITLE" | translate }}
+      </h1>
+    </header>
+
+    @if (loading()) {
+      <div class="flex items-center gap-3 py-8">
+        <span class="pi pi-spin pi-spinner" aria-hidden="true"></span>
+        {{ "EVENTS_PAGE.DETAIL.LOADING" | translate }}
+      </div>
+    } @else if (loadError()) {
+      <div class="ops-detail-banner ops-detail-banner--error" role="alert">
+        {{ "EVENTS_PAGE.DETAIL.ERROR" | translate }}
+      </div>
+    } @else if (record(); as detail) {
+      <div class="events-detail-card flex flex-col gap-5">
+        <dl class="ops-detail-meta m-0 grid gap-3">
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.ID" | translate }}</dt>
+            <dd class="flex items-start gap-1">
+              <code class="ops-detail-code break-all">{{ detail.id }}</code>
+              <button
+                type="button"
+                class="ops-detail-copy-btn shrink-0"
+                [attr.aria-label]="'EVENTS_PAGE.DETAIL.COPY' | translate"
+                (click)="copyText(detail.id)"
+              >
+                <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+              </button>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.TYPE" | translate }}</dt>
+            <dd><code class="ops-detail-code">{{ detail.type }}</code></dd>
+          </div>
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.SERVICE" | translate }}</dt>
+            <dd><code class="ops-detail-code">{{ detail.service }}</code></dd>
+          </div>
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.ENTITY_ID" | translate }}</dt>
+            <dd class="break-all text-sm">{{ detail.entityId ?? "—" }}</dd>
+          </div>
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.OWNER_ID" | translate }}</dt>
+            <dd class="break-all text-sm">{{ detail.ownerId ?? "—" }}</dd>
+          </div>
+          <div>
+            <dt>{{ "EVENTS_PAGE.DETAIL.CORRELATION_ID" | translate }}</dt>
+            <dd class="flex items-start gap-1 break-all text-sm">
+              <span>{{ detail.correlationId ?? "—" }}</span>
+              @if (detail.correlationId) {
+                <button
+                  type="button"
+                  class="ops-detail-copy-btn shrink-0"
+                  [attr.aria-label]="'EVENTS_PAGE.DETAIL.COPY' | translate"
+                  (click)="copyText(detail.correlationId!)"
+                >
+                  <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+                </button>
+              }
+            </dd>
+          </div>
+          <div class="ops-detail-meta__wide">
+            <dt>{{ "EVENTS_PAGE.DETAIL.TIMESTAMP" | translate }}</dt>
+            <dd>{{ detail.timestamp | date: "medium" : undefined : locale }}</dd>
+          </div>
+        </dl>
+
+        <section class="space-y-2">
+          <h2 class="ops-detail-section-title m-0">
+            {{ "EVENTS_PAGE.DETAIL.PAYLOAD" | translate }}
+          </h2>
+          <pre class="ops-detail-pre">{{ formatJson(detail.payload) }}</pre>
+        </section>
+      </div>
+    }
+  </div>
+</section>

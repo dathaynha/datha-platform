@@ -1,0 +1,82 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: alloy
+    static_configs:
+      - targets: ["alloy:12345"]
+
+  # Host services (run outside colima via pnpm dev / go run / uvicorn).
+  # Each target lands as its service repo adds a /metrics endpoint (phase 1: gateway + one Node service).
+  - job_name: api-gateway
+    static_configs:
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          service: api-gateway
+
+  - job_name: event-store
+    static_configs:
+      - targets: ["host.docker.internal:3002"]
+        labels:
+          service: event-store
+
+  - job_name: file-service
+    static_configs:
+      - targets: ["host.docker.internal:3001"]
+        labels:
+          service: file-service
+
+  - job_name: chatbot-service
+    static_configs:
+      - targets: ["host.docker.internal:8050"]
+        labels:
+          service: chatbot-service
+
+  - job_name: chatbot-worker
+    static_configs:
+      - targets: ["host.docker.internal:8051"]
+        labels:
+          service: chatbot-worker
+
+  - job_name: notification-service
+    static_configs:
+      - targets: ["host.docker.internal:3003"]
+        labels:
+          service: notification-service
+
+  - job_name: accounts-service
+    static_configs:
+      - targets: ["host.docker.internal:3006"]
+        labels:
+          service: accounts-service
+
+  - job_name: messenger-service
+    static_configs:
+      - targets: ["host.docker.internal:3005"]
+        labels:
+          service: messenger-service
+
+  # Go, like api-gateway: ws connections, frames, presence beats, typing relay.
+  - job_name: realtime-service
+    static_configs:
+      - targets: ["host.docker.internal:3004"]
+        labels:
+          service: realtime-service
+
+  # Infra exporters (run in this compose)
+  - job_name: postgres
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+
+  - job_name: redis
+    static_configs:
+      - targets: ["redis-exporter:9121"]
+
+  - job_name: nats
+    static_configs:
+      - targets: ["nats-exporter:7777"]

@@ -1,0 +1,43 @@
+# MegaLinter. Advisory (continueOnError) — it reports to the PR itself.
+# SYSTEM_ACCESSTOKEN in docker -e is required by AZURE_COMMENT_REPORTER
+# (job-scoped OAuth; see the job header comment).
+parameters:
+  - name: image
+    type: string
+    default: 'oxsecurity/megalinter-javascript:v8'
+  # Extra `docker run` flags, e.g. -e GOTOOLCHAIN=auto so MegaLinter's Go linters
+  # can match a go.mod newer than the image's bundled toolchain.
+  - name: extraDockerEnv
+    type: string
+    default: ''
+
+steps:
+  - script: |
+      if [[ "$PR_ID" =~ ^[0-9]+$ ]]; then
+        COMMENT_REPORTER=true
+      else
+        COMMENT_REPORTER=false
+      fi
+
+      # SYSTEM_ACCESSTOKEN in docker -e: required by MegaLinter AZURE_COMMENT_REPORTER (job OAuth; see job header)
+      docker run --rm \
+        -v "$BUILD_SOURCESDIRECTORY":/tmp/lint \
+        -e DEFAULT_WORKSPACE=/tmp/lint \
+        -e "AZURE_COMMENT_REPORTER=$COMMENT_REPORTER" \
+        -e "SYSTEM_ACCESSTOKEN=$SYSTEM_ACCESSTOKEN" \
+        -e "SYSTEM_COLLECTIONURI=$SYSTEM_COLLECTIONURI" \
+        -e "SYSTEM_TEAMPROJECT=$SYSTEM_TEAMPROJECT" \
+        -e "BUILD_REPOSITORY_ID=$BUILD_REPOSITORY_ID" \
+        -e "SYSTEM_PULLREQUEST_PULLREQUESTID=$PR_ID" \
+        -e LOG_LEVEL=WARNING \
+        ${{ parameters.extraDockerEnv }} \
+        ${{ parameters.image }}
+    displayName: MegaLinter
+    env:
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      SYSTEM_TEAMPROJECT: $(System.TeamProject)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      PR_ID: $(System.PullRequest.PullRequestId)
+      BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+    continueOnError: true

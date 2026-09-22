@@ -1,0 +1,26 @@
+{
+  "name": "platform-nats",
+  "private": true,
+  "packageManager": "pnpm@10.33.2",
+  "scripts": {
+    "knip": "knip",
+    "reconcile": "tsx reconcile.ts",
+    "format": "prettier --write \"**/*.{ts,json}\"",
+    "format:check": "prettier --check \"**/*.{ts,json}\""
+  },
+  "dependencies": {
+    "@nats-io/jetstream": "^3.3.0",
+    "@nats-io/transport-node": "^3.3.0",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "knip": "^6.34.0",
+    "prettier": "^3.8.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

@@ -1,0 +1,29 @@
+/* Trigger + badge only — the drawer is appended to <body>, so its styles live
+   in src/styles/base.scss (component ::ng-deep cannot reach body overlays). */
+
+.shell-bell-badge {
+  background-color: var(--p-red-500);
+  color: var(--p-surface-0);
+}
+
+/*
+ * The toast has to fit the phone it pops up on.
+ *
+ * PrimeNG sizes `.p-toast` at a flat 25rem and `position="top-right"` offsets
+ * it 20px from the right, so on a 375px screen its left edge sat at **-45px**
+ * and the title was clipped off the side of the display (dathq, 2026-09-21,
+ * with a screenshot). Nothing overflowed the document, so no scrollbar
+ * appeared and no existing check could see it.
+ *
+ * Fluid rather than a breakpoint: `min()` keeps the 25rem it was designed at
+ * wherever that fits and clamps it everywhere else, which cannot be wrong at
+ * some width the way a threshold can. The 2.5rem is the 20px offset doubled,
+ * so the gap matches on both sides.
+ *
+ * `::ng-deep` because PrimeNG builds this element, so it carries no
+ * `_ngcontent` attribute and a plain component rule cannot reach it.
+ */
+:host ::ng-deep .p-toast {
+  width: min(25rem, calc(100vw - 2.5rem));
+  max-width: calc(100vw - 2.5rem);
+}

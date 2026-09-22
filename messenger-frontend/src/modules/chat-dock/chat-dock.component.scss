@@ -1,0 +1,38 @@
+@use "dock" as dock;
+
+/*
+ * Fixed to the viewport, bottom-right, growing leftwards — where Messenger,
+ * Google Chat and Teams all put docked conversations, and away from the header
+ * menus the shell owns.
+ *
+ * Sits *below* the call dock's z-index on purpose: when a call expands to the
+ * full stage it draws a scrim at z-40, which then covers these windows without
+ * anything here having to know that the stage exists.
+ */
+.chat-dock-strip {
+  right: 1rem;
+  bottom: 0;
+}
+
+/*
+ * A docked call owns the corner, so the windows start to its left.
+ *
+ * `dock.$width` is declared once, in `styles/_dock.scss`, and is the same
+ * value the call dock sizes itself with — a shared constant rather than a
+ * measurement, so nothing here has to read a rect or re-run on resize.
+ */
+.chat-dock-strip.has-call {
+  right: calc(2rem + #{dock.$width});
+}
+
+/*
+ * Below this, two 20rem windows do not fit beside each other and one covers
+ * the page it is docked over. Messenger's answer at this width is chat *heads*
+ * — a different feature, not a narrower window — so the strip steps aside and
+ * the header icon keeps navigating to the full product.
+ */
+@media (max-width: 40rem) {
+  .chat-dock-strip {
+    display: none;
+  }
+}

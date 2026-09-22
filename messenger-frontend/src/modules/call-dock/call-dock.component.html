@@ -1,0 +1,681 @@
+<!-- Nothing rendered without a call: the header is untouched the rest of the
+     time, and this component is mounted for the whole session. -->
+@if (call(); as active) {
+  <!-- An incoming call is a decision that cannot wait, so it is centred over a
+       dimmed backdrop the way Messenger and Slack both present one. Everything
+       else — dialling, connecting, in a call — is a corner dock, because it
+       must not block the app you are using. -->
+  @if (isIncomingRing()) {
+    <div class="call-backdrop fixed inset-0 z-40" aria-hidden="true"></div>
+  }
+  @if (expanded()) {
+    <div class="call-scrim fixed inset-0 z-40" aria-hidden="true"></div>
+  }
+  <section
+    class="call-dock fixed z-50 flex flex-col gap-3 rounded-2xl border p-4 shadow-lg"
+    [class.is-ring]="isIncomingRing()"
+    [class.is-group]="isGroup()"
+    [class.is-stage]="expanded()"
+    role="dialog"
+    aria-live="polite"
+    [attr.aria-modal]="isIncomingRing() ? 'true' : null"
+    [attr.aria-label]="'MESSENGER.CALL.ARIA' | translate"
+    data-testid="call-dock"
+  >
+    @if (hasVideo() && !isIncomingRing()) {
+      <!--
+        One tile per participant, equal size, in a grid.
+
+        Not a big tile with a thumbnail beside it: when both people share a
+        screen that can only ever show one of them properly and drops the other
+        into the corner where an avatar belongs (dathq, 2026-09-11). Meet gives
+        presentations equal tiles, and equal tiles are also right for two
+        cameras.
+
+        Both videos are MUTED: sound comes from the service's own <audio>,
+        which keeps playing while this dock re-renders. An unmuted element here
+        would play the peer twice.
+      -->
+      <div
+        class="call-stage"
+        [class.is-presenting]="presenting()"
+        data-testid="call-stage"
+      >
+        <!--
+          Presentations get their own tiles and their own room. A shared screen
+          used to take over the sharer's camera tile, so once both people were
+          sharing neither could see the other — Meet shows four tiles, two
+          screens and two people (dathq, 2026-09-11).
+        -->
+        @if (focus(); as focused) {
+          <!-- One source holds the stage: the pinned one, or the first shared
+               screen when nothing is pinned. Rendering every screen at equal
+               size is what filled a duo share with black — two 16:10 sources
+               in half-width cells are mostly letterbox, and `contain` has to
+               stay because cropping a screen hides somebody's code. Meet, Zoom
+               and Teams all show one presentation and make the rest
+               switchable. -->
+          <div class="call-screens" data-testid="call-screens">
+            @if (focused.kind === "screen" && focusedScreen(); as shown) {
+              <div
+                class="call-tile call-screen-tile"
+                [class.has-ratio]="screenRatio(shown.ownerId) !== null"
+                [attr.data-owner]="shown.ownerId"
+                [style.aspect-ratio]="screenRatio(shown.ownerId)"
+                [attr.data-testid]="
+                  shown.ownerId === selfOwnerId()
+                    ? 'call-tile-self-screen'
+                    : 'call-tile-peer-screen'
+                "
+              >
+                <!-- Never mirrored, even our own: mirrored text is unreadable. -->
+                <video
+                  class="call-screen-video"
+                  data-call-screen
+                  [attr.data-owner]="shown.ownerId"
+                  [attr.data-testid]="
+                    shown.ownerId === selfOwnerId()
+                      ? 'call-local-screen'
+                      : 'call-remote-screen'
+                  "
+                  autoplay
+                  playsinline
+                  [muted]="true"
+                  (loadedmetadata)="measureScreen($event)"
+                  (resize)="measureScreen($event)"
+                ></video>
+                <span
+                  class="call-tile-name"
+                  data-testid="call-screen-owner"
+                  [attr.data-owner]="shown.ownerId"
+                >
+                  <i class="pi pi-desktop" aria-hidden="true"></i>
+                  {{
+                    screenLabel(shown.ownerId).key
+                      | translate: screenLabel(shown.ownerId).params
+                  }}
+                </span>
+                <div class="call-tile-actions">
+                  <!-- Take the slides off the stage and look at faces. Meet
+                       has this; without it a shared screen could not be got
+                       out of the way at all. -->
+                  <button
+                    type="button"
+                    class="call-pin"
+                    data-testid="call-show-people"
+                    [attr.aria-label]="'MESSENGER.CALL.SHOW_PEOPLE' | translate"
+                    (click)="showPeople()"
+                  >
+                    <i class="pi pi-users" aria-hidden="true"></i>
+                  </button>
+                  <button
+                    type="button"
+                    class="call-pin"
+                    [class.is-on]="isPinned(shown.ownerId, 'screen')"
+                    data-testid="call-pin-stage"
+                    [attr.aria-pressed]="isPinned(shown.ownerId, 'screen')"
+                    [attr.aria-label]="'MESSENGER.CALL.PIN' | translate"
+                    (click)="togglePin(shown.ownerId, 'screen')"
+                  >
+                    <i class="pi pi-thumbtack" aria-hidden="true"></i>
+                  </button>
+                </div>
+              </div>
+            } @else {
+              <!-- A pinned person. Their camera takes the room a presentation
+                   would, which is what Meet does with a pin and no share. -->
+              <div
+                class="call-tile call-stage-tile"
+                [attr.data-owner]="focused.ownerId"
+                data-testid="call-tile-stage"
+              >
+                <video
+                  class="call-remote-video"
+                  [class.is-hidden]="!stageHasVideo()"
+                  [class.is-mirrored]="focused.ownerId === selfOwnerId()"
+                  data-call-video
+                  [attr.data-owner]="focused.ownerId"
+                  data-testid="call-stage-video"
+                  autoplay
+                  playsinline
+                  [muted]="true"
+                ></video>
+                @if (!stageHasVideo()) {
+                  <!-- Pinning is about attention, not video: somebody with
+                       their camera off is still worth watching, and an empty
+                       <video> is a dark rectangle that says nothing. -->
+                  <p class="call-tile-avatar" data-testid="call-stage-avatar">
+                    <messenger-avatar
+                      [url]="avatarFor(focused.ownerId)"
+                      [initialOverride]="initialFor(focused.ownerId)"
+                    />
+                  </p>
+                }
+                <span class="call-tile-name" data-testid="call-stage-name">
+                  {{ nameFor(focused.ownerId) }}
+                </span>
+                <button
+                  type="button"
+                  class="call-pin is-on"
+                  data-testid="call-pin-stage"
+                  aria-pressed="true"
+                  [attr.aria-label]="'MESSENGER.CALL.UNPIN' | translate"
+                  (click)="togglePin(focused.ownerId, 'camera')"
+                >
+                  <i class="pi pi-thumbtack" aria-hidden="true"></i>
+                </button>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- The people. A strip beside the presentations, a grid without.
+
+             One tile per participant, keyed by owner id — never by position:
+             a mesh adds and drops tiles mid-call, and an index would hand one
+             person's camera to another the moment somebody between them left. -->
+        <div
+          class="call-people"
+          [class.is-grid]="gridded()"
+          [class.is-odd]="oddTiles()"
+          data-testid="call-people"
+        >
+          <!-- Screens that are not holding the stage sit with the people, so a
+               second share is one click away instead of halving the room. -->
+          @for (screen of asideScreens(); track screen.ownerId) {
+            <div
+              class="call-tile call-aside-screen"
+              data-testid="call-tile-aside-screen"
+              [attr.data-owner]="screen.ownerId"
+            >
+              <video
+                class="call-screen-video"
+                data-call-screen
+                [attr.data-owner]="screen.ownerId"
+                autoplay
+                playsinline
+                [muted]="true"
+                (loadedmetadata)="measureScreen($event)"
+                (resize)="measureScreen($event)"
+              ></video>
+              <span
+                class="call-tile-name"
+                data-testid="call-screen-owner"
+                [attr.data-owner]="screen.ownerId"
+              >
+                <i class="pi pi-desktop" aria-hidden="true"></i>
+                {{
+                  screenLabel(screen.ownerId).key
+                    | translate: screenLabel(screen.ownerId).params
+                }}
+              </span>
+              <button
+                type="button"
+                class="call-pin"
+                data-testid="call-pin"
+                [attr.aria-pressed]="isPinned(screen.ownerId, 'screen')"
+                [attr.aria-label]="'MESSENGER.CALL.PIN' | translate"
+                (click)="togglePin(screen.ownerId, 'screen')"
+              >
+                <i class="pi pi-thumbtack" aria-hidden="true"></i>
+              </button>
+            </div>
+          }
+
+          @for (peer of peers(); track peer.ownerId) {
+            <div
+              class="call-tile"
+              [class.is-speaking]="peer.speaking"
+              data-testid="call-tile-peer"
+              [attr.data-owner]="peer.ownerId"
+            >
+              <button
+                type="button"
+                class="call-pin"
+                data-testid="call-pin"
+                [class.is-on]="isPinned(peer.ownerId, 'camera')"
+                [attr.aria-pressed]="isPinned(peer.ownerId, 'camera')"
+                [attr.aria-label]="'MESSENGER.CALL.PIN' | translate"
+                (click)="togglePin(peer.ownerId, 'camera')"
+              >
+                <i class="pi pi-thumbtack" aria-hidden="true"></i>
+              </button>
+              <video
+                class="call-remote-video"
+                [class.is-hidden]="!peer.stream"
+                data-call-video
+                [attr.data-owner]="peer.ownerId"
+                data-testid="call-remote-video"
+                autoplay
+                playsinline
+                [muted]="true"
+              ></video>
+              @if (!peer.stream) {
+                <p class="call-tile-avatar" data-testid="call-main-avatar">
+                  <messenger-avatar
+                    [url]="avatarFor(peer.ownerId)"
+                    [initialOverride]="initialFor(peer.ownerId)"
+                  />
+                </p>
+              }
+              <!-- A tile says whose it is once there is more than one of them.
+                   In a 1:1 the dock's own header already answers that. -->
+              @if (isGroup()) {
+                <span class="call-tile-name" data-testid="call-tile-name">
+                  {{ nameFor(peer.ownerId) }}
+                </span>
+              }
+              @if (peer.state === "failed") {
+                <!-- One pair with no working path. The rest of the call is
+                     unaffected, so this is a tile that says so rather than an
+                     error banner over everybody. -->
+                <span class="call-tile-state" data-testid="call-tile-failed">
+                  {{ "MESSENGER.CALL.PEER_UNREACHABLE" | translate }}
+                </span>
+              }
+            </div>
+          }
+
+          <div
+            class="call-tile"
+            data-testid="call-tile-self"
+            [attr.data-owner]="selfOwnerId()"
+          >
+            <video
+              class="call-local-video is-mirrored"
+              [class.is-hidden]="!localHasVideo()"
+              data-call-video
+              [attr.data-owner]="selfOwnerId()"
+              data-testid="call-local-video"
+              autoplay
+              playsinline
+              [muted]="true"
+            ></video>
+            @if (!localHasVideo()) {
+              <p class="call-tile-avatar" data-testid="call-no-camera">
+                <messenger-avatar
+                  [url]="avatarFor(selfOwnerId())"
+                  [initialOverride]="initialFor(selfOwnerId())"
+                />
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+    }
+
+    @if (hasVideo() && !isIncomingRing()) {
+      <button
+        type="button"
+        class="call-expand"
+        [attr.aria-label]="
+          (expanded() ? 'MESSENGER.CALL.MINIMISE' : 'MESSENGER.CALL.EXPAND')
+            | translate
+        "
+        data-testid="call-expand"
+        (click)="toggleExpanded()"
+      >
+        @if (expanded()) {
+          <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 3v6H3" />
+            <path d="M15 21v-6h6" />
+            <path d="M3 9l7-7" />
+            <path d="M21 15l-7 7" />
+          </svg>
+        } @else {
+          <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 3h6v6" />
+            <path d="M9 21H3v-6" />
+            <path d="M21 3l-7 7" />
+            <path d="M3 21l7-7" />
+          </svg>
+        }
+      </button>
+    }
+
+    <div class="call-identity flex min-w-0 items-center gap-3">
+      <!-- People's pictures, not a bare letter: the dock showed an initial
+           while the same person's photo was on every bubble behind it
+           (dathq, 2026-09-11). A group shows the faces of the call rather than
+           one participant's, which would be the same mistake a group presence
+           dot makes by reporting whoever is listed first. -->
+      <span class="call-avatar shrink-0" aria-hidden="true">
+        <messenger-avatar-stack [faces]="faces()" />
+      </span>
+      <div class="flex min-w-0 flex-col">
+        <p class="call-peer m-0 truncate text-sm font-semibold">
+          {{ title() }}
+        </p>
+        <p
+          class="call-state chats-subtle m-0 flex items-center gap-1.5 text-[0.6875rem]"
+        >
+          @switch (active.state) {
+            @case ("ringing") {
+              @if (isIncomingRing()) {
+                @if (isGroup()) {
+                  <!-- The title above names the group, so this line names the
+                       person — which the group name cannot tell you. -->
+                  {{
+                    "MESSENGER.CALL.INCOMING_GROUP"
+                      | translate: { name: callerName() }
+                  }}
+                } @else if (isVideo()) {
+                  {{ "MESSENGER.CALL.INCOMING_VIDEO" | translate }}
+                } @else {
+                  {{ "MESSENGER.CALL.INCOMING" | translate }}
+                }
+              } @else {
+                <span class="call-pulse" aria-hidden="true"></span>
+                {{ "MESSENGER.CALL.RINGING" | translate }}
+              }
+            }
+            @case ("connecting") {
+              {{ "MESSENGER.CALL.CONNECTING" | translate }}
+            }
+            @case ("active") {
+              <span data-testid="call-duration">{{ duration() }}</span>
+              @if (isGroup()) {
+                <!-- A group reports how many are actually in, not how many were
+                     rung: someone who has not picked up is not on the call. -->
+                <span data-testid="call-joined-count">
+                  ·
+                  {{
+                    "MESSENGER.CALL.IN_CALL" | translate: { count: tileCount() }
+                  }}
+                </span>
+              }
+            }
+            @default {
+              {{ "MESSENGER.CALL.ENDING" | translate }}
+            }
+          }
+        </p>
+      </div>
+    </div>
+
+    @if (error(); as reason) {
+      <!-- Named causes only. "Call failed" alone sends people to the wrong
+           place; a denied microphone is theirs to fix, ICE failure is ours. -->
+      <p class="call-error m-0 text-[0.6875rem]" data-testid="call-error">
+        @switch (reason) {
+          @case ("MEDIA_DENIED") {
+            {{ "MESSENGER.CALL.ERROR_MIC" | translate }}
+          }
+          @case ("MEDIA_MISSING") {
+            {{ "MESSENGER.CALL.ERROR_NO_DEVICE" | translate }}
+          }
+          @case ("MEDIA_BUSY") {
+            {{ "MESSENGER.CALL.ERROR_DEVICE_BUSY" | translate }}
+          }
+          @case ("SCREEN_FAILED") {
+            {{ "MESSENGER.CALL.ERROR_SCREEN" | translate }}
+          }
+          @case ("MEDIA_UNSUPPORTED") {
+            {{ "MESSENGER.CALL.ERROR_DEVICE_LIMIT" | translate }}
+          }
+          @case ("ICE_FAILED") {
+            {{ "MESSENGER.CALL.ERROR_ICE" | translate }}
+          }
+          @case ("CALL_TOO_MANY") {
+            <!-- The mesh's limit, refused at invite time. The server's own text
+                 names both numbers but is English only, so it goes to the
+                 console in development instead. -->
+            {{ "MESSENGER.CALL.ERROR_TOO_MANY" | translate }}
+          }
+          @case ("AUDIO_BLOCKED") {
+            {{ "MESSENGER.CALL.ERROR_AUDIO" | translate }}
+          }
+          @case ("JOIN_FAILED") {
+            <!-- A join the server never answered. The banner is still on the
+                 thread, so trying again is one click away. -->
+            {{ "MESSENGER.CALL.ERROR_JOIN" | translate }}
+          }
+          @default {
+            {{ "MESSENGER.CALL.ERROR_GENERIC" | translate }}
+          }
+        }
+      </p>
+    }
+
+    @if (call()?.micSilent) {
+      <!-- Only this side can see it: the other end simply hears nothing.
+           Meet surfaces the same warning. -->
+      <p class="call-warning m-0 text-[0.6875rem]" data-testid="call-mic-silent">
+        {{ "MESSENGER.CALL.MIC_SILENT" | translate }}
+      </p>
+    }
+
+    @if (relayWarning()) {
+      <!-- STUN only. Works between two tabs here and fails behind symmetric
+           NAT, which is precisely the failure nobody sees locally. -->
+      <p class="call-warning m-0 text-[0.6875rem]" data-testid="call-no-relay">
+        {{ "MESSENGER.CALL.NO_RELAY" | translate }}
+      </p>
+    }
+
+    <div class="call-controls flex items-center gap-2">
+      @if (isIncomingRing()) {
+        <!-- A modal asking a question keeps its labels: this is the one place
+             the two answers must be unmistakable. -->
+        <p-button
+          severity="success"
+          icon="pi pi-phone"
+          [rounded]="true"
+          [label]="'MESSENGER.CALL.ACCEPT' | translate"
+          data-testid="call-accept"
+          (onClick)="accept()"
+        />
+        <p-button
+          severity="danger"
+          icon="pi pi-phone"
+          [rounded]="true"
+          [label]="'MESSENGER.CALL.DECLINE' | translate"
+          data-testid="call-hangup"
+          (onClick)="hangUp()"
+        />
+      } @else {
+        <!--
+          Plain buttons, not p-button: the dock needs two controls of the *same*
+          size, and a labelled pill beside a small outlined circle is what made
+          it look thrown together. Equal circular icon buttons is what every
+          call dock uses.
+
+          Mute is hidden while dialling — there is no microphone stream to mute
+          until the call connects, so the control did nothing.
+        -->
+        @if (active.state !== "ringing") {
+          <button
+            type="button"
+            class="call-button call-mute"
+            [class.is-muted]="active.micMuted"
+            [attr.aria-pressed]="active.micMuted"
+            [attr.aria-label]="
+              (active.micMuted
+                ? 'MESSENGER.CALL.UNMUTE'
+                : 'MESSENGER.CALL.MUTE'
+              ) | translate
+            "
+            data-testid="call-mute"
+            (click)="toggleMute()"
+          >
+            <!--
+              Inline SVG, not the icon font. PrimeIcons ships no slashed
+              microphone or camera, and the CSS slash drawn over the plain icon
+              looked exactly as bolted-on as it was (dathq, 2026-09-11). A
+              stroke set gives a real "off" glyph and one consistent weight
+              across every control.
+            -->
+            @if (active.micMuted) {
+              <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 9.34V5a3 3 0 0 0-5.68-1.33" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12" />
+                <path d="M19 10v2a7 7 0 0 1-.11 1.23" />
+                <path d="M5 10v2a7 7 0 0 0 12 5" />
+                <path d="M12 19v3" />
+                <path d="M2 2l20 20" />
+              </svg>
+            } @else {
+              <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="13" rx="3" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <path d="M12 19v3" />
+              </svg>
+            }
+          </button>
+        }
+        <!-- Offered on an audio call too: there it *adds* a camera, which is a
+             renegotiation. Hidden while ringing, like mute, because there is no
+             connection to renegotiate yet. -->
+        @if (active.state === "active") {
+          <button
+            type="button"
+            class="call-button call-camera"
+            [class.is-off]="!sendingCamera() || active.cameraOff"
+            [disabled]="!hasCamera()"
+            [attr.aria-pressed]="sendingCamera() ? active.cameraOff : null"
+            [attr.aria-label]="
+              (!sendingCamera()
+                ? 'MESSENGER.CALL.CAMERA_ADD'
+                : active.cameraOff
+                  ? 'MESSENGER.CALL.CAMERA_ON'
+                  : 'MESSENGER.CALL.CAMERA_OFF'
+              ) | translate
+            "
+            data-testid="call-camera"
+            (click)="onCamera()"
+          >
+            @if (sendingCamera() && !active.cameraOff) {
+              <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 8l-6 4 6 4V8Z" />
+                <rect x="2" y="6" width="14" height="12" rx="2" />
+              </svg>
+            } @else {
+              <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10.66 6H14a2 2 0 0 1 2 2v2.34l1 1L22 8v8" />
+                <path
+                  d="M16 16a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"
+                />
+                <path d="M2 2l20 20" />
+              </svg>
+            }
+          </button>
+
+          <!-- Only worth showing when there is something to choose between. -->
+          @if (sendingCamera() && cameras().length > 1) {
+            <select
+              class="call-camera-picker"
+              [attr.aria-label]="'MESSENGER.CALL.CAMERA_PICK' | translate"
+              data-testid="call-camera-picker"
+              (change)="pickCamera($event)"
+            >
+              @for (camera of cameras(); track camera.deviceId) {
+                <option [value]="camera.deviceId">{{ camera.label }}</option>
+              }
+            </select>
+          }
+        }
+        @if (active.state === "active") {
+          <button
+            type="button"
+            class="call-button call-share"
+            [class.is-on]="active.sharingScreen"
+            [attr.aria-pressed]="active.sharingScreen"
+            [attr.aria-label]="
+              (active.sharingScreen
+                ? 'MESSENGER.CALL.STOP_SHARING'
+                : 'MESSENGER.CALL.SHARE_SCREEN'
+              ) | translate
+            "
+            data-testid="call-share"
+            (click)="toggleScreenShare()"
+          >
+            <svg class="call-glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="2" y="3" width="20" height="14" rx="2" />
+              <path d="M8 21h8" />
+              <path d="M12 17v4" />
+            </svg>
+          </button>
+        }
+        <button
+          type="button"
+          class="call-button call-hangup"
+          [attr.aria-label]="'MESSENGER.CALL.HANG_UP' | translate"
+          data-testid="call-hangup"
+          (click)="hangUp()"
+        >
+          <svg class="call-glyph is-hangup" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"
+            />
+          </svg>
+        </button>
+      }
+    </div>
+  </section>
+}
+
+<!-- After the call clears: why it ended. The server distinguishes declined
+     from missed from hung-up, and dropping the panel silently would waste
+     that. Auto-dismisses; the button is for people who want it gone now. -->
+@if (!call() && endNotice(); as notice) {
+  <section
+    class="call-dock call-dock-notice fixed z-50 flex items-center gap-3 rounded-2xl border p-3 shadow-lg"
+    role="status"
+    data-testid="call-end-notice"
+  >
+    <i class="pi pi-phone text-sm" aria-hidden="true"></i>
+    <p class="m-0 flex-1 text-[0.8125rem]">
+      @if (notice.group) {
+        <!-- Nobody in particular declined or missed a group call, so the
+             name-bearing wordings do not apply: one person not answering is
+             not the call's outcome. -->
+        @switch (notice.reason) {
+          @case ("answered_elsewhere") {
+            <!-- Another tab of this person holds the place. Said out loud,
+                 because a tab that simply vanishes from a call looks exactly
+                 like the reconnect being broken (dathq, 2026-09-15). -->
+            {{ "MESSENGER.CALL.IN_ANOTHER_TAB" | translate }}
+          }
+          @case ("empty") {
+            {{ "MESSENGER.CALL.WAS_EMPTY" | translate }}
+          }
+          @case ("ice_failed") {
+            {{ "MESSENGER.CALL.WAS_FAILED" | translate }}
+          }
+          @default {
+            {{ "MESSENGER.CALL.WAS_ENDED" | translate }}
+          }
+        }
+      } @else {
+        @switch (notice.reason) {
+          @case ("declined") {
+            {{
+              "MESSENGER.CALL.WAS_DECLINED" | translate: { name: endPeerName() }
+            }}
+          }
+          @case ("missed") {
+            {{ "MESSENGER.CALL.WAS_MISSED" | translate: { name: endPeerName() } }}
+          }
+          @case ("busy") {
+            {{ "MESSENGER.CALL.WAS_BUSY" | translate: { name: endPeerName() } }}
+          }
+          @case ("ice_failed") {
+            {{ "MESSENGER.CALL.WAS_FAILED" | translate }}
+          }
+          @default {
+            {{ "MESSENGER.CALL.WAS_ENDED" | translate }}
+          }
+        }
+      }
+    </p>
+    <button
+      type="button"
+      class="chats-icon-button flex h-6 w-6 items-center justify-center rounded-md border"
+      [attr.aria-label]="'MESSENGER.CALL.DISMISS' | translate"
+      data-testid="call-notice-dismiss"
+      (click)="dismissNotice()"
+    >
+      <i class="pi pi-times text-[0.625rem]" aria-hidden="true"></i>
+    </button>
+  </section>
+}

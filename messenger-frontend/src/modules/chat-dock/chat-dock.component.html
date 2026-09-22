@@ -1,0 +1,17 @@
+<!-- Nothing rendered without a window, so the overlay is absent rather than
+     empty for the whole of a normal session. -->
+@if (windows().length > 0) {
+  <div
+    class="chat-dock-strip fixed z-30 flex items-end gap-3"
+    [class.has-call]="callDocked()"
+    data-testid="chat-dock"
+  >
+    @for (window of windows(); track window.conversationId) {
+      <messenger-chat-window
+        [conversationId]="window.conversationId"
+        [minimised]="window.minimised"
+        [chatsLink]="chatsLink()"
+      />
+    }
+  </div>
+}

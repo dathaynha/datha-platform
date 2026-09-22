@@ -1,0 +1,86 @@
+# Bot Review — api-gateway
+#
+# The job body lives in the shared template repo so a fix lands once instead of
+# nine times: platform-pipelines/templates/stack-go-gotestsum.yml. This file
+# keeps the triggers, the parameters and this repo's own diagnostics, and stays
+# at this path so the pipeline definition (referenced by main's
+# build-validation policy) is unchanged.
+#
+# Pinned to a tag on purpose — never track the template repo's main, or one edit
+# there changes every pipeline at once with no review.
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-24.04
+
+variables:
+  # Key Vault-linked group (dathq-platform-kv via azure-dathq-platform connection)
+  - group: platform-bot-review
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: DatHa Platform/platform-pipelines
+      ref: refs/tags/v7
+
+extends:
+  template: templates/stack-go-gotestsum.yml@templates
+  parameters:
+    # GoTool wants an exact semver matching go.mod — see the template.
+    service: api-gateway
+    goVersion: '1.25'
+    # Repo-specific diagnostics, kept through the template's extension hooks
+    # rather than by forking it. preSteps run after GoTool so the toolchain
+    # echoes are meaningful.
+    preSteps:
+      - script: |
+          set -euo pipefail
+          echo "##[group]Debug — job context"
+          echo "Build.Reason=$(Build.Reason)"
+          echo "Build.SourceBranch=$(Build.SourceBranch)"
+          echo "Build.SourceVersion=$(Build.SourceVersion)"
+          echo "Build.Repository.Name=$(Build.Repository.Name)"
+          echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
+          echo "System.PullRequest.PullRequestId=$(System.PullRequest.PullRequestId)"
+          echo "System.PullRequest.SourceBranch=$(System.PullRequest.SourceBranch)"
+          echo "System.PullRequest.TargetBranch=$(System.PullRequest.TargetBranch)"
+          echo "pwd=$(pwd)"
+          echo "top-level files:"
+          ls -la
+          echo "##[endgroup]"
+        displayName: Debug — job context
+      - script: |
+          set -euo pipefail
+          echo "##[group]Debug — Go toolchain"
+          echo "which go: $(command -v go || echo 'not found')"
+          go version
+          go env GOROOT GOPATH GOVERSION GOTOOLCHAIN
+          echo "go.mod (first 15 lines):"
+          head -n 15 go.mod
+          echo "##[endgroup]"
+        displayName: Debug — Go toolchain
+    # Ran between MegaLinter and PR-Agent before; now grouped here, since both
+    # are echo-only and their order relative to the linters does not matter.
+    extraSteps:
+      - script: |
+          set -euo pipefail
+          echo "##[group]Debug — bot review context"
+          docker version
+          echo "PR_ID=${PR_ID:-<empty>}"
+          echo "SYSTEM_ACCESSTOKEN=$([[ -n "${SYSTEM_ACCESSTOKEN:-}" ]] && echo set || echo missing)"
+          echo "ADO_PAT=$([[ -n "${ADO_PAT:-}" ]] && echo set || echo missing)"
+          echo "GEMINI_KEY=$([[ -n "${GEMINI_KEY:-}" ]] && echo set || echo missing)"
+          test -f .mega-linter.yml && echo ".mega-linter.yml present" || echo "##[warning].mega-linter.yml not found"
+          echo "##[endgroup]"
+        displayName: Debug — bot review context
+        env:
+          PR_ID: $(System.PullRequest.PullRequestId)
+          SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+          ADO_PAT: $(bot-review-ado-pat)
+          GEMINI_KEY: $(bot-review-gemini-key)

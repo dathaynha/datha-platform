@@ -1,0 +1,768 @@
+/* Inherits the page's --chats-* tokens; nothing is redefined here. */
+.thread-header,
+.thread-composer {
+  border-color: var(--chats-border);
+  background: var(--chats-header-bg);
+}
+
+.thread-title {
+  color: var(--chats-ink);
+}
+
+.chats-subtle {
+  color: var(--chats-subtle);
+}
+
+.chats-muted {
+  color: var(--chats-muted);
+}
+
+.chats-icon-button {
+  border-color: var(--chats-border);
+  background: var(--chats-surface-bg);
+  color: var(--chats-ink);
+}
+
+.thread-offline {
+  color: #f59e0b;
+}
+
+.thread-avatar {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.presence-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  height: 0.625rem;
+  width: 0.625rem;
+  border-radius: 999px;
+  border: 2px solid var(--chats-header-bg);
+  background: var(--chats-subtle);
+
+  &.is-online {
+    background: #22c55e;
+  }
+
+  &.is-away {
+    background: #f59e0b;
+  }
+}
+
+.message-row {
+  justify-content: flex-start;
+
+  &.is-own {
+    justify-content: flex-end;
+  }
+}
+
+.message-bubble {
+  position: relative;
+  border-radius: 1.125rem;
+  border: 1px solid var(--chats-border);
+  background: var(--chats-surface-bg);
+  padding: 0.5rem 0.75rem;
+  color: var(--chats-ink);
+  box-shadow: var(--chats-shadow);
+}
+
+/* Own messages carry the accent; incoming ones stay on the surface. Same
+   asymmetry every messenger uses, so the eye finds its own column instantly. */
+.message-row.is-own .message-bubble {
+  border-color: transparent;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+}
+
+/*
+ * Run-aware corners. Consecutive messages from one person read as a single
+ * block when the corners facing the rest of the run are tightened — the
+ * detail every mainstream client uses and the reason a grouped run does not
+ * look like three unrelated pills.
+ */
+.message-row:not(.starts-run) .message-bubble {
+  border-top-left-radius: 0.375rem;
+}
+
+.message-row:not(.ends-run) .message-bubble {
+  border-bottom-left-radius: 0.375rem;
+}
+
+.message-row.is-own:not(.starts-run) .message-bubble {
+  border-top-left-radius: 1.125rem;
+  border-top-right-radius: 0.375rem;
+}
+
+.message-row.is-own:not(.ends-run) .message-bubble {
+  border-bottom-left-radius: 1.125rem;
+  border-bottom-right-radius: 0.375rem;
+}
+
+/*
+ * An image bubble is the image. Dropping the chrome is what separates "a photo
+ * someone sent" from "a card containing a photo" — the same call Messenger,
+ * WhatsApp and iMessage all make.
+ *
+ * Written at the same specificity as `.message-row.is-own .message-bubble`
+ * (and after it) so the accent cannot come back on your own pictures: a bubble
+ * wider than the picture inside it paints that difference as a coloured strip
+ * down one side, which is exactly what a stretched child produces.
+ */
+.message-row .message-bubble.is-media {
+  border-color: transparent;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  /* Hug the picture. A flex column stretches its children, so any sibling —
+     or a replaced element whose width resolves after its height cap — leaves
+     the bubble wider than the image with nothing but background in the gap.
+     `max-content` rather than `fit-content`: the latter fills the space the
+     bubble is *allowed*, which is the 80% cap, not the picture. */
+  width: max-content;
+  align-items: flex-start;
+}
+
+.message-row.is-own .message-bubble.is-media {
+  align-items: flex-end;
+  margin-left: auto;
+}
+
+.attachment-image {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  /* With an aspect-ratio set from the sender's dimensions the box exists at
+     full size before the bytes land, so nothing below it moves when they do.
+     The tint is what makes the reserved space read as a picture loading
+     rather than as a hole. */
+  background: color-mix(in srgb, var(--chats-ink) 6%, transparent);
+  cursor: pointer;
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+
+  /*
+   * The sender recorded the picture's size, so the box is its exact shape
+   * before any bytes arrive. Width is also capped by the height limit —
+   * `20rem * aspect` — so a tall photo narrows instead of being letterboxed
+   * inside a box that no longer matches it.
+   */
+  &.has-shape {
+    aspect-ratio: var(--media-aspect);
+    width: min(18rem, 100%, calc(20rem * var(--media-aspect)));
+    height: auto;
+
+    img {
+      height: 100%;
+      width: 100%;
+      object-fit: cover;
+    }
+  }
+
+  /*
+   * Before a shape is known — the first paint of a message whose sender never
+   * recorded one — the bounds live on the *button*, not the picture. Left on
+   * the image, the button keeps its own unconstrained width while the picture
+   * shrinks against the height cap, and the difference shows as background
+   * beside the image: an own picture that stops short of the column every
+   * other message lines up with.
+   */
+  /* A plain length, not `min(18rem, 100%)`: a percentage is indefinite while
+     the bubble computes its own max-content width, so the cap disappears at
+     exactly the moment it is needed and the bubble sizes to the picture's
+     full intrinsic width. The image's own `max-width: 100%` keeps it inside a
+     narrow screen. */
+  max-width: 18rem;
+  max-height: 20rem;
+
+  img {
+    /* `block` as well as bounded: an inline image adds a baseline gap under
+       itself, which is background again. */
+    display: block;
+    max-height: 20rem;
+    max-width: 100%;
+    height: auto;
+    width: auto;
+    object-fit: contain;
+  }
+}
+
+/* A pasted URL has no spaces to break on and would otherwise run straight out
+   of the bubble. */
+.message-body {
+  overflow-wrap: anywhere;
+}
+
+.message-seen {
+  padding-right: 0.125rem;
+}
+
+.seen-avatar {
+  display: inline-flex;
+  height: 0.875rem;
+  width: 0.875rem;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+  font-size: 0.5rem;
+  font-weight: 600;
+
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+/* Skeleton: the shape of the thread it is about to be. Shimmer is a gradient
+   sweep rather than a pulse, which reads as loading instead of as broken. */
+.thread-skeleton {
+  padding: 0.25rem 0;
+}
+
+.skeleton-row.is-own {
+  flex-direction: row-reverse;
+}
+
+.skeleton-avatar,
+.skeleton-bubble {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--chats-subtle) 12%, transparent) 25%,
+    color-mix(in srgb, var(--chats-subtle) 22%, transparent) 37%,
+    color-mix(in srgb, var(--chats-subtle) 12%, transparent) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+.skeleton-avatar {
+  height: 1.5rem;
+  width: 1.5rem;
+  border-radius: 999px;
+}
+
+.skeleton-bubble {
+  height: 2rem;
+  border-radius: 1.125rem;
+}
+
+.skeleton-line-title {
+  height: 0.75rem;
+  width: 7rem;
+  border-radius: 999px;
+}
+
+.skeleton-line-sub {
+  height: 0.5rem;
+  width: 3.5rem;
+  border-radius: 999px;
+}
+
+@keyframes skeleton-sweep {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-avatar,
+  .skeleton-bubble {
+    animation: none;
+  }
+}
+
+.thread-jump {
+  border: 1px solid var(--chats-border);
+  background: var(--chats-header-bg);
+  color: var(--chats-ink);
+  box-shadow: var(--chats-shadow);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+
+  &:hover {
+    background: var(--chats-surface-hover-bg);
+  }
+}
+
+/*
+ * Hover/focus label. A styled tooltip rather than the native `title`: that one
+ * waits about a second, renders in the OS chrome and never appears for keyboard
+ * users at all. `aria-hidden` because the button already carries the same text
+ * as its accessible name — announcing it twice is worse than not at all.
+ */
+.thread-jump-label {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 0.25rem);
+  border: 1px solid var(--chats-border);
+  background: var(--chats-header-bg);
+  color: var(--chats-ink);
+  box-shadow: var(--chats-shadow);
+  backdrop-filter: blur(8px);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease,
+    visibility 120ms;
+}
+
+.thread-jump:hover .thread-jump-label,
+.thread-jump:focus-visible .thread-jump-label {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread-jump,
+  .thread-jump-label {
+    transition: none;
+  }
+}
+
+.typing-dots {
+  display: inline-flex;
+  gap: 0.1875rem;
+
+  span {
+    height: 0.25rem;
+    width: 0.25rem;
+    border-radius: 999px;
+    background: currentColor;
+    animation: typing-bounce 1.2s infinite ease-in-out;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+
+@keyframes typing-bounce {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
+/* Anyone who has asked the OS for less motion gets the dots, not the bounce. */
+@media (prefers-reduced-motion: reduce) {
+  .typing-dots span {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
+/* Incoming avatar: one per run, beside the last bubble. The spacer holds the
+   column so the run above it does not step sideways. */
+.message-avatar,
+.message-avatar-spacer {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.message-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+  font-size: 0.625rem;
+  font-weight: 600;
+
+  img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+}
+
+/*
+ * The timestamp is present for every message but only *shown* on hover or
+ * keyboard focus — putting it in every bubble is what made the thread feel
+ * heavy. `visibility` rather than `display` so the row never reflows and the
+ * bubbles do not shift under the pointer.
+ */
+/*
+ * Out of flow entirely. Held in the flex row it reserved the width of the
+ * timestamp it was hiding, which is why own bubbles stopped short of the right
+ * edge. Absolute against the bubble hugs it at any width, shifts nothing on
+ * hover, and leaves the row free to sit flush.
+ */
+.message-trailing {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.message-row:not(.is-own) .message-trailing {
+  left: calc(100% + 0.5rem);
+}
+
+.message-row.is-own .message-trailing {
+  right: calc(100% + 0.5rem);
+}
+
+.message-time {
+  visibility: hidden;
+}
+
+.message-row:hover .message-time,
+.message-row:focus-within .message-time {
+  visibility: visible;
+}
+
+/* Messages in the middle of a run sit closer together than separate turns do. */
+.message-row:not(.ends-run) {
+  margin-bottom: -0.375rem;
+}
+
+.thread-separator {
+  color: var(--chats-subtle);
+}
+
+/*
+ * Call history: a card on the caller's side, not a centred system row.
+ *
+ * Neutral surface on both sides — a call is not something either person
+ * *said*, so borrowing the own-message accent would overstate it. Placement
+ * plus the attribution line carry who called.
+ */
+.call-card {
+  border-radius: 1.125rem;
+  border: 1px solid var(--chats-border);
+  background: var(--chats-surface-bg);
+  color: var(--chats-ink);
+  box-shadow: var(--chats-shadow);
+}
+
+/* Written after `.message-row:not(.ends-run)` and at equal specificity, so it
+   wins on source order: a call is never part of a run. */
+.message-row.call-row {
+  margin-bottom: 0;
+}
+
+.call-card-icon {
+  background: color-mix(in srgb, var(--chats-ink) 8%, transparent);
+  color: var(--chats-ink);
+}
+
+.call-card-meta {
+  color: var(--chats-subtle);
+}
+
+/* A call nobody picked up is the one row worth colouring — same convention as
+   Messenger and the phone app it copies. */
+.call-card.is-missed .call-card-icon,
+.call-card.is-declined .call-card-icon {
+  background: color-mix(in srgb, #ef4444 14%, transparent);
+  color: #ef4444;
+}
+
+.call-card.is-missed .call-card-title,
+.call-card.is-declined .call-card-title {
+  color: #ef4444;
+}
+
+.message-retry {
+  color: inherit;
+  cursor: pointer;
+}
+
+.composer-input {
+  border-color: var(--chats-border);
+  background: var(--chats-input-bg);
+  color: var(--chats-ink);
+
+  &::placeholder {
+    color: var(--chats-subtle);
+  }
+
+  &:focus {
+    border-color: color-mix(in srgb, var(--p-primary-500) 60%, transparent);
+  }
+}
+
+.composer-send {
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.composer-attach {
+  border: 1px solid var(--chats-border);
+  background: var(--chats-surface-bg);
+  color: var(--chats-ink);
+
+  &:hover {
+    background: var(--chats-surface-hover-bg);
+  }
+}
+
+/* The card inherits the bubble's colours, so an attachment reads as the same
+   message it is, not as a foreign widget dropped into the thread. */
+.attachment-card {
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  color: inherit;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+}
+
+/* Fills the avatar circle; the initial stays as the fallback beneath it. */
+.thread-avatar-photo {
+  height: 100%;
+  width: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+/* The header is the way into a group's details in every mainstream messenger,
+   so it behaves like a control rather than like a label. */
+.thread-identity.is-tappable {
+  cursor: pointer;
+  border-radius: 0.75rem;
+  margin: -0.25rem;
+  padding: 0.25rem;
+  transition: background-color 120ms ease;
+
+  &:hover {
+    background: var(--chats-surface-hover-bg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-500);
+    outline-offset: 2px;
+  }
+}
+
+/* A participant's name keeps one colour everywhere, derived from their owner
+   id — the point is that the eye tracks the colour instead of reading the
+   name, which only works if it never changes. Six hues, spaced far enough
+   apart to stay distinguishable, and each one legible on the bubble in both
+   themes. */
+.message-sender {
+  color: var(--chats-tone-0);
+
+  &[data-tone="1"] {
+    color: var(--chats-tone-1);
+  }
+  &[data-tone="2"] {
+    color: var(--chats-tone-2);
+  }
+  &[data-tone="3"] {
+    color: var(--chats-tone-3);
+  }
+  &[data-tone="4"] {
+    color: var(--chats-tone-4);
+  }
+  &[data-tone="5"] {
+    color: var(--chats-tone-5);
+  }
+}
+
+/*
+ * The ongoing-call banner: a live call in this thread, with a way in.
+ *
+ * Sits directly under the header and above the scroller, so it is fixed in
+ * place rather than scrolling away with the timeline — the point of it is to
+ * be reachable at any scroll position, which a message row cannot be.
+ */
+.thread-live-call {
+  border-color: var(--chats-border);
+  background: color-mix(in srgb, var(--chats-ink) 4%, var(--chats-surface-bg));
+  color: var(--chats-ink);
+}
+
+.thread-live-meta {
+  color: var(--chats-subtle);
+}
+
+.thread-live-join {
+  border: none;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+  cursor: pointer;
+}
+
+.thread-live-join:hover {
+  filter: brightness(1.05);
+}
+
+/*
+ * Docked mini window (phase 3 slice 4).
+ *
+ * The same thread, in a 20rem box. Only the spacing that was sized for a page
+ * is tightened — the composer's `pb-5` exists so a thumb does not sit against a
+ * phone's viewport edge, which a window docked above the fold has no use for,
+ * and the header's group and call buttons would otherwise crowd the title out
+ * of a narrow row.
+ */
+:host(.is-windowed) {
+  .thread-header {
+    padding: 0.5rem 0.625rem;
+    gap: 0.25rem;
+  }
+
+  /*
+   * A group's header carries five buttons — details, audio, video, minimise,
+   * close — and at 320px the 2rem page size left the title as "Proje…".
+   */
+  .thread-call,
+  .thread-back {
+    height: 1.75rem;
+    width: 1.75rem;
+  }
+
+  /* "2 members" wrapped onto two lines and pushed the header taller. */
+  .thread-subtitle,
+  [data-testid="thread-subtitle"] {
+    white-space: nowrap;
+  }
+
+  /*
+   * The timestamp beside a bubble is absolutely positioned past its edge, and
+   * at this width there was nowhere for it to go: it overflowed the scroller
+   * by 11px and put a horizontal scrollbar under every window. Reserve the
+   * strip rather than clipping it, or the stamp is invisible on hover — which
+   * is the only time it is shown.
+   *
+   * Incoming rows only. An own row's stamp sits on the *left* of its bubble,
+   * where the avatar gutter does not exist, so it already has the room.
+   */
+  .message-row:not(.is-own) .message-bubble {
+    max-width: calc(100% - 4.5rem);
+  }
+
+  .thread-composer {
+    padding: 0.5rem 0.625rem 0.625rem;
+  }
+
+  .thread-live-call {
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+/*
+ * Touch targets.
+ *
+ * The thread's header controls are 2rem and the composer's are 2.5rem, which
+ * is comfortable with a mouse and under the 44px both Apple and Material set
+ * as the minimum for a finger (measured 2026-09-17: 32px and 40px).
+ *
+ * Keyed on `pointer: coarse` rather than on width, because this is a question
+ * about the input device and not about the screen — a touch laptop wants the
+ * bigger target at any width.
+ *
+ * `:host(:not(.is-windowed))` is load-bearing: a docked mini window is 20rem
+ * wide and its header already shrinks these to 1.75rem to fit five buttons
+ * beside the title. Growing them there would put the title back to "Proje…"
+ * and reintroduce the horizontal scrollbar that cost a measuring session.
+ */
+@media (pointer: coarse) {
+  :host(:not(.is-windowed)) {
+    /*
+     * The *target* is 44px, the control is not.
+     *
+     * Drawing the whole 2.75rem made a thread header of three big squares
+     * beside the avatar and the name, which dathq called too big and was right
+     * about — the guideline is about what a finger can hit, not about how much
+     * ink the button spends. So the box stays at its desktop size and a
+     * transparent `::after` carries the hit area out to 44px.
+     */
+    .thread-call,
+    .thread-back,
+    .composer-send,
+    .composer-attach {
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        height: 2.75rem;
+        width: 2.75rem;
+        transform: translate(-50%, -50%);
+      }
+    }
+  }
+}
+
+/*
+ * The way back, when the page has collapsed to one pane.
+ *
+ * `.thread-back` used to carry `sm:hidden`, because above `sm` the list is
+ * already on screen. That was a viewport rule, and the chats page collapses
+ * on a **container** query — so at 667x375 hosted the list was gone and the
+ * button that returns to it was hidden too, leaving no way out of a thread.
+ *
+ * Now the base state shows it and the wide tier hides it, which is the same
+ * mobile-first direction as everything else in this wave. Both queries name
+ * `ms-chats` (`.chats-root`) explicitly: container context crosses component
+ * boundaries even though styles do not, and an unnamed query would re-point
+ * the day anything between here and there became a container.
+ *
+ * In the docked window there is no `ms-chats` ancestor, so neither rule
+ * matches and the button stays visible — which is wrong for a dock, so the
+ * `:host(:not(.is-windowed))` guard carries that case instead.
+ */
+.thread-composer {
+  padding-inline: 1rem;
+}
+
+@container ms-chats (min-width: 40rem) {
+  :host(:not(.is-windowed)) .thread-back {
+    display: none;
+  }
+
+  .thread-composer {
+    padding-inline: 1.5rem;
+  }
+}

@@ -1,0 +1,139 @@
+<div class="shell-root flex h-[100dvh] min-h-0 w-full flex-col">
+
+  <!-- Shell top header -->
+  <p-toolbar class="shell-toolbar datha-glass-bar px-4">
+    <ng-template pTemplate="start">
+      <div class="flex items-center gap-3">
+        <!-- Hidden on a phone: below `sm` there is no sidebar to toggle, the
+             bottom bar is the navigation, and the button only cost width. -->
+        <button
+          type="button"
+          (click)="toggleSidebar()"
+          class="shell-header-menu-btn hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors sm:flex"
+          [attr.aria-label]="(sidebarCollapsed() ? 'SIDEBAR.EXPAND' : 'SIDEBAR.COLLAPSE') | translate"
+          [attr.aria-expanded]="!sidebarCollapsed()"
+        >
+          <i class="pi pi-bars text-base"></i>
+        </button>
+        @let brandApp = activeApp();
+        @let brandAppName = activeAppNameKey() | translate;
+        <a
+          [routerLink]="['/']"
+          class="flex items-center gap-2 no-underline"
+          [attr.aria-label]="
+            brandApp
+              ? ('BRAND.WITH_APP' | translate: { appName: brandAppName })
+              : ('BRAND.PLATFORM' | translate)
+          "
+        >
+        <datha-brand-mark class="shell-brand-icon h-7 w-7" aria-hidden="true" />
+        <span class="shell-brand-title inline-flex items-center gap-2 text-sm font-semibold">
+          <span>{{ "BRAND.PLATFORM" | translate }}</span>
+          @if (brandApp) {
+            <span class="shell-brand-separator" aria-hidden="true"></span>
+            <span class="shell-brand-app">{{ brandAppName }}</span>
+          }
+        </span>
+        </a>
+      </div>
+    </ng-template>
+
+    <ng-template pTemplate="end">
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Both selects leave the toolbar on a phone, where five controls
+             wrapped the bar onto three rows and ate 155px of an 844px screen.
+             They are not lost: Settings owns them, and Settings is a tab in
+             the bottom bar. -->
+        <div class="hidden items-center gap-3 sm:flex">
+          <datha-theme-select
+            inputId="shell-theme"
+            [selected]="selectedTheme"
+            (selectedChange)="onThemeChange($event)"
+          />
+          <datha-lang-select
+            inputId="shell-lang"
+            [languages]="languages"
+            [selected]="selectedLanguage"
+            (selectedChange)="onLanguageChange($event)"
+          />
+        </div>
+        <shell-header-widget-host />
+        <shell-notification-bell />
+        <datha-profile-popover
+          [name]="profileDisplayName()"
+          [email]="profileEmail()"
+          [username]="showUsernameRow() ? profileUsername() : ''"
+          [signInMethodKey]="providerLabelKey()"
+          [menuItems]="profileMenuItems"
+          (menuItemSelect)="onProfileMenuItem($event)"
+          (logout)="logout()"
+        />
+      </div>
+    </ng-template>
+  </p-toolbar>
+
+  <!-- Body: sidebar + router outlet -->
+  <div class="flex min-h-0 flex-1">
+
+    <!-- Sidebar -->
+    <nav
+      [class.w-56]="!sidebarCollapsed()"
+      [class.w-14]="sidebarCollapsed()"
+      class="shell-sidebar datha-glass-bar hidden shrink-0 flex-col overflow-y-auto overflow-x-hidden transition-[width] duration-200 ease-in-out sm:flex"
+    >
+      <!-- Nav items -->
+      <div class="flex flex-col gap-0.5 p-2">
+        <a
+          routerLink="/"
+          routerLinkActive="shell-nav-link--active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [pTooltip]="sidebarCollapsed() ? ('NAV.HOME' | translate) : ''"
+          tooltipPosition="right"
+          class="shell-nav-link flex items-center gap-3 rounded-lg px-2 py-2 text-sm no-underline transition-colors"
+        >
+          <i class="pi pi-home shrink-0 text-base"></i>
+          @if (!sidebarCollapsed()) {
+            <span class="truncate">{{ "NAV.HOME" | translate }}</span>
+          }
+        </a>
+        @for (app of apps; track app.remoteName) {
+          <a
+            [routerLink]="[app.route]"
+            routerLinkActive="shell-nav-link--active"
+            [pTooltip]="sidebarCollapsed() ? (nameKey(app) | translate) : ''"
+            tooltipPosition="right"
+            class="shell-nav-link flex items-center gap-3 rounded-lg px-2 py-2 text-sm no-underline transition-colors"
+          >
+            <i [class]="'pi ' + app.icon + ' shrink-0 text-base'"></i>
+            @if (!sidebarCollapsed()) {
+              <span class="truncate">{{ nameKey(app) | translate }}</span>
+            }
+          </a>
+        }
+      </div>
+
+      <!-- Settings pinned to the sidebar bottom -->
+      <div class="mt-auto flex flex-col p-2">
+        <a
+          routerLink="/settings"
+          routerLinkActive="shell-nav-link--active"
+          [pTooltip]="sidebarCollapsed() ? ('SETTINGS.NAV' | translate) : ''"
+          tooltipPosition="right"
+          class="shell-nav-link flex items-center gap-3 rounded-lg px-2 py-2 text-sm no-underline transition-colors"
+        >
+          <i class="pi pi-cog shrink-0 text-base"></i>
+          @if (!sidebarCollapsed()) {
+            <span class="truncate">{{ "SETTINGS.NAV" | translate }}</span>
+          }
+        </a>
+      </div>
+    </nav>
+
+    <!-- Remote / page content: flex column so children using h-full / flex-1 can fill the area -->
+    <main class="shell-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <router-outlet />
+    </main>
+  </div>
+
+  <shell-bottom-nav [apps]="apps" />
+</div>

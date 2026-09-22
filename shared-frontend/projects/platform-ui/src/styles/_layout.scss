@@ -1,0 +1,94 @@
+/**
+ * App chrome surfaces with light AND dark built in — replaces the
+ * `:host-context(.dark)` re-pointing blocks every app duplicated in its
+ * layout components. Raw `--p-surface-N` primitives do not darken under
+ * `.dark` (Aura only swaps slate→zinc), hence explicit dark rules.
+ */
+
+.datha-app-surface {
+  background-color: var(--p-surface-0);
+}
+
+.datha-app-surface--muted {
+  background-color: var(--p-surface-50);
+}
+
+.dark .datha-app-surface,
+.dark .datha-app-surface--muted {
+  background-color: var(--p-surface-950);
+}
+
+.datha-toolbar {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--p-surface-200);
+  background-color: var(--p-surface-0);
+}
+
+.dark .datha-toolbar {
+  background-color: var(--p-surface-900);
+  border-bottom-color: var(--p-surface-800);
+}
+
+.datha-sidebar {
+  border-right: 1px solid var(--p-surface-200);
+  background-color: var(--p-surface-50);
+}
+
+.dark .datha-sidebar {
+  background-color: var(--p-surface-900);
+  border-right-color: var(--p-surface-800);
+}
+
+.datha-text-strong {
+  color: var(--p-surface-900);
+}
+
+.dark .datha-text-strong {
+  color: var(--p-surface-0);
+}
+
+.datha-text-muted {
+  color: var(--p-surface-500);
+}
+
+.dark .datha-text-muted {
+  color: var(--p-surface-400);
+}
+
+/* Popover chrome. Global on purpose: PrimeNG body-appends overlays, so
+   component-scoped :host-context(.dark) rules never match inside them. */
+.datha-popover-title {
+  border-bottom: 1px solid var(--p-surface-200);
+}
+
+.dark .datha-popover-title {
+  border-bottom-color: var(--p-surface-700);
+}
+
+.datha-popover-footer {
+  border-top: 1px solid var(--p-surface-200);
+}
+
+.dark .datha-popover-footer {
+  border-top-color: var(--p-surface-700);
+}
+
+/* Profile trigger: outlined primary is illegible over light glass chrome. */
+.p-button.p-button-outlined.datha-profile-trigger {
+  background: var(--datha-glass-bg-control);
+  border-color: var(--datha-glass-control-edge);
+  color: var(--p-surface-700);
+}
+
+.dark .p-button.p-button-outlined.datha-profile-trigger {
+  color: var(--p-surface-100);
+}
+
+/* The language chip carries a code rather than an icon, so it is a pill and
+   not a circle — but it sits in a row of 2.5rem circles and has to match their
+   height exactly, which a label-sized button does not do on its own. */
+.p-button.p-button-outlined.datha-lang-trigger {
+  height: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0 0.75rem;
+}

@@ -1,0 +1,18 @@
+/*
+ * The width of anything docked in the bottom-right corner.
+ *
+ * A **Sass** variable rather than only a custom property, because the two are
+ * not equally available. `base.scss` is a global stylesheet listed in
+ * `angular.json`, and the shell never loads it: a Module Federation host pulls
+ * the remote's *component* styles in with its JavaScript and nothing else. So
+ * `--messenger-dock-width` resolved to the empty string inside the shell,
+ * `width: var(--messenger-dock-width)` was therefore invalid, and the docked
+ * window fell back to `width: auto` — sizing to its own content and visibly
+ * growing as the thread loaded (reported by dathq, 2026-09-17).
+ *
+ * Compiled into every consumer, this value travels with the component that
+ * uses it and holds in both hosts. Deliberately not re-published as a custom
+ * property: a declaration nothing reads is one more thing to keep in step,
+ * and the global sheet it would live in is exactly what the host ignores.
+ */
+$width: min(20rem, calc(100vw - 2rem));

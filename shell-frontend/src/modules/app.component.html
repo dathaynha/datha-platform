@@ -1,0 +1,19 @@
+<div
+  class="app-shell box-border min-h-full font-sans text-sm antialiased"
+  [class.dark]="useDarkChrome()"
+  [attr.data-shell-theme]="themeId()"
+>
+  @if (isLoading) {
+    <div
+      class="app-loading-backdrop fixed inset-0 z-[10000] flex items-center justify-center backdrop-blur-sm"
+      @fade
+    >
+      <p-progress-spinner
+        strokeWidth="4"
+        [style.width.px]="100"
+        [style.height.px]="100"
+      />
+    </div>
+  }
+  <router-outlet />
+</div>

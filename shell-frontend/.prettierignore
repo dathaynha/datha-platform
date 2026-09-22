@@ -1,0 +1,21 @@
+# MegaLinter gates TYPESCRIPT_PRETTIER + JSON_PRETTIER, i.e. .ts and .json only.
+#
+# This file is kept byte-identical in every prettier-using repo, so some entries
+# are inert in some stacks: .angular/, test-results/ and playwright-report/ mean
+# nothing in a backend, and vendor/ means nothing outside Go. One file to reason
+# about beats eleven that drift. Do not "clean up" the entries per repo.
+#
+# *.html is excluded because reformatting Tailwind-heavy Angular templates is a
+# large, separate change with no CI benefit. That is a frontend concern; the line
+# is simply harmless where there are no templates.
+*.html
+
+node_modules/
+dist/
+coverage/
+.angular/
+test-results/
+playwright-report/
+vendor/
+pnpm-lock.yaml
+package-lock.json

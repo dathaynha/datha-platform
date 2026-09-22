@@ -1,0 +1,60 @@
+<div
+  [class]="
+    isShelled()
+      ? 'messenger-layout flex min-h-0 h-full w-full flex-1 flex-col'
+      : 'messenger-layout flex h-[100dvh] min-h-0 w-full flex-col'
+  "
+>
+  <datha-sub-header [tabs]="tabs()" navAriaLabelKey="SUBNAV.ARIA">
+
+    <!-- Standalone-only: shell owns language + profile + logout when hosted -->
+    @if (!isShelled()) {
+      <datha-theme-select
+        inputId="toolbar-theme"
+        [selected]="selectedTheme()"
+        (selectedChange)="onThemeChange($event)"
+      />
+      <datha-lang-select
+        inputId="toolbar-lang"
+        [languages]="languages"
+        [selected]="selectedLanguage()"
+        (selectedChange)="onLanguageChange($event)"
+      />
+      <datha-profile-popover
+        [name]="profileDisplayName()"
+        [email]="profileEmail()"
+        [username]="showUsernameRow() ? profileUsername() : ''"
+        [signInMethodKey]="providerLabelKey()"
+        [menuItems]="profileMenuItems"
+        (menuItemSelect)="onProfileMenuItem($event)"
+        (logout)="logout()"
+      />
+    }
+  </datha-sub-header>
+
+  <div
+    class="messenger-content relative flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
+  >
+    <router-outlet></router-outlet>
+  </div>
+
+  <!--
+    Standalone-only, and the counterpart of the shell's header widget, which
+    mounts this same dock when hosted. Without it :4003 had a call *button*
+    (ordinary thread chrome) and no call *UI*, so pressing it rang the other
+    person for real and left this side with nothing to look at and no way to
+    hang up. A remote has to work on its own — that is the point of the
+    architecture — so the answer is to mount the dock here, never to hide the
+    button (dathq, 2026-09-15).
+
+    It re-parents itself to `body`, so where it sits in this template does not
+    affect where it renders.
+  -->
+  @if (!isShelled()) {
+    <messenger-call-dock />
+    <!-- Standalone only, like the call dock above: when the shell hosts this
+         remote its header widget mounts the strip instead. Two mounts would
+         mean two strips over one set of windows. -->
+    <messenger-chat-dock [chatsLink]="chatsLink()" />
+  }
+</div>

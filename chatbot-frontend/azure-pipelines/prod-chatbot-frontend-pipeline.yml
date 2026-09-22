@@ -1,0 +1,27 @@
+trigger:
+  branches:
+    include:
+      - prod
+
+resources:
+  repositories:
+    - repository: master-pipelines
+      type: git
+      name: "DatHa Platform/master-pipelines"
+      ref: refs/heads/main
+
+variables:
+  - group: pipeline-config
+
+stages:
+  - template: pipelines/angular-template.yml@master-pipelines
+    parameters:
+      appName: "chatbot-frontend"
+      skipTest: true
+      artifactTypes:
+        - docker
+      appShortName: "chatbot-frontend"
+      terraformDir: "/IaC"
+      deployToK8s: true
+      environment: "prod"
+      buildMode: "-- --configuration production"

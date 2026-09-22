@@ -1,0 +1,18 @@
+-- Filtering on a payload field, without a new column or a new index per field.
+--
+-- `origin` was added to the file events so an audit could tell a chatbot
+-- attachment from a messenger one — and then could not be filtered on, because
+-- the list filters columns and `origin` lives in `payload`. That is the same
+-- shape as the bug this wave opened with: the data is there and nothing can
+-- select on it.
+--
+-- A column per interesting payload field does not scale and a `->>` expression
+-- index only serves the one key it names. A GIN index on the whole document
+-- serves containment (`@>`) for **every** key at once, so the next publisher to
+-- add a payload field gets filtering for free.
+--
+-- `jsonb_path_ops` rather than the default: it indexes only the value paths
+-- rather than every key and every value separately, which makes it markedly
+-- smaller and faster for `@>`. It cannot answer key-existence (`?`), which this
+-- service does not ask.
+CREATE INDEX IF NOT EXISTS events_payload_idx ON events USING gin (payload jsonb_path_ops);

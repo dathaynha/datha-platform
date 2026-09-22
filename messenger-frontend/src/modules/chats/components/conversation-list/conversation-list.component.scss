@@ -1,0 +1,169 @@
+/* Tokens (--chats-*) are defined on the page host and inherit down, so both
+   themes come from one place rather than being redefined per component. */
+:host {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chats-sidebar-header {
+  border-color: var(--chats-border);
+  background: var(--chats-header-bg);
+}
+
+.chats-kicker,
+.chats-subtle {
+  color: var(--chats-subtle);
+}
+
+.chats-muted {
+  color: var(--chats-muted);
+}
+
+.chats-icon-button {
+  border-color: var(--chats-border);
+  background: var(--chats-surface-bg);
+  color: var(--chats-ink);
+
+  &:hover {
+    background: var(--chats-surface-hover-bg);
+  }
+}
+
+.chats-search-input {
+  border-color: var(--chats-border);
+  background: var(--chats-input-bg);
+  color: var(--chats-ink);
+
+  &::placeholder {
+    color: var(--chats-subtle);
+  }
+
+  &:focus {
+    border-color: color-mix(in srgb, var(--p-primary-500) 60%, transparent);
+  }
+}
+
+.chats-search-icon {
+  color: var(--chats-subtle);
+}
+
+.conversation-row {
+  border: 1px solid transparent;
+
+  &:hover {
+    background: var(--chats-surface-hover-bg);
+  }
+
+  &.is-active {
+    border-color: var(--chats-border);
+    background: var(--chats-surface-bg);
+    box-shadow: var(--chats-shadow);
+  }
+}
+
+.conversation-title {
+  color: var(--chats-ink);
+
+  &.is-unread {
+    font-weight: 700;
+  }
+}
+
+.chats-muted.is-unread {
+  color: var(--chats-ink);
+  font-weight: 600;
+}
+
+.conversation-avatar {
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--chats-accent-bg);
+  color: var(--chats-accent-ink);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Presence rides on the avatar rather than a separate column: it is a property
+   of the person, and the popover uses the same dot. */
+.presence-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  height: 0.625rem;
+  width: 0.625rem;
+  border-radius: 999px;
+  border: 2px solid var(--chats-sidebar-bg);
+  background: var(--chats-subtle);
+
+  &.is-online {
+    background: #22c55e;
+  }
+
+  &.is-away {
+    background: #f59e0b;
+  }
+}
+
+/*
+ * A call is happening in this thread.
+ *
+ * A tinted glyph, not a filled badge. The first version was a green circle,
+ * which fought the theme and read as a second, louder unread dot right beside
+ * the real one (dathq, 2026-09-16: "ugly as hell"). The row's chrome is
+ * understated everywhere else, so this is too — it earns attention by moving,
+ * not by shouting.
+ */
+.conversation-call {
+  color: var(--p-primary-500);
+  font-size: 0.8125rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .conversation-call {
+    animation: conversation-call-pulse 1.8s ease-in-out infinite;
+  }
+}
+
+@keyframes conversation-call-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.unread-dot {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 999px;
+  background: var(--p-primary-500);
+}
+
+.chats-error {
+  color: #ef4444;
+}
+
+/*
+ * A row action, revealed on hover — the pattern Slack, Gmail and Linear all
+ * use for a secondary action that would otherwise compete with the content.
+ * It covers the timestamp while shown, which is the trade every one of them
+ * makes too. Focus reveals it as well, so it is reachable from the keyboard.
+ */
+.conversation-dock {
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+
+.conversation-row-wrap:hover .conversation-dock,
+.conversation-dock:focus-visible {
+  opacity: 1;
+}

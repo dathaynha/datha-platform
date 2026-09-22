@@ -1,0 +1,212 @@
+/*
+ * The control sizes itself to the room it has, not to the window.
+ *
+ * Declared on `:host`, so the query below resolves against this component
+ * rather than the viewport — the pager sits inside a card, inside a page, which
+ * may itself be inside the shell beside a 224px sidebar. Keying it on the
+ * viewport is the mistake that cost three products a landscape layout.
+ */
+:host {
+  container-type: inline-size;
+  display: block;
+
+  /* `container-type: inline-size` makes the element's width independent of its
+     contents — that is the whole point of inline-size containment, and it means
+     a shrink-to-fit box has nothing left to size from. As a plain flex child of
+     the pager footer this host measured **0px wide**, which then matched the
+     narrow query below and hid the page links at every viewport (2026-09-19).
+     The width has to come from the layout instead, so: grow into what the
+     footer has left, and let `min-width: 0` allow it to shrink again. Same
+     family as the table container that measured 0px tall — a container needs a
+     definite size on the axis it contains. */
+  /* The footer wraps, so a minimum is what decides whether this control shares
+     a row with "Showing 1-50 of 715" or takes one of its own. Below this it
+     cannot lay out without clipping the last-page button, so it should wrap
+     rather than shrink. */
+  flex: 1 1 auto;
+  min-width: 14rem;
+}
+
+.ops-paginator {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.ops-paginator__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.ops-paginator__pages {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Square, so the row does not jog as the digit count changes. */
+.ops-paginator__page {
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.4rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--p-surface-600);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.ops-paginator__page:hover:not(.is-current):not(:disabled) {
+  background: color-mix(in srgb, var(--p-primary-200) 40%, transparent);
+  color: var(--p-surface-900);
+}
+
+/* The current page is a state, not a button you press again. */
+.ops-paginator__page.is-current {
+  background: var(--p-primary-500);
+  border-color: var(--p-primary-500);
+  color: var(--p-primary-contrast-color, #fff);
+  font-weight: 600;
+  cursor: default;
+}
+
+.ops-paginator__page:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ops-paginator__gap {
+  min-width: 1.25rem;
+  text-align: center;
+  color: var(--p-surface-400);
+  user-select: none;
+}
+
+/* Shown when the links are not: either the container is too narrow (the query
+   below) or there are no links to show, past the cap. */
+.ops-paginator__compact.is-always-shown {
+  display: inline-block;
+}
+
+.ops-paginator__compact {
+  display: none;
+  min-width: 3.5rem;
+  text-align: center;
+  color: var(--p-surface-600);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+:host-context(.dark) .ops-paginator__page {
+  color: var(--p-surface-300);
+}
+
+:host-context(.dark) .ops-paginator__page:hover:not(.is-current):not(:disabled) {
+  background: color-mix(in srgb, var(--p-primary-500) 22%, transparent);
+  color: var(--p-surface-0);
+}
+
+:host-context(.dark) .ops-paginator__compact,
+:host-context(.dark) .ops-paginator__gap {
+  color: var(--p-surface-400);
+}
+
+.ops-paginator__size {
+  flex: 0 0 auto;
+}
+
+/*
+ * Below the width the numbers need, drop them for a "3 / 15" readout.
+ *
+ * Nine links at ~2rem plus four step buttons and the size select is about
+ * 26rem of control; on a 390px phone, inside a card with padding, there is not
+ * that much. The steps and the size select are what a phone actually uses —
+ * you swipe through a list rather than jump to page 9 of 15 — so they stay and
+ * the links go.
+ */
+@container (max-width: 26rem) {
+  .ops-paginator__pages {
+    display: none;
+  }
+
+  .ops-paginator__compact {
+    display: inline-block;
+  }
+
+  /* Steps at one end, page size at the other, on a single line. */
+  .ops-paginator {
+    justify-content: space-between;
+    width: 100%;
+    gap: 0.35rem;
+  }
+
+  /* Every pixel counts once the readout and the size select share the row. */
+  .ops-paginator__controls {
+    gap: 0;
+  }
+
+  .ops-paginator__compact {
+    min-width: 3rem;
+  }
+}
+
+/* Below the width the steps and the size select need *together*, stack them.
+   Deliberately a **narrower** threshold than the one above, and the two are
+   about different things: 26rem is where the numbered page links stop fitting,
+   19rem is where these two children stop fitting beside each other. Keying the
+   stack on the links' threshold made a 329px landscape pager lay itself out in
+   two rows with 38px to spare, and the footer then centred a one-line summary
+   against an 84px block — so the summary sat between the steps and the select,
+   which is what dathq saw. Measured: steps 208 + select 75 + gap needs ~291. */
+@container (max-width: 19rem) {
+  .ops-paginator {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  /* Spread across the row rather than huddled at one end: this is the control
+     a phone actually uses, and spacing the four steps apart is what stops a
+     thumb hitting "last page" when it meant "next". */
+  .ops-paginator__controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  /* Right-aligned, because it is a setting rather than a step — putting it
+     under the left edge of the steps is what made the block read as three
+     things dropped in a pile. */
+  .ops-paginator__size {
+    align-self: flex-end;
+  }
+}
+
+/* 44px of reach on a touch device, carried by a transparent pseudo-element so
+   the drawn control keeps its desktop size — the rule the messenger thread
+   already follows. */
+@media (pointer: coarse) {
+  .ops-paginator__page {
+    position: relative;
+  }
+
+  .ops-paginator__page::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    height: 2.75rem;
+    width: 2.75rem;
+    transform: translate(-50%, -50%);
+  }
+}

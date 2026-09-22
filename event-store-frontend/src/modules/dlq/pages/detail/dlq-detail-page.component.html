@@ -1,0 +1,172 @@
+<section
+  class="dlq-detail-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="dlq-detail-title"
+>
+  <div class="dlq-detail-aurora" aria-hidden="true"></div>
+  <div class="dlq-detail-noise" aria-hidden="true"></div>
+
+  <div
+    class="ops-detail-body relative z-10 flex w-full min-w-0 flex-1 flex-col overflow-y-auto"
+  >
+    <header class="mb-6 flex flex-wrap items-center gap-3">
+      <p-button
+        type="button"
+        icon="pi pi-arrow-left"
+        [rounded]="true"
+        [text]="true"
+        [ariaLabel]="'DLQ_PAGE.DETAIL.BACK' | translate"
+        [pTooltip]="'DLQ_PAGE.DETAIL.BACK' | translate"
+        tooltipPosition="bottom"
+        (onClick)="goBack()"
+      />
+      <h1
+        id="dlq-detail-title"
+        class="dlq-detail-title ops-detail-title m-0 font-bold tracking-tight"
+      >
+        {{ "DLQ_PAGE.DETAIL.TITLE" | translate }}
+      </h1>
+    </header>
+
+    @if (loading()) {
+      <div class="flex items-center gap-3 py-8">
+        <span class="pi pi-spin pi-spinner" aria-hidden="true"></span>
+        {{ "DLQ_PAGE.DETAIL.LOADING" | translate }}
+      </div>
+    } @else if (loadError()) {
+      <div class="ops-detail-banner ops-detail-banner--error" role="alert">
+        {{ "DLQ_PAGE.DETAIL.ERROR" | translate }}
+      </div>
+    } @else if (record(); as detail) {
+      <div class="dlq-detail-card flex flex-col gap-5">
+        <dl class="ops-detail-meta m-0 grid gap-3">
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.ID" | translate }}</dt>
+            <dd class="flex items-start gap-1">
+              <code class="ops-detail-code break-all">{{ detail.id }}</code>
+              <button
+                type="button"
+                class="ops-detail-copy-btn shrink-0"
+                [attr.aria-label]="'DLQ_PAGE.DETAIL.COPY' | translate"
+                (click)="copyText(detail.id)"
+              >
+                <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+              </button>
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.SINK" | translate }}</dt>
+            <dd><code class="ops-detail-code">{{ detail.sink }}</code></dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.SUBJECT" | translate }}</dt>
+            <dd class="break-all text-sm">{{ detail.subject }}</dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.ORIGINAL_SUBJECT" | translate }}</dt>
+            <dd class="break-all text-sm">{{ detail.originalSubject }}</dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.OWNER_ID" | translate }}</dt>
+            <dd class="break-all text-sm">{{ detail.ownerId ?? "—" }}</dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.CORRELATION_ID" | translate }}</dt>
+            <dd class="flex items-start gap-1 break-all text-sm">
+              <span>{{ detail.correlationId ?? "—" }}</span>
+              @if (detail.correlationId) {
+                <button
+                  type="button"
+                  class="ops-detail-copy-btn shrink-0"
+                  [attr.aria-label]="'DLQ_PAGE.DETAIL.COPY' | translate"
+                  (click)="copyText(detail.correlationId!)"
+                >
+                  <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+                </button>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.FAILED_AT" | translate }}</dt>
+            <dd>{{ detail.failedAt | date: "medium" : undefined : locale }}</dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.INGESTED_AT" | translate }}</dt>
+            <dd>{{ detail.ingestedAt | date: "medium" : undefined : locale }}</dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.REPLAYED_AT" | translate }}</dt>
+            <dd>
+              @if (detail.replayedAt) {
+                {{ detail.replayedAt | date: "medium" : undefined : locale }}
+              } @else {
+                —
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>{{ "DLQ_PAGE.DETAIL.JETSTREAM" | translate }}</dt>
+            <dd class="text-sm">
+              {{ detail.jetstreamStream }} #{{ detail.jetstreamSequence }}
+            </dd>
+          </div>
+        </dl>
+
+        <section class="space-y-2">
+          <h2 class="ops-detail-section-title m-0">
+            {{ "DLQ_PAGE.DETAIL.LAST_ERROR" | translate }}
+          </h2>
+          <pre class="ops-detail-pre">{{ detail.lastError }}</pre>
+        </section>
+
+        <section class="space-y-2">
+          <h2 class="ops-detail-section-title m-0">
+            {{ "DLQ_PAGE.DETAIL.PAYLOAD" | translate }}
+          </h2>
+          <pre class="ops-detail-pre">{{ formatJson(detail.payload) }}</pre>
+        </section>
+
+        <section class="space-y-2">
+          <h2 class="ops-detail-section-title m-0">
+            {{ "DLQ_PAGE.DETAIL.ENVELOPE" | translate }}
+          </h2>
+          @if (hasEnvelope(detail)) {
+            <pre class="ops-detail-pre">{{ formatJson(detail.envelope) }}</pre>
+          } @else {
+            <p class="ops-detail-warn">{{ "DLQ_PAGE.DETAIL.NO_ENVELOPE" | translate }}</p>
+          }
+        </section>
+
+        @if (replaySuccess()) {
+          <div class="ops-detail-banner ops-detail-banner--success" role="status">
+            {{ "DLQ_PAGE.REPLAY.SUCCESS" | translate }}
+          </div>
+        }
+        @if (replayError()) {
+          <div class="ops-detail-banner ops-detail-banner--error" role="alert">
+            {{ replayError() }}
+          </div>
+        }
+
+        <div class="flex flex-wrap gap-2 border-t border-white/10 pt-4">
+          @if (canReplay(detail)) {
+            <p-button
+              [label]="'DLQ_PAGE.REPLAY.ACTION' | translate"
+              icon="pi pi-replay"
+              [loading]="replaying()"
+              (onClick)="requestReplay()"
+            />
+          } @else if (isReplayed(detail)) {
+            <p-tag
+              severity="success"
+              [value]="'DLQ_PAGE.STATUS.REPLAYED' | translate"
+            />
+          } @else {
+            <p class="ops-detail-warn m-0">
+              {{ "DLQ_PAGE.REPLAY.UNAVAILABLE" | translate }}
+            </p>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</section>

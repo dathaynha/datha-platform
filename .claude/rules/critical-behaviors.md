@@ -1,0 +1,13 @@
+# Critical behaviors (always apply)
+
+One-line hard rules; full detail in the linked canonical `.claude/docs/` file.
+
+1. **Never read or edit `.env` / `.env.*` in any backend service dir** — real secrets. Only `.env.example` (editable) and frontend `environment.*.ts` are safe. When env config changes, update `.env.example` and tell the user to mirror it. → `.claude/docs/always-apply/env-file-safety.md`
+2. **Never touch `_local/`** — personal documents and legacy notes. Off limits unless the user names a specific file; the infra working files are the standing exception. Holds **no credentials** (scanned 2026-09-18), so it is backed up rather than excluded. → `.claude/docs/always-apply/context-boundaries.md`
+3. **Never leave a dev server running** at end of turn. May start one temporarily to verify, must kill it. User manages all ports. Sole exception: explicit "run …" request via the `run-platform` skill — those stay up. → `.claude/docs/always-apply/no-running-ports.md`
+4. **No routine unit test runs** after normal edits. Run suites only on prepare-push or explicit request. Writing tests is fine; auto-running is not. → `.claude/docs/always-apply/no-routine-unit-tests.md`
+5. **Don't grep/bulk-read** `node_modules/`, `dist/`, `coverage/`, `vendor/`, `.venv/`, `.angular/`, `.git/` — several repos have these committed/present locally. → context-boundaries.md
+6. **Commits/PRs scoped to one service repo** unless the user names more. No root pipeline, no root package.json, no "deploy the monorepo". → `.claude/docs/always-apply/workspace-layout.md`
+7. **NATS topology belongs to `platform-nats/`** — other services connect only, never `streams.add`/`consumers.add` on startup. Durable names sync with each service's `src/nats/streams.ts`. → `.claude/docs/platform/platform-nats-architecture.md`
+8. **Don't scaffold deferred services** (analytics-service, search-service, translation pipeline, interview-prep repos) until explicitly asked — they are documented ahead of build.
+9. **No AI attribution in git** — no `Co-Authored-By: Claude/Cursor`, no "Generated with" lines in commits or PRs. Conventional Commits format. → `.claude/docs/always-apply/git-commit-conventions.md`

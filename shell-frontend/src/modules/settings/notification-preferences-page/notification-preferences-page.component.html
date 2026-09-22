@@ -1,0 +1,101 @@
+<div class="shell-page-root">
+  <div class="shell-page-ambient" aria-hidden="true"></div>
+  <div class="shell-page-noise" aria-hidden="true"></div>
+
+  <div class="shell-page-shell !max-w-3xl">
+    <header class="shell-page-header datha-glass-sheen">
+      <p class="shell-page-kicker">
+        <a routerLink="/settings" class="settings-breadcrumb">
+          <i class="pi pi-arrow-left mr-1 text-[0.6rem]" aria-hidden="true"></i>
+          {{ "SETTINGS.TITLE" | translate }}
+        </a>
+      </p>
+      <h1 class="shell-page-title flex items-center gap-3">
+        <span class="settings-icon" aria-hidden="true"><i class="pi pi-bell"></i></span>
+        {{ "SETTINGS.NOTIFICATIONS.TITLE" | translate }}
+      </h1>
+      <p class="shell-page-subtitle">
+        {{ "SETTINGS.NOTIFICATIONS.SUBTITLE" | translate }}
+      </p>
+    </header>
+
+    @if (pushIssueKey(); as issueKey) {
+      <div class="shell-drawer-error mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
+        <i class="pi pi-ban"></i>
+        {{ issueKey | translate }}
+      </div>
+    }
+
+    @if (preferencesService.saveError()) {
+      <div class="shell-drawer-error mb-4 flex items-center gap-2 rounded-lg px-3 py-2 text-sm">
+        <i class="pi pi-exclamation-triangle"></i>
+        {{ "SETTINGS.NOTIFICATIONS.SAVE_ERROR" | translate }}
+      </div>
+    }
+
+    @if (preferencesService.preferences(); as prefs) {
+      <section class="shell-glass-card shell-glass-card--static datha-glass-sheen block px-6 py-2">
+        <div class="settings-row">
+          <span class="settings-icon" aria-hidden="true"><i class="pi pi-desktop"></i></span>
+          <div class="min-w-0 flex-1">
+            <h2 class="datha-text-strong m-0 text-sm font-semibold">
+              {{ "SETTINGS.NOTIFICATIONS.PUSH_TITLE" | translate }}
+            </h2>
+            <p class="datha-text-muted m-0 mt-1 text-sm">
+              {{ "SETTINGS.NOTIFICATIONS.PUSH_HINT" | translate }}
+            </p>
+          </div>
+          <p-toggleswitch
+            [ngModel]="prefs.pushEnabled"
+            (ngModelChange)="setPushEnabled($event)"
+            [ariaLabel]="'SETTINGS.NOTIFICATIONS.PUSH_TITLE' | translate"
+          />
+        </div>
+
+        @if (prefs.pushEnabled) {
+          <div class="settings-row settings-row--nested">
+            <div class="min-w-0 flex-1">
+              <h3 class="datha-text-strong m-0 text-sm font-medium">
+                {{ "SETTINGS.NOTIFICATIONS.PUSH_SEVERITY_TITLE" | translate }}
+              </h3>
+              <p class="datha-text-muted m-0 mt-1 text-sm">
+                {{ "SETTINGS.NOTIFICATIONS.PUSH_SEVERITY_HINT" | translate }}
+              </p>
+            </div>
+            <p-select
+              [options]="severityOptions()"
+              [ngModel]="prefs.pushMinSeverity"
+              (ngModelChange)="setPushMinSeverity($event)"
+              optionLabel="label"
+              optionValue="value"
+              appendTo="body"
+              class="settings-severity-select"
+              [ariaLabel]="'SETTINGS.NOTIFICATIONS.PUSH_SEVERITY_TITLE' | translate"
+            />
+          </div>
+        }
+
+        <div class="settings-row">
+          <span class="settings-icon" aria-hidden="true"><i class="pi pi-envelope"></i></span>
+          <div class="min-w-0 flex-1">
+            <h2 class="datha-text-strong m-0 text-sm font-semibold">
+              {{ "SETTINGS.NOTIFICATIONS.DIGEST_TITLE" | translate }}
+            </h2>
+            <p class="datha-text-muted m-0 mt-1 text-sm">
+              {{ "SETTINGS.NOTIFICATIONS.DIGEST_HINT" | translate }}
+            </p>
+          </div>
+          <p-toggleswitch
+            [ngModel]="prefs.emailDigest"
+            (ngModelChange)="setEmailDigest($event)"
+            [ariaLabel]="'SETTINGS.NOTIFICATIONS.DIGEST_TITLE' | translate"
+          />
+        </div>
+      </section>
+    } @else if (preferencesService.loading()) {
+      <p class="datha-text-muted py-8 text-center text-sm">
+        {{ "NOTIFICATIONS.LOADING" | translate }}
+      </p>
+    }
+  </div>
+</div>

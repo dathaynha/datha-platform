@@ -1,0 +1,15 @@
+.app-shell {
+  color: var(--p-surface-800);
+}
+
+.app-shell.dark {
+  color: var(--p-surface-0);
+}
+
+.app-loading-backdrop {
+  background-color: color-mix(in srgb, var(--p-surface-950) 15%, transparent);
+}
+
+.app-shell.dark .app-loading-backdrop {
+  background-color: color-mix(in srgb, var(--p-surface-950) 45%, transparent);
+}

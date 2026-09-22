@@ -1,0 +1,12 @@
+FILTER_REGEX_EXCLUDE: "(vendor/|azure-pipelines/)"
+DISABLE_LINTERS:
+  - SPELL_CSPELL
+  # No container image in this repo; skip repo-wide vuln/misconfig scans (Grype/Trivy noise).
+  - REPOSITORY_GRYPE
+  - REPOSITORY_TRIVY
+  - COPYPASTE_JSCPD
+  # golangci-lint is enough for CI; revive enableAllRules is too strict (line-length 80, complexity, …).
+  - GO_REVIVE
+  # Pedantic table padding; README table is valid locally but Docker linter version differs.
+  - MARKDOWN_MARKDOWN_TABLE_FORMATTER
+FLAVOR_SUGGESTIONS: false

@@ -1,0 +1,61 @@
+/* Compact-only bottom navigation. Glass to match the toolbar and sidebar, with
+   the border on top because this bar sits against the bottom edge.
+
+   `env(safe-area-inset-bottom)` keeps the row clear of the home indicator on a
+   notched phone; it resolves to 0 everywhere else, so there is no desktop cost
+   and no second rule to keep in step. */
+.shell-bottom-nav {
+  position: relative;
+  z-index: 20;
+  border-top: 1px solid var(--datha-glass-edge);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.shell-bottom-link {
+  color: var(--datha-chrome-text);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.shell-bottom-link:hover {
+  background-color: var(--datha-chrome-hover-bg);
+}
+
+.shell-bottom-link.shell-bottom-link--active {
+  color: var(--datha-chrome-text-active);
+  font-weight: 600;
+}
+
+/*
+ * Sheet rows.
+ *
+ * These stay here rather than in `base.scss` even though the drawer is
+ * `appendTo="body"`: they are elements this template wrote, so they carry the
+ * component's `_ngcontent` attribute and an encapsulated rule still matches
+ * them wherever PrimeNG moves them. What cannot be reached from here is the
+ * drawer's own chrome, which PrimeNG builds — that part is in `base.scss`.
+ */
+.shell-sheet-link {
+  color: var(--datha-chrome-text);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.shell-sheet-link:hover {
+  background-color: var(--datha-chrome-hover-bg);
+}
+
+.shell-sheet-link.shell-sheet-link--active {
+  background-color: var(--datha-chrome-hover-bg);
+  color: var(--datha-chrome-text-active);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-bottom-link,
+  .shell-sheet-link {
+    transition: none;
+  }
+}

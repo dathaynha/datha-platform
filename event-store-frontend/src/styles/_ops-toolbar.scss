@@ -1,0 +1,159 @@
+// Shared ops list filter bar (DLQ + Events list routes).
+//
+// The two toolbars were byte-identical for 133 lines apart from their class
+// prefix and one class name (`__service` vs `__sink`), which is 266 lines doing
+// the work of 133 — and it is the shape that lets one copy drift from the
+// other, which this repo has already paid for three times (the shell's preview
+// rule, four copies of `auth.interceptor.ts`, the call-label rule).
+//
+// Shared class names rather than a prefix interpolated into a mixin, because
+// that is what `_ops-detail.scss` and `ops-table()` already do here. The one
+// theme-dependent value is handed over as a custom property for the same
+// reason, so each page maps it from its own palette.
+//
+// Compiled into each page component by a plain `@use`: a Module Federation host
+// never loads a remote's global stylesheet, so anything these pages need to
+// keep working inside the shell has to travel with their JavaScript.
+
+.ops-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.ops-toolbar__primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+/* The leading filter: services on the events list, sinks on the DLQ. */
+.ops-toolbar__lead {
+  flex: 0 1 14rem;
+  min-width: 10rem;
+}
+
+.ops-search-field {
+  position: relative;
+  flex: 1 1 16rem;
+  min-width: 12rem;
+}
+
+.ops-search-field__icon {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ops-toolbar-muted);
+  font-size: 0.6875rem;
+  pointer-events: none;
+}
+
+.ops-search-field__input {
+  /* A property rather than a literal, so the stacked layout below can reclaim
+     the room the icon needs — the declaration carries `!important` to beat
+     PrimeNG's own padding, and two `!important` rules of equal specificity are
+     decided by source order, which is a fragile thing to depend on. */
+  padding-left: var(--es-search-inset, 1.85rem) !important;
+}
+
+.ops-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.ops-toolbar__advanced {
+  display: grid;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--ops-toolbar-border);
+}
+
+.ops-toolbar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+/* The advanced panel widens with the page, not the window — `es-page` is
+   declared on each list's root. 40rem and 64rem are the old `sm` and `lg`
+   breakpoints, measured where they mean something. */
+@container es-page (min-width: 40rem) {
+  .ops-toolbar__advanced {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container es-page (min-width: 64rem) {
+  .ops-toolbar__advanced {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* One column, one left edge, below the width the row needs.
+   Measured hosted at 375x667 before this: the card is 296px wide and the row
+   wrapped into three lines of **224px, 296px and 218px**, the last of them
+   right-floated by `margin-left: auto` so it started at x=118 against a left
+   edge of 39. Nothing lined up with anything, which is what "chaotic" was.
+   Wrapping cannot be tidied — it hands each line its own width — so below the
+   width the row actually needs, it stops being a row.
+
+   The action row keeps its order and spans the card: the primary action grows
+   into the space and the two secondary controls stay their own size, which is
+   the arrangement filter bars on a phone converge on. */
+@container (max-width: 34rem) {
+  .ops-toolbar__primary {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ops-toolbar__lead,
+  .ops-search-field {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ops-toolbar__actions {
+    /* `auto` is what pushed this group off the card's left edge. */
+    margin-left: 0;
+    width: 100%;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+
+  /* Stacked, the three controls share a left edge, and an icon inside one of
+     them breaks it: the select's label starts at 12px and the icon pushed the
+     input's text to 29.6px — a **17.6px** step, measured, and the thing dathq
+     could see. Side by side the magnifier earns its keep by marking which
+     field is the search; in a column the shared baseline matters more, and the
+     placeholder plus the Search button directly beneath already say what the
+     field is. */
+  .ops-search-field {
+    --es-search-inset: 0.75rem;
+  }
+
+  .ops-search-field__icon {
+    display: none;
+  }
+
+  /* The submit button grows; `p-button` renders a wrapper around the real
+     button, so both have to be told. */
+  .ops-toolbar__actions > p-button:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* `::ng-deep`, because PrimeNG builds this `<button>` and it therefore
+     carries no `_ngcontent` — an encapsulated rule matches the `p-button`
+     wrapper and stops there. Without it the wrapper grew and the button inside
+     stayed 102px, leaving a hole between it and Clear. */
+  :host ::ng-deep .ops-toolbar__actions > p-button:first-child button {
+    width: 100%;
+  }
+}

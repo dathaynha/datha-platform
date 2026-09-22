@@ -1,0 +1,16 @@
+/*
+ * The docked corner's width is **not** declared here. It was, as
+ * `--messenger-dock-width`, and this file is a global stylesheet that a
+ * Module Federation host never loads — so inside the shell the property did
+ * not exist and every consumer fell back to `width: auto`. It lives in
+ * `styles/_dock.scss` as a Sass value compiled into each component instead.
+ */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

@@ -1,0 +1,132 @@
+// Shared ops detail page content (DLQ + Events detail routes).
+
+/* Responsive scale for both detail routes, keyed on the page container that
+   each route declares (`es-page`) rather than on the viewport. Hosted, the
+   shell's 224px sidebar means a 1024px window holds 800px of content, so the
+   old `sm:`/`lg:` utilities fired a whole step too early (measured
+   2026-09-20). The rem values are the Tailwind breakpoints unchanged. */
+.ops-detail-body {
+  padding: 2rem 1.25rem;
+}
+
+.ops-detail-title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.ops-detail-meta {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+@container es-page (min-width: 40rem) {
+  .ops-detail-body {
+    padding: 2.5rem 2rem;
+  }
+
+  .ops-detail-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+
+  .ops-detail-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Spans the pair rather than sitting in one column: the timestamp and the
+     payload are long values that read badly at half width. */
+  .ops-detail-meta__wide {
+    grid-column: span 2;
+  }
+}
+
+@container es-page (min-width: 64rem) {
+  .ops-detail-body {
+    padding-inline: 3rem;
+  }
+}
+
+.ops-detail-meta dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ops-detail-meta-label);
+  margin-bottom: 0.25rem;
+}
+
+.ops-detail-meta dd {
+  margin: 0;
+  color: var(--ops-detail-meta-value);
+}
+
+.ops-detail-section-title {
+  font-size: var(--datha-form-font-size, 0.8125rem);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ops-detail-section-title);
+}
+
+.ops-detail-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--datha-form-font-size, 0.8125rem);
+}
+
+.ops-detail-pre {
+  margin: 0;
+  max-height: 18rem;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--ops-detail-border);
+  background: var(--ops-detail-pre-bg);
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ops-detail-pre-text);
+}
+
+.ops-detail-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--ops-detail-copy-btn-bg);
+  color: var(--ops-detail-copy-btn-text);
+  padding: 0.2rem 0.35rem;
+  cursor: pointer;
+}
+
+.ops-detail-copy-btn:hover {
+  background: var(--ops-detail-copy-btn-hover-bg);
+}
+
+.ops-detail-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--datha-form-font-size, 0.8125rem);
+}
+
+.ops-detail-banner--error {
+  border: 1px solid var(--ops-detail-banner-error-border);
+  background: var(--ops-detail-banner-error-bg);
+  color: var(--ops-detail-banner-error-text);
+}
+
+.ops-detail-banner--success {
+  border: 1px solid var(--ops-detail-banner-success-border);
+  background: var(--ops-detail-banner-success-bg);
+  color: var(--ops-detail-banner-success-text);
+}
+
+.ops-detail-warn {
+  margin: 0;
+  font-size: var(--datha-form-font-size, 0.8125rem);
+  color: color-mix(in srgb, #fbbf24 85%, var(--ops-detail-meta-value));
+}

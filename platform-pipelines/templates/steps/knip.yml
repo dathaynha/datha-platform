@@ -1,0 +1,11 @@
+# Dead-code scan: unused files, exports and dependencies. Required, not advisory
+# — every repo read clean when this became a gate (2026-09-04) and an advisory
+# step just accumulates findings, which is how 34 dead scaffold files survived
+# four months. knip cannot see everything (angular.json "styles", Module
+# Federation exposes, pino transport target strings), so when a legitimate entry
+# point trips it the fix is one line in that repo's knip.jsonc.
+steps:
+  - script: |
+      set -euo pipefail
+      corepack pnpm knip
+    displayName: Dead code scan (knip)

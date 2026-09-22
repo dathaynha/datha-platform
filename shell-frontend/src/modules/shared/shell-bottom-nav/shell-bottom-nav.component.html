@@ -1,0 +1,119 @@
+<!--
+  Primary navigation on a phone, and only there.
+
+  Material 3 puts three to five destinations in a bottom bar below 600dp and
+  prefers it to a modal drawer, because a drawer makes the user reach the top of
+  the screen on the device where that is hardest. Past five the bar spills into
+  a sheet rather than shrinking every item — see BOTTOM_NAV_SLOTS.
+-->
+<nav
+  class="shell-bottom-nav datha-glass-bar flex shrink-0 items-stretch sm:hidden"
+  [attr.aria-label]="'NAV.PRIMARY' | translate"
+  data-testid="shell-bottom-nav"
+>
+  <a
+    routerLink="/"
+    routerLinkActive="shell-bottom-link--active"
+    [routerLinkActiveOptions]="{ exact: true }"
+    class="shell-bottom-link flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 no-underline"
+    data-testid="shell-bottom-link"
+  >
+    <i class="pi pi-home text-base" aria-hidden="true"></i>
+    <span class="w-full truncate text-center text-[0.625rem] leading-tight">{{
+      "NAV.HOME" | translate
+    }}</span>
+  </a>
+  @for (app of barApps(); track app.remoteName) {
+    <a
+      [routerLink]="[app.route]"
+      routerLinkActive="shell-bottom-link--active"
+      class="shell-bottom-link flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 no-underline"
+      data-testid="shell-bottom-link"
+    >
+      <i [class]="'pi ' + app.icon + ' text-base'" aria-hidden="true"></i>
+      <span
+        class="w-full truncate text-center text-[0.625rem] leading-tight"
+        >{{ nameKey(app) | translate }}</span
+      >
+    </a>
+  }
+  @if (overflows()) {
+    <button
+      type="button"
+      class="shell-bottom-link flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 border-0 bg-transparent px-1"
+      [class.shell-bottom-link--active]="moreActive()"
+      [attr.aria-expanded]="sheetOpen()"
+      aria-haspopup="menu"
+      data-testid="shell-bottom-more"
+      (click)="openSheet()"
+    >
+      <i class="pi pi-ellipsis-h text-base" aria-hidden="true"></i>
+      <span class="w-full truncate text-center text-[0.625rem] leading-tight">{{
+        "NAV.MORE" | translate
+      }}</span>
+    </button>
+  } @else {
+    <a
+      routerLink="/settings"
+      routerLinkActive="shell-bottom-link--active"
+      class="shell-bottom-link flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 px-1 no-underline"
+      data-testid="shell-bottom-link"
+    >
+      <i class="pi pi-cog text-base" aria-hidden="true"></i>
+      <span class="w-full truncate text-center text-[0.625rem] leading-tight">{{
+        "SETTINGS.NAV" | translate
+      }}</span>
+    </a>
+  }
+</nav>
+
+<!--
+  The overflow sheet.
+
+  p-drawer rather than a hand-rolled panel: the focus trap, Escape, the
+  backdrop and scroll blocking are the library's, which is the seam this
+  workspace prefers over compensating for a missing one.
+-->
+<p-drawer
+  [visible]="sheetOpen()"
+  (visibleChange)="sheetOpen.set($event)"
+  position="bottom"
+  styleClass="shell-bottom-sheet"
+  appendTo="body"
+  [blockScroll]="true"
+>
+  <ng-template pTemplate="header">
+    <h2 class="datha-text-strong m-0 text-base font-semibold">
+      {{ "NAV.MORE_TITLE" | translate }}
+    </h2>
+  </ng-template>
+
+  <ul class="m-0 flex list-none flex-col gap-1 p-0" data-testid="shell-bottom-sheet">
+    @for (app of sheetApps(); track app.remoteName) {
+      <li>
+        <a
+          [routerLink]="[app.route]"
+          class="shell-sheet-link flex min-h-12 items-center gap-3 rounded-lg px-3 no-underline"
+          [class.shell-sheet-link--active]="isSheetItemActive(app.route)"
+          data-testid="shell-bottom-sheet-link"
+          (click)="closeSheet()"
+        >
+          <i [class]="'pi ' + app.icon + ' text-base'" aria-hidden="true"></i>
+          <span class="truncate text-sm">{{ nameKey(app) | translate }}</span>
+        </a>
+      </li>
+    }
+    <li>
+      <a
+        routerLink="/settings"
+        class="shell-sheet-link flex min-h-12 items-center gap-3 rounded-lg px-3 no-underline"
+        [class.shell-sheet-link--active]="isSheetItemActive('/settings')"
+        data-testid="shell-bottom-sheet-link"
+        (click)="closeSheet()"
+      >
+        <i class="pi pi-cog text-base" aria-hidden="true"></i>
+        <span class="truncate text-sm">{{ "SETTINGS.NAV" | translate }}</span>
+      </a>
+    </li>
+  </ul>
+</p-drawer>

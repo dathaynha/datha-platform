@@ -1,0 +1,55 @@
+/**
+ * Replaces the Tailwind utilities the app-local dialogs used — lib templates
+ * are not scanned by consumer Tailwind configs, so styles must be self-contained.
+ */
+
+.datha-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.datha-dialog--confirm {
+  min-width: min(400px, 92vw);
+}
+
+.datha-dialog__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.datha-dialog__body {
+  color: var(--p-surface-700);
+}
+
+:host-context(.dark) .datha-dialog__body {
+  color: var(--p-surface-300);
+}
+
+.datha-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.datha-dialog__actions--spaced {
+  margin-top: 1rem;
+}
+
+.datha-dialog__prose {
+  max-width: none;
+  font-size: 0.875rem;
+  line-height: 1.6;
+
+  :where(p, ul, ol) {
+    margin: 0 0 0.75em;
+  }
+
+  :where(code) {
+    padding: 0.1em 0.35em;
+    border-radius: 0.3em;
+    background: color-mix(in srgb, var(--p-surface-500) 14%, transparent);
+    font-size: 0.85em;
+  }
+}

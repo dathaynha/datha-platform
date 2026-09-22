@@ -1,0 +1,33 @@
+/**
+ * Prime Aura exposes --p-* variables under `.dark` (see providePrimeNG darkModeSelector).
+ * Chrome material, tokens and the sub-header bar come from @datha/platform-ui;
+ * only the product-specific layout shell lives here.
+ */
+@use "@datha/platform-ui/styles/chrome" as chrome;
+
+.event-store-layout {
+  color: var(--p-surface-800);
+}
+
+:host-context(.dark) .event-store-layout {
+  color: var(--p-surface-0);
+}
+
+.event-store-content {
+  @include chrome.content-surface;
+}
+
+:host-context(.dark) .event-store-content {
+  @include chrome.content-surface-dark;
+}
+
+/* Ambient backdrop — glass chrome is invisible over flat backgrounds. Mixed in
+   from the lib rather than a global class: the remote's global stylesheet never
+   loads in hosted mode, component styles ship with the MF module. */
+.event-store-layout {
+  @include chrome.ambient;
+}
+
+:host-context(.dark) .event-store-layout {
+  @include chrome.ambient-dark;
+}

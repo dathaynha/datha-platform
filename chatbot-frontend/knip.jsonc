@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // remote-entry.ts is the Module Federation "./Module" expose — the shell loads it
+  // at runtime, nothing imports it statically. environment.*.ts are angular.json
+  // fileReplacements targets, e2e/ is Playwright's. webpack.config.js is where
+  // @angular-architects/module-federation is required (a remote never imports it
+  // from src, unlike the host). None are reachable from src.
+  "entry": [
+    "src/remote-entry.ts",
+    "src/environments/environment*.ts",
+    "e2e/**/*.ts",
+    "webpack.config.js",
+  ],
+  // Exported but referenced only inside its own file is NOT dead: model files
+  // legitimately export the constituent types of an exported interface or union
+  // (deleting them would break the union; un-exporting them hurts consumers).
+  "ignoreExportsUsedInFile": true,
+  "project": ["src/**/*.ts", "e2e/**/*.ts"],
+  // Loaded as CSS via angular.json "styles"; knip's Angular plugin does not read
+  // the @angular-builders/custom-webpack builder, so it cannot see that reference.
+  "ignoreDependencies": ["primeicons"],
+}

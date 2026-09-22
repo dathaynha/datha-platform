@@ -1,0 +1,100 @@
+<nav class="ops-paginator" [attr.aria-label]="'PAGINATION.LABEL' | translate">
+  <div class="ops-paginator__controls">
+    <p-button
+      type="button"
+      icon="pi pi-angle-double-left"
+      [text]="true"
+      severity="secondary"
+      styleClass="ops-paginator__step"
+      [disabled]="isFirst() || disabled()"
+      [ariaLabel]="'PAGINATION.FIRST' | translate"
+      (onClick)="step('first')"
+    />
+    <p-button
+      type="button"
+      icon="pi pi-angle-left"
+      [text]="true"
+      severity="secondary"
+      styleClass="ops-paginator__step"
+      [disabled]="isFirst() || disabled()"
+      [ariaLabel]="'PAGINATION.PREV' | translate"
+      (onClick)="step('prev')"
+    />
+
+    <!-- Stands in for the links when there is no room for them, and replaces
+         them outright past the cap, where there is no denominator to show. -->
+    <span
+      class="ops-paginator__compact"
+      [class.is-always-shown]="cursorMode()"
+      aria-hidden="true"
+    >
+      {{ positionLabel() }}
+    </span>
+
+    <!-- Not merely hidden past the cap: there are no pages to link to, and a
+         page number that cannot be computed should not be in the document. -->
+    @if (!cursorMode()) {
+      <ol class="ops-paginator__pages">
+        @for (link of links(); track $index) {
+          @if (isGap(link)) {
+            <!-- Not a button: there is no single page it could take you to. -->
+            <li class="ops-paginator__gap" aria-hidden="true">…</li>
+          } @else {
+            <li>
+              <button
+                type="button"
+                class="ops-paginator__page"
+                [class.is-current]="link === currentPage()"
+                [attr.aria-current]="link === currentPage() ? 'page' : null"
+                [attr.aria-label]="
+                  'PAGINATION.PAGE' | translate: { page: link }
+                "
+                [disabled]="disabled()"
+                (click)="goToPage(link)"
+              >
+                {{ link }}
+              </button>
+            </li>
+          }
+        }
+      </ol>
+    }
+
+    <p-button
+      type="button"
+      icon="pi pi-angle-right"
+      [text]="true"
+      severity="secondary"
+      styleClass="ops-paginator__step"
+      [disabled]="isLast() || disabled()"
+      [ariaLabel]="'PAGINATION.NEXT' | translate"
+      (onClick)="step('next')"
+    />
+    <!-- There is no last page to jump to once the count stopped being exact. -->
+    @if (!cursorMode()) {
+      <p-button
+        type="button"
+        icon="pi pi-angle-double-right"
+        [text]="true"
+        severity="secondary"
+        styleClass="ops-paginator__step"
+        [disabled]="isAtLastNumberedPage() || disabled()"
+        [ariaLabel]="'PAGINATION.LAST' | translate"
+        (onClick)="goToPage(pageCount())"
+      />
+    }
+  </div>
+
+  <p-select
+    class="ops-paginator__size"
+    styleClass="datha-select"
+    appendTo="body"
+    [options]="sizeOptions()"
+    [ngModel]="pageSize()"
+    [disabled]="disabled()"
+    [ariaLabel]="'PAGINATION.PAGE_SIZE' | translate"
+    optionLabel="label"
+    optionValue="value"
+    (ngModelChange)="onSizeChange($event)"
+  />
+</nav>

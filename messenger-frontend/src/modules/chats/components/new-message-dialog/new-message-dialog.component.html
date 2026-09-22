@@ -1,0 +1,154 @@
+<!-- Appended to body so the mask escapes `.messenger-content`, which sets
+     `position: relative; z-index: 1` and so establishes a stacking context:
+       inside it the mask's own z-index only competes with its siblings, and the
+       whole dialog painted under the app header (z-index 10) no matter how high
+       it went. Same family as the call dock's `backdrop-filter` containing
+       block — see `.claude/rules/working-agreement.md`. -->
+<p-dialog
+  appendTo="body"
+  [visible]="visible()"
+  [modal]="true"
+  [dismissableMask]="true"
+  [focusOnShow]="false"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(28rem, 92vw)', maxHeight: 'min(40rem, 85dvh)' }"
+  [contentStyle]="{
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    overflow: 'hidden',
+  }"
+  [header]="
+    (grouping() ? 'MESSENGER.GROUP.NEW_TITLE' : 'MESSENGER.NEW.TITLE')
+      | translate
+  "
+  (visibleChange)="!$event && close.emit()"
+  (onShow)="onShow()"
+>
+  <!-- The dialog is capped to the viewport and only the results scroll: the
+       title box, the chips and the confirm all have to stay reachable no
+       matter how many people the directory returns. -->
+  <div class="flex min-h-0 flex-1 flex-col gap-3">
+    @if (!grouping()) {
+      <button
+        type="button"
+        class="new-group-entry flex w-full shrink-0 items-center gap-3 rounded-xl px-3 py-2 text-left"
+        data-testid="new-group"
+        (click)="startGroup()"
+      >
+        <span
+          class="new-group-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+          aria-hidden="true"
+        >
+          <i class="pi pi-users text-sm"></i>
+        </span>
+        <span class="text-[0.8125rem] font-semibold">{{
+          "MESSENGER.GROUP.NEW" | translate
+        }}</span>
+      </button>
+    } @else {
+      <input
+        type="text"
+        class="new-search w-full shrink-0 rounded-lg border px-3 py-2 text-[0.8125rem] outline-none"
+        data-testid="group-title"
+        maxlength="200"
+        [attr.aria-label]="'MESSENGER.GROUP.TITLE_LABEL' | translate"
+        [attr.placeholder]="'MESSENGER.GROUP.TITLE_PLACEHOLDER' | translate"
+        [value]="title()"
+        (input)="onTitle($event)"
+      />
+
+      <messenger-person-chips
+        [people]="selectedList()"
+        (remove)="toggle($event)"
+      />
+    }
+
+    <!-- `autofocus` only fires on first render, and this component is never
+         re-created — onShow handles every open after the first. -->
+    <input
+      #searchInput
+      type="search"
+      class="new-search w-full shrink-0 rounded-lg border px-3 py-2 text-[0.8125rem] outline-none"
+      data-testid="directory-search"
+      [attr.aria-label]="'MESSENGER.NEW.SEARCH' | translate"
+      [attr.placeholder]="'MESSENGER.NEW.SEARCH_PLACEHOLDER' | translate"
+      [value]="query()"
+      (input)="onInput($event)"
+    />
+
+    @if (searching()) {
+      <p class="chats-muted m-0 shrink-0 py-4 text-center text-[0.8125rem]">
+        {{ "MESSENGER.CHATS.LOADING" | translate }}
+      </p>
+    } @else if (query().trim() && results().length === 0) {
+      <p class="chats-muted m-0 shrink-0 py-4 text-center text-[0.8125rem]">
+        {{ "MESSENGER.NEW.NO_RESULTS" | translate }}
+      </p>
+    } @else if (!query().trim()) {
+      <p class="chats-muted m-0 shrink-0 py-4 text-center text-[0.8125rem]">
+        {{
+          (grouping() ? "MESSENGER.GROUP.HINT" : "MESSENGER.NEW.HINT")
+            | translate
+        }}
+      </p>
+    } @else {
+      <ul
+        class="m-0 flex min-h-0 flex-1 list-none flex-col gap-1 overflow-y-auto p-0"
+        role="list"
+      >
+        @for (person of results(); track person.ownerId) {
+          <li>
+            <button
+              type="button"
+              class="directory-row flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left"
+              data-testid="directory-result"
+              [class.is-selected]="isSelected(person.ownerId)"
+              [attr.aria-pressed]="grouping() ? isSelected(person.ownerId) : null"
+              (click)="onPickPerson(person)"
+            >
+              <span class="directory-avatar shrink-0" aria-hidden="true">
+                <messenger-avatar
+                  [url]="person.pictureUrl"
+                  [name]="person.displayName"
+                />
+              </span>
+              <span class="flex min-w-0 flex-1 flex-col">
+                <span class="truncate text-[0.8125rem] font-semibold">{{
+                  person.displayName
+                }}</span>
+                <span class="chats-subtle truncate text-[0.6875rem]">{{
+                  person.email
+                }}</span>
+              </span>
+              @if (grouping() && isSelected(person.ownerId)) {
+                <i
+                  class="pi pi-check-circle shrink-0 text-sm"
+                  data-testid="group-selected"
+                  aria-hidden="true"
+                ></i>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    @if (grouping()) {
+      <button
+        type="button"
+        class="chats-cta mt-1 inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-[0.8125rem] font-semibold"
+        data-testid="group-create"
+        [disabled]="!canCreate()"
+        (click)="onCreate()"
+      >
+        @if (creating()) {
+          {{ "MESSENGER.CHATS.LOADING" | translate }}
+        } @else {
+          {{ "MESSENGER.GROUP.CREATE" | translate }}
+        }
+      </button>
+    }
+  </div>
+</p-dialog>

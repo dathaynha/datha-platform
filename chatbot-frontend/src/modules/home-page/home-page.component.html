@@ -1,0 +1,692 @@
+<section
+  class="landing-root relative flex h-full w-full min-w-0 flex-col overflow-hidden text-slate-50"
+  aria-labelledby="landing-hero-title"
+>
+  <div class="landing-aurora" aria-hidden="true"></div>
+  <div class="landing-noise" aria-hidden="true"></div>
+
+  <!-- Scroll container: sits above the aurora (z-10), takes all remaining height, scrolls -->
+  <div
+    class="landing-body relative z-10 flex w-full min-w-0 flex-1 flex-col overflow-y-auto"
+  >
+    <header class="w-full max-w-none space-y-5">
+      <h1
+        id="landing-hero-title"
+        class="landing-title text-balance font-extrabold leading-[1.08] tracking-tight text-white drop-shadow-[0_0_3rem_rgba(168,85,247,0.45)]"
+      >
+        {{ "LANDING.HERO_TITLE" | translate }}
+      </h1>
+      <div class="landing-copy max-w-4xl leading-relaxed text-slate-300/90">
+        <p class="m-0">{{ "LANDING.HERO_DESC" | translate }}</p>
+      </div>
+    </header>
+
+    <section class="w-full space-y-4" aria-labelledby="landing-flows-title">
+      <div class="space-y-3 text-left">
+        <h2
+          id="landing-flows-title"
+          class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
+        >
+          {{ "LANDING.FLOWS.SECTION_TITLE" | translate }}
+        </h2>
+
+        <div
+          class="flow-picker"
+          role="tablist"
+          [attr.aria-label]="'LANDING.FLOWS.PICKER_ARIA' | translate"
+        >
+          <button
+            type="button"
+            class="flow-picker__tab"
+            role="tab"
+            id="landing-flow-tab-message"
+            [class.flow-picker__tab--active]="isMessageFlow()"
+            [attr.aria-selected]="isMessageFlow()"
+            [attr.tabindex]="isMessageFlow() ? 0 : -1"
+            (click)="setFlowMode('message')"
+          >
+            <span class="pi pi-comments" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_MESSAGE" | translate }}
+          </button>
+          <button
+            type="button"
+            class="flow-picker__tab flow-picker__tab--delete"
+            role="tab"
+            id="landing-flow-tab-delete"
+            [class.flow-picker__tab--active]="isDeleteFlow()"
+            [attr.aria-selected]="isDeleteFlow()"
+            [attr.tabindex]="isDeleteFlow() ? 0 : -1"
+            (click)="setFlowMode('delete')"
+          >
+            <span class="pi pi-trash" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_DELETE" | translate }}
+          </button>
+        </div>
+
+        <p
+          class="landing-muted landing-muted--lead m-0 max-w-3xl leading-relaxed text-slate-300/90"
+          role="tabpanel"
+          [attr.aria-labelledby]="
+            isMessageFlow() ? 'landing-flow-tab-message' : 'landing-flow-tab-delete'
+          "
+        >
+          {{ activeFlowSubtitleKey() | translate }}
+        </p>
+      </div>
+
+      <div
+        class="landing-flow-grid mx-auto grid w-full min-w-0"
+      >
+        @if (isMessageFlow()) {
+        <div
+          class="flex w-full min-w-0 flex-col items-center gap-0"
+          role="group"
+          [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+        >
+          <!-- Angular -->
+          <button
+            type="button"
+            class="flow-node"
+            [class.flow-node--active]="isFlowSelected('angular')"
+            [attr.aria-pressed]="isFlowSelected('angular')"
+            (click)="selectFlowNode('angular')"
+          >
+            <span
+              class="text-lg text-violet-200/95"
+              [class]="getFlowNode('angular').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("angular").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("angular").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.FLOW.LINK_HTTP" | translate }}</span>
+          </div>
+
+          <!-- API Gateway -->
+          <button
+            type="button"
+            class="flow-node"
+            [class.flow-node--active]="isFlowSelected('gateway')"
+            [attr.aria-pressed]="isFlowSelected('gateway')"
+            (click)="selectFlowNode('gateway')"
+          >
+            <span
+              class="text-lg text-teal-200/95"
+              [class]="getFlowNode('gateway').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("gateway").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("gateway").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link flow-link--branch" aria-hidden="true">
+            <span>{{ "LANDING.FLOW.LINK_GATEWAY" | translate }}</span>
+          </div>
+
+          <!-- Services row: FastAPI + File Service → Azure Blob -->
+          <div
+            class="landing-flow-row landing-flow-row--top grid w-full"
+          >
+            <button
+              type="button"
+              class="flow-node flow-node--compact"
+              [class.flow-node--active]="isFlowSelected('fastapi')"
+              [attr.aria-pressed]="isFlowSelected('fastapi')"
+              (click)="selectFlowNode('fastapi')"
+            >
+              <span
+                class="text-base text-sky-200/95"
+                [class]="getFlowNode('fastapi').icon"
+                aria-hidden="true"
+              ></span>
+              <span class="flow-node__title">{{
+                getFlowNode("fastapi").titleKey | translate
+              }}</span>
+              <span class="flow-node__desc">{{
+                getFlowNode("fastapi").descKey | translate
+              }}</span>
+            </button>
+
+            <div class="flex w-full min-w-0 flex-col items-center gap-0">
+              <button
+                type="button"
+                class="flow-node flow-node--compact"
+                [class.flow-node--active]="isFlowSelected('file-service')"
+                [attr.aria-pressed]="isFlowSelected('file-service')"
+                (click)="selectFlowNode('file-service')"
+              >
+                <span
+                  class="text-base text-orange-200/90"
+                  [class]="getFlowNode('file-service').icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getFlowNode("file-service").titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getFlowNode("file-service").descKey | translate
+                }}</span>
+              </button>
+
+              <div class="flow-link" aria-hidden="true">
+                <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                <span>{{ "LANDING.FLOW.LINK_BLOB" | translate }}</span>
+              </div>
+
+              <button
+                type="button"
+                class="flow-node flow-node--compact"
+                [class.flow-node--active]="isFlowSelected('azure-blob')"
+                [attr.aria-pressed]="isFlowSelected('azure-blob')"
+                (click)="selectFlowNode('azure-blob')"
+              >
+                <span
+                  class="text-base text-cyan-200/90"
+                  [class]="getFlowNode('azure-blob').icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getFlowNode("azure-blob").titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getFlowNode("azure-blob").descKey | translate
+                }}</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.FLOW.LINK_EVENTS" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--compact"
+            [class.flow-node--active]="isFlowSelected('nats')"
+            [attr.aria-pressed]="isFlowSelected('nats')"
+            (click)="selectFlowNode('nats')"
+          >
+            <span
+              class="text-base text-rose-200/95"
+              [class]="getFlowNode('nats').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("nats").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("nats").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link flow-link--branch" aria-hidden="true">
+            <span>{{ "LANDING.FLOW.LINK_INGEST" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--compact"
+            [class.flow-node--active]="isFlowSelected('event-store')"
+            [attr.aria-pressed]="isFlowSelected('event-store')"
+            (click)="selectFlowNode('event-store')"
+          >
+            <span
+              class="text-base text-slate-200/95"
+              [class]="getFlowNode('event-store').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("event-store").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("event-store").descKey | translate
+            }}</span>
+          </button>
+
+          <p
+            class="landing-muted landing-muted--note m-0 max-w-md px-2 text-center leading-snug text-slate-400"
+          >
+            {{ "LANDING.FLOW.EVENTS_NOTE" | translate }}
+          </p>
+
+          <div class="flow-link flow-link--branch" aria-hidden="true">
+            <span>{{ "LANDING.FLOW.LINK_BRANCH" | translate }}</span>
+          </div>
+
+          <!-- Storage row: Postgres + Redis -->
+          <div
+            class="landing-flow-row grid w-full"
+          >
+            <button
+              type="button"
+              class="flow-node flow-node--compact"
+              [class.flow-node--active]="isFlowSelected('postgres')"
+              [attr.aria-pressed]="isFlowSelected('postgres')"
+              (click)="selectFlowNode('postgres')"
+            >
+              <span
+                class="text-base text-emerald-200/90"
+                [class]="getFlowNode('postgres').icon"
+                aria-hidden="true"
+              ></span>
+              <span class="flow-node__title">{{
+                getFlowNode("postgres").titleKey | translate
+              }}</span>
+              <span class="flow-node__desc">{{
+                getFlowNode("postgres").descKey | translate
+              }}</span>
+            </button>
+            <button
+              type="button"
+              class="flow-node flow-node--compact"
+              [class.flow-node--active]="isFlowSelected('redis')"
+              [attr.aria-pressed]="isFlowSelected('redis')"
+              (click)="selectFlowNode('redis')"
+            >
+              <span
+                class="text-base text-amber-200/90"
+                [class]="getFlowNode('redis').icon"
+                aria-hidden="true"
+              ></span>
+              <span class="flow-node__title">{{
+                getFlowNode("redis").titleKey | translate
+              }}</span>
+              <span class="flow-node__desc">{{
+                getFlowNode("redis").descKey | translate
+              }}</span>
+            </button>
+          </div>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.FLOW.LINK_QUEUE" | translate }}</span>
+          </div>
+
+          <!-- Worker -->
+          <button
+            type="button"
+            class="flow-node"
+            [class.flow-node--active]="isFlowSelected('worker')"
+            [attr.aria-pressed]="isFlowSelected('worker')"
+            (click)="selectFlowNode('worker')"
+          >
+            <span
+              class="text-lg text-fuchsia-200/95"
+              [class]="getFlowNode('worker').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("worker").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("worker").descKey | translate
+            }}</span>
+          </button>
+
+          <p
+            class="landing-muted landing-muted--note m-0 max-w-md px-2 text-center leading-snug text-slate-400"
+          >
+            {{ "LANDING.FLOW.LOOP_NOTE" | translate }}
+          </p>
+
+          <div
+            class="flow-separator my-5 w-full max-w-md border-t border-dashed border-white/15"
+            aria-hidden="true"
+          ></div>
+
+          <p
+            class="landing-kicker m-0 mb-2 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-slate-500"
+          >
+            {{ "LANDING.FLOW.DELIVERY_KICKER" | translate }}
+          </p>
+
+          <!-- ADO -->
+          <button
+            type="button"
+            class="flow-node flow-node--delivery"
+            [class.flow-node--active]="isFlowSelected('ado')"
+            [attr.aria-pressed]="isFlowSelected('ado')"
+            (click)="selectFlowNode('ado')"
+          >
+            <span
+              class="text-lg text-slate-200/95"
+              [class]="getFlowNode('ado').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getFlowNode("ado").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getFlowNode("ado").descKey | translate
+            }}</span>
+          </button>
+        </div>
+        } @else {
+        <div
+          class="flex w-full min-w-0 flex-col items-center gap-0"
+          role="group"
+          [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+        >
+          <button
+            type="button"
+            class="flow-node flow-node--delete"
+            [class.flow-node--active]="isDeleteFlowSelected('angular')"
+            [attr.aria-pressed]="isDeleteFlowSelected('angular')"
+            (click)="selectDeleteFlowNode('angular')"
+          >
+            <span
+              class="text-lg text-violet-200/95"
+              [class]="getDeleteFlowNode('angular').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getDeleteFlowNode("angular").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getDeleteFlowNode("angular").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.DELETE_FLOW.LINK_DELETE" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--delete"
+            [class.flow-node--active]="isDeleteFlowSelected('gateway')"
+            [attr.aria-pressed]="isDeleteFlowSelected('gateway')"
+            (click)="selectDeleteFlowNode('gateway')"
+          >
+            <span
+              class="text-lg text-teal-200/95"
+              [class]="getDeleteFlowNode('gateway').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getDeleteFlowNode("gateway").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getDeleteFlowNode("gateway").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.DELETE_FLOW.LINK_GATEWAY" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--delete"
+            [class.flow-node--active]="isDeleteFlowSelected('fastapi')"
+            [attr.aria-pressed]="isDeleteFlowSelected('fastapi')"
+            (click)="selectDeleteFlowNode('fastapi')"
+          >
+            <span
+              class="text-lg text-sky-200/95"
+              [class]="getDeleteFlowNode('fastapi').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getDeleteFlowNode("fastapi").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getDeleteFlowNode("fastapi").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.DELETE_FLOW.LINK_COMMIT" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--delete flow-node--compact"
+            [class.flow-node--active]="isDeleteFlowSelected('postgres')"
+            [attr.aria-pressed]="isDeleteFlowSelected('postgres')"
+            (click)="selectDeleteFlowNode('postgres')"
+          >
+            <span
+              class="text-base text-emerald-200/90"
+              [class]="getDeleteFlowNode('postgres').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getDeleteFlowNode("postgres").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getDeleteFlowNode("postgres").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link" aria-hidden="true">
+            <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+            <span>{{ "LANDING.DELETE_FLOW.LINK_PUBLISH" | translate }}</span>
+          </div>
+
+          <button
+            type="button"
+            class="flow-node flow-node--delete"
+            [class.flow-node--active]="isDeleteFlowSelected('nats')"
+            [attr.aria-pressed]="isDeleteFlowSelected('nats')"
+            (click)="selectDeleteFlowNode('nats')"
+          >
+            <span
+              class="text-lg text-rose-200/95"
+              [class]="getDeleteFlowNode('nats').icon"
+              aria-hidden="true"
+            ></span>
+            <span class="flow-node__title">{{
+              getDeleteFlowNode("nats").titleKey | translate
+            }}</span>
+            <span class="flow-node__desc">{{
+              getDeleteFlowNode("nats").descKey | translate
+            }}</span>
+          </button>
+
+          <div class="flow-link flow-link--branch" aria-hidden="true">
+            <span>{{ "LANDING.DELETE_FLOW.LINK_ASYNC" | translate }}</span>
+          </div>
+
+          <div
+            class="landing-flow-row landing-flow-row--top grid w-full"
+          >
+            <div class="flex w-full min-w-0 flex-col items-center gap-0">
+              <button
+                type="button"
+                class="flow-node flow-node--delete flow-node--compact"
+                [class.flow-node--active]="isDeleteFlowSelected('file-service')"
+                [attr.aria-pressed]="isDeleteFlowSelected('file-service')"
+                (click)="selectDeleteFlowNode('file-service')"
+              >
+                <span
+                  class="text-base text-orange-200/90"
+                  [class]="getDeleteFlowNode('file-service').icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getDeleteFlowNode("file-service").titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getDeleteFlowNode("file-service").descKey | translate
+                }}</span>
+              </button>
+
+              <div class="flow-link" aria-hidden="true">
+                <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                <span>{{ "LANDING.DELETE_FLOW.LINK_BLOB" | translate }}</span>
+              </div>
+
+              <button
+                type="button"
+                class="flow-node flow-node--delete flow-node--compact"
+                [class.flow-node--active]="isDeleteFlowSelected('azure-blob')"
+                [attr.aria-pressed]="isDeleteFlowSelected('azure-blob')"
+                (click)="selectDeleteFlowNode('azure-blob')"
+              >
+                <span
+                  class="text-base text-cyan-200/90"
+                  [class]="getDeleteFlowNode('azure-blob').icon"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getDeleteFlowNode("azure-blob").titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getDeleteFlowNode("azure-blob").descKey | translate
+                }}</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              class="flow-node flow-node--delete flow-node--compact"
+              [class.flow-node--active]="isDeleteFlowSelected('event-store')"
+              [attr.aria-pressed]="isDeleteFlowSelected('event-store')"
+              (click)="selectDeleteFlowNode('event-store')"
+            >
+              <span
+                class="text-base text-slate-200/95"
+                [class]="getDeleteFlowNode('event-store').icon"
+                aria-hidden="true"
+              ></span>
+              <span class="flow-node__title">{{
+                getDeleteFlowNode("event-store").titleKey | translate
+              }}</span>
+              <span class="flow-node__desc">{{
+                getDeleteFlowNode("event-store").descKey | translate
+              }}</span>
+            </button>
+          </div>
+
+          <p
+            class="landing-muted landing-muted--note m-0 max-w-md px-2 text-center leading-snug text-slate-400"
+          >
+            {{ "LANDING.DELETE_FLOW.NOTE" | translate }}
+          </p>
+        </div>
+        }
+
+        <aside
+          class="flow-panel w-full min-w-0 rounded-2xl border border-white/10 bg-slate-950/55 backdrop-blur-md"
+          [class.flow-panel--delete]="isDeleteFlow()"
+          [attr.aria-live]="'polite'"
+        >
+          @if (activeFlowPanel(); as node) {
+            <h3
+              class="flow-panel__title m-0 flex items-center gap-2 font-bold tracking-tight text-white"
+            >
+              <span
+                class="shrink-0"
+                [class]="node.icon"
+                [class.text-rose-300/90]="isDeleteFlow()"
+                [class.text-sky-300/90]="isMessageFlow()"
+                aria-hidden="true"
+              ></span>
+              {{ node.titleKey | translate }}
+            </h3>
+            <p
+              class="flow-panel__copy m-0 mt-2 leading-relaxed text-slate-300/95"
+            >
+              {{ node.descKey | translate }}
+            </p>
+            <p
+              class="flow-panel__kicker m-0 mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-slate-500"
+            >
+              {{ activeFlowPanelKickerKey() | translate }}
+            </p>
+            <ul class="m-0 mt-2 list-none space-y-2.5 p-0" role="list">
+              @for (item of node.details; track item.labelKey) {
+                <li
+                  class="flow-panel__item flex gap-2.5 text-sm leading-snug text-slate-200/95"
+                  role="listitem"
+                >
+                  <span
+                    class="mt-0.5 shrink-0"
+                    [class]="item.icon"
+                    [class.text-rose-400/85]="isDeleteFlow()"
+                    [class.text-sky-400/85]="isMessageFlow()"
+                    aria-hidden="true"
+                  ></span>
+                  <span>{{ item.labelKey | translate }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p
+              class="flow-panel__copy m-0 leading-relaxed text-slate-400"
+            >
+              {{ activeFlowPanelEmptyKey() | translate }}
+            </p>
+          }
+        </aside>
+      </div>
+    </section>
+
+    <div class="landing-stack flex w-full min-w-0 flex-col">
+      <h2
+        class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em] text-slate-400"
+      >
+        {{ "LANDING.STACK_INTRO" | translate }}
+      </h2>
+
+      @for (group of stackCardGroups; track group.titleKey) {
+        <section
+          class="flex w-full min-w-0 flex-col gap-4"
+          [attr.aria-labelledby]="group.headingId"
+        >
+          <h3
+            [id]="group.headingId"
+            class="landing-kicker m-0 text-[0.65rem] font-bold uppercase tracking-[0.2em] text-slate-500"
+          >
+            {{ group.titleKey | translate }}
+          </h3>
+          <div
+            class="landing-cards grid w-full auto-rows-fr"
+            [class]="group.gridClass"
+          >
+            @for (card of group.cards; track card.title) {
+              <div class="flex h-full min-h-[10.5rem]">
+                <p-card class="landing-card h-full w-full">
+                  <div class="flex items-start gap-3">
+                    <div
+                      class="landing-card-icon inline-flex size-9 shrink-0 items-center justify-center rounded-[0.55rem] bg-gradient-to-br from-purple-500/55 to-sky-400/45 text-lg text-violet-100 shadow-[0_0_1.5rem_rgba(168,85,247,0.35)]"
+                      aria-hidden="true"
+                    >
+                      <span class="leading-none" [class]="card.icon"></span>
+                    </div>
+                    <h3
+                      class="landing-card-title m-0 flex-1 text-base font-bold leading-tight tracking-tight text-white"
+                    >
+                      {{ card.title }}
+                    </h3>
+                  </div>
+                  <p
+                    class="landing-card-copy m-0 mt-2.5 text-[0.8125rem] leading-relaxed text-slate-300/90"
+                  >
+                    {{ card.descKey | translate }}
+                  </p>
+                </p-card>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</section>

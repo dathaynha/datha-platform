@@ -1,0 +1,72 @@
+# Bot Review — Go services on gotestsum.
+#
+# No knip step: that is a TypeScript tool. MegaLinter runs the Go image, and
+# GO_REVIVE is disabled in the consuming repo's .mega-linter.yml (golangci-lint
+# is the Go gate; revive's enableAllRules is too noisy).
+parameters:
+  - name: service
+    type: string
+  - name: goVersion
+    type: string
+    default: '1.25'
+  - name: gotestsumVersion
+    type: string
+    default: 'v1.13.0'
+  - name: megalinterImage
+    type: string
+    default: 'oxsecurity/megalinter-go:v8'
+  # MegaLinter's Go linters must be able to match a go.mod newer than the image's
+  # bundled toolchain, otherwise they fail to build the module.
+  - name: megalinterExtraDockerEnv
+    type: string
+    default: '-e GOTOOLCHAIN=auto'
+  - name: preSteps
+    type: stepList
+    default: []
+  - name: extraSteps
+    type: stepList
+    default: []
+
+jobs:
+  - job: BotReview
+    displayName: Bot Review — ${{ parameters.service }}
+    # SYSTEM_ACCESSTOKEN: job OAuth for Git/PR REST API. YAML enables it via step env: below — not the Classic
+    # Agent-job "Allow scripts to access the OAuth token" checkbox. Masked in logs; never echo value; curl -fsS.
+    # MegaLinter -e pass-through required for AZURE_COMMENT_REPORTER. PR-Agent uses ADO_PAT,
+    # sourced from the Key Vault-linked platform-bot-review variable group. See bot-review-pipelines.md.
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      # GoTool wants `version` with an exact semver matching go.mod — not
+      # `versionSpec`, and not `1.25.x`. The wrong key silently falls back to
+      # Go 1.10 and `go: unknown subcommand "mod"`.
+      - task: GoTool@0
+        inputs:
+          version: ${{ parameters.goVersion }}
+        displayName: Use Go ${{ parameters.goVersion }}
+
+      - ${{ parameters.preSteps }}
+
+      - template: steps/unit-tests.yml
+        parameters:
+          service: ${{ parameters.service }}
+          bootstrapShell: 'export PATH="$(go env GOPATH)/bin:${PATH}"; go mod download; go install gotest.tools/gotestsum@${{ parameters.gotestsumVersion }}'
+          # Dump the Go environment if the tests fail — the toolchain is the usual culprit.
+          preTestShell: 'trap ''echo "##[group]Debug — go env"; go version; go env GOROOT GOPATH GOVERSION GOTOOLCHAIN; go mod verify || true; echo "##[endgroup]"'' ERR'
+          # Coverage footer on the PR comment, same as the pipeline this replaces.
+          summaryExtraShell: '[[ -f "${AGENT_TEMPDIRECTORY}/coverage.out" ]] && go tool cover -func="${AGENT_TEMPDIRECTORY}/coverage.out" | tail -1 || true'
+          testCommand: 'gotestsum --junitfile "$JUNIT" --format standard-quiet -- -count=1 -coverprofile="${AGENT_TEMPDIRECTORY}/coverage.out" ./...'
+          publishTitle: 'Go unit tests (${{ parameters.service }})'
+          summaryLabel: 'Packages'
+
+      - ${{ parameters.extraSteps }}
+
+      - template: steps/megalinter.yml
+        parameters:
+          image: ${{ parameters.megalinterImage }}
+          extraDockerEnv: ${{ parameters.megalinterExtraDockerEnv }}
+
+      - template: steps/pr-agent.yml
+        parameters:
+          service: ${{ parameters.service }}

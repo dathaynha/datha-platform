@@ -1,0 +1,127 @@
+name: datha_platform
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: datha_platform_db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password  # gitleaks:allow — local-dev only, bound to localhost
+      POSTGRES_DB: chatbot_service
+    volumes:
+      - datha_platform_pgdata:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d chatbot_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: datha_platform_redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - datha_platform_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2.10-alpine
+    container_name: datha_platform_nats
+    ports:
+      - "4222:4222"
+      # JetStream + HTTP monitoring (healthz); optional for local debugging
+      - "8222:8222"
+    command:
+      - "-js"
+      - "-sd"
+      - "/data"
+      - "-m"
+      - "8222"
+    volumes:
+      - datha_platform_natsdata:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O-",
+          "http://127.0.0.1:8222/healthz",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # TURN relay for WebRTC calls (Messenger phase 2).
+  #
+  # NOT started by plain `docker compose up -d postgres redis nats mailpit` —
+  # name it explicitly (the run-platform skill does, for the messenger group).
+  # Media only needs a relay when both peers are behind symmetric NAT, so chat
+  # development never has to pay for these port forwards.
+  #
+  # Everything is passed on the command line rather than a turnserver.conf, so
+  # this stays the one file in _local/ that describes local infra.
+  coturn:
+    image: coturn/coturn:4.6-alpine
+    container_name: datha_platform_coturn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      # Relay range, deliberately small: every published UDP port is its own
+      # forward through the colima VM, and that forwarder is the part of this
+      # machine that wedges (see local-environment.md). Twenty ports is far
+      # more than 1:1 calling needs.
+      - "49160-49179:49160-49179/udp"
+    command:
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49179
+      # use-auth-secret is the coturn REST API scheme: realtime-service signs
+      # `<expiry>:<owner>` with this secret and hands the browser the
+      # signature, never the key. The two MUST match or every call fails to
+      # relay with no useful error.
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_STATIC_SECRET:-datha-local-turn-secret}  # gitleaks:allow — local-dev only, bound to localhost
+      - --realm=datha.local
+      # coturn inside a container would otherwise advertise its bridge address
+      # as the relay candidate, which nothing on the host can reach. Override
+      # with TURN_EXTERNAL_IP (LAN or public address) to relay between machines.
+      - --external-ip=${TURN_EXTERNAL_IP:-127.0.0.1}
+      - --fingerprint
+      - --total-quota=100
+      # No certificates locally, so TLS/DTLS listeners would only fail to bind.
+      # A deployed relay serves turns:5349 and must add them back.
+      - --no-tls
+      - --no-dtls
+      - --no-cli
+      - --no-multicast-peers
+      - --log-file=stdout
+      - --simple-log
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 3478 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Catches all outgoing mail from notification-service (email digest) —
+  # nothing leaves the machine. Web inbox: http://localhost:8025
+  mailpit:
+    image: axllent/mailpit
+    container_name: datha_platform_mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  datha_platform_pgdata:
+  datha_platform_redisdata:
+  datha_platform_natsdata:

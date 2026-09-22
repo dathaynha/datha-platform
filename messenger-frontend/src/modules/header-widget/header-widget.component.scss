@@ -1,0 +1,53 @@
+/* The popover renders in an overlay outside any page host, so it uses the
+   PrimeNG surface palette rather than the chat page's --chats-* tokens. */
+.widget-row {
+  color: var(--p-text-color);
+
+  &:hover {
+    background: var(--p-content-hover-background);
+  }
+}
+
+.widget-avatar {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-500),
+    var(--p-primary-800)
+  );
+  color: var(--p-primary-contrast-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Presence sits on the avatar, matching the sidebar and the thread header. */
+.presence-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  height: 0.5625rem;
+  width: 0.5625rem;
+  border-radius: 999px;
+  border: 2px solid var(--p-content-background);
+  background: var(--p-text-muted-color);
+
+  &.is-online {
+    background: #22c55e;
+  }
+
+  &.is-away {
+    background: #f59e0b;
+  }
+}
+
+.widget-unread-dot {
+  height: 0.5rem;
+  width: 0.5rem;
+  border-radius: 999px;
+  background: var(--p-primary-500);
+}

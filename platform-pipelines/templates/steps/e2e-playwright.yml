@@ -1,0 +1,39 @@
+# Playwright E2E. Only for the Angular apps that ship a suite.
+parameters:
+  - name: service
+    type: string
+
+steps:
+  # E2E code lives outside tsconfig.app/spec, so nothing else typechecks it —
+  # Playwright transpiles with esbuild and never checks types.
+  - script: |
+      set -euo pipefail
+      corepack pnpm exec tsc -p tsconfig.e2e.json
+    displayName: Typecheck E2E specs
+
+  # Playwright config starts the standalone dev server itself (webServer) and
+  # runs on the agent's system Chrome (channel: chrome) — no browser download.
+  # Specs route-mock the gateway, so no backend is required.
+  - script: |
+      set -euo pipefail
+      corepack pnpm exec playwright test
+    displayName: E2E tests (Playwright)
+    env:
+      CI: 'true'
+
+  - task: PublishTestResults@2
+    displayName: Publish E2E test results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: test-results/e2e-junit.xml
+      testRunTitle: Playwright E2E (${{ parameters.service }})
+      mergeTestResults: true
+      failTaskOnFailedTests: false
+
+  - task: PublishPipelineArtifact@1
+    displayName: Publish E2E traces on failure
+    condition: failed()
+    inputs:
+      targetPath: test-results
+      artifact: playwright-test-results

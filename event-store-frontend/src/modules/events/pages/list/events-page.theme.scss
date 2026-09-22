@@ -1,0 +1,113 @@
+/* Theme tokens, split out of the component sheet: this file declares the
+   light/dark custom properties, the component sheet uses them for layout.
+   It also keeps each sheet inside Angular's 10 kB `anyComponentStyle` budget,
+   which the combined file exceeded. */
+:host {
+  --events-bg:
+    radial-gradient(
+      circle at 14% 8%,
+      color-mix(in srgb, var(--p-primary-300) 42%, transparent) 0 20rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--p-primary-900) 18%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    linear-gradient(
+      145deg,
+      var(--p-surface-0) 0%,
+      var(--p-primary-50) 48%,
+      var(--p-surface-50) 100%
+    );
+  --events-aurora: conic-gradient(
+    from 215deg at 50% 45%,
+    color-mix(in srgb, var(--p-primary-50) 92%, white) 0deg,
+    color-mix(in srgb, var(--p-primary-300) 62%, white) 76deg,
+    color-mix(in srgb, var(--p-primary-600) 38%, white) 148deg,
+    color-mix(in srgb, var(--p-primary-900) 30%, white) 226deg,
+    color-mix(in srgb, #0546ff 28%, white) 304deg,
+    color-mix(in srgb, var(--p-primary-50) 92%, white) 360deg
+  );
+  --events-aurora-opacity: 0.42;
+  --events-aurora-blur: 80px;
+  --events-noise-opacity: 0.045;
+  --events-border: color-mix(
+    in srgb,
+    var(--p-primary-600) 18%,
+    var(--p-surface-200)
+  );
+  --events-ink: var(--p-surface-950);
+  --events-copy: var(--p-surface-700);
+  --events-muted: var(--p-surface-500);
+  --events-body-text: var(--p-surface-800);
+  --events-meta-label: var(--p-surface-500);
+  --events-meta-value: var(--p-surface-900);
+  --events-section-title: var(--p-surface-600);
+  --events-copy-btn-bg: color-mix(
+    in srgb,
+    var(--p-surface-900) 8%,
+    transparent
+  );
+  --events-copy-btn-text: var(--events-copy);
+  --events-copy-btn-hover-bg: color-mix(
+    in srgb,
+    var(--p-surface-900) 14%,
+    transparent
+  );
+  --events-pre-bg: color-mix(in srgb, var(--p-surface-100) 85%, transparent);
+  --events-pre-text: var(--events-body-text);
+  --events-banner-error-border: color-mix(in srgb, #f43f5e 35%, transparent);
+  --events-banner-error-bg: color-mix(in srgb, #fecdd3 55%, transparent);
+  --events-banner-error-text: #881337;
+}
+
+:host-context(.dark) {
+  --events-bg:
+    radial-gradient(
+      circle at 12% 8%,
+      color-mix(in srgb, var(--p-primary-600) 28%, transparent) 0 20rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 86% 16%,
+      color-mix(in srgb, #0546ff 20%, transparent) 0 18rem,
+      transparent 32rem
+    ),
+    linear-gradient(145deg, var(--p-surface-950) 0%, #100628 52%, #07111f 100%);
+  --events-aurora: conic-gradient(
+    from 215deg at 50% 45%,
+    #0f172a 0deg,
+    #1e1b4b 72deg,
+    #5c44e4 142deg,
+    #8001c6 218deg,
+    #0546ff 300deg,
+    #0f172a 360deg
+  );
+  --events-aurora-opacity: 0.86;
+  --events-aurora-blur: 76px;
+  --events-noise-opacity: 0.08;
+  --events-border: color-mix(in srgb, var(--p-surface-0) 14%, transparent);
+  --events-ink: var(--p-surface-0);
+  --events-copy: var(--p-surface-300);
+  --events-muted: var(--p-surface-400);
+  --events-body-text: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  --events-meta-label: color-mix(in srgb, var(--p-surface-0) 55%, transparent);
+  --events-meta-value: color-mix(in srgb, var(--p-surface-0) 92%, transparent);
+  --events-section-title: color-mix(
+    in srgb,
+    var(--p-surface-0) 72%,
+    transparent
+  );
+  --events-copy-btn-bg: color-mix(in srgb, var(--p-surface-0) 8%, transparent);
+  --events-copy-btn-hover-bg: color-mix(
+    in srgb,
+    var(--p-surface-0) 14%,
+    transparent
+  );
+  --events-pre-bg: color-mix(in srgb, var(--p-surface-950) 45%, transparent);
+  --events-pre-text: color-mix(in srgb, var(--p-surface-0) 90%, transparent);
+  --events-banner-error-border: color-mix(in srgb, #f43f5e 45%, transparent);
+  --events-banner-error-bg: color-mix(in srgb, #881337 28%, transparent);
+  --events-banner-error-text: #fecdd3;
+}

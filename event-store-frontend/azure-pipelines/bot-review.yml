@@ -1,0 +1,34 @@
+# Bot Review — event-store-frontend
+#
+# The job body lives in the shared template repo so a fix lands once instead of
+# nine times: platform-pipelines/templates/stack-angular-karma.yml. This file keeps the triggers
+# and the parameters, and stays at this path so the pipeline definition
+# (referenced by main's build-validation policy) is unchanged.
+#
+# Pinned to a tag on purpose — never track the template repo's main, or one edit
+# there changes every pipeline at once with no review.
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-24.04
+
+variables:
+  # Key Vault-linked group (dathq-platform-kv via azure-dathq-platform connection)
+  - group: platform-bot-review
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: DatHa Platform/platform-pipelines
+      ref: refs/tags/v7
+
+extends:
+  template: templates/stack-angular-karma.yml@templates
+  parameters:
+    service: event-store-frontend

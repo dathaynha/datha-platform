@@ -1,0 +1,349 @@
+@use "table-compact" as compact;
+@use "../../../../styles/ops-toolbar";
+@use "primeng-table-overrides" as overrides;
+@use "table-empty-overlay" as overlay;
+
+@include compact.ops-table(52rem);
+
+/* The page's own responsive scale keys on this element, not on the window.
+   Hosted, the shell takes 224px for its sidebar, so a 1024px viewport leaves
+   800px here and the old `lg:` utilities still fired — a desktop gutter in a
+   tablet's worth of room, and the same again one step down at 667x375
+   (measured 2026-09-20). The rem values below are the Tailwind breakpoints
+   unchanged; what changes is what they are measured against.
+
+   Named, because `.events-filters-card` and `.es-table-wrap` are containers
+   too and an unnamed query binds to whichever is nearest. Containment makes
+   this a containing block for absolute descendants — `.events-aurora` and
+   `.events-noise` were already anchored here by `position: relative`. */
+.events-root {
+  container-type: inline-size;
+  container-name: es-page;
+  --ops-toolbar-muted: var(--events-muted);
+  --ops-toolbar-border: var(--events-border);
+  background: var(--events-bg);
+  color: var(--events-ink);
+}
+
+.events-page-body {
+  padding: 2rem 1.25rem;
+}
+
+.events-title {
+  color: var(--events-ink);
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.events-subtitle {
+  color: var(--events-copy);
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+@container es-page (min-width: 40rem) {
+  .events-page-body {
+    padding: 2.5rem 2rem;
+  }
+
+  .events-title {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .events-subtitle {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@container es-page (min-width: 64rem) {
+  .events-page-body {
+    padding-inline: 3rem;
+  }
+}
+
+.events-aurora {
+  position: absolute;
+  inset: -40% -20%;
+  background: var(--events-aurora);
+  filter: blur(var(--events-aurora-blur));
+  opacity: var(--events-aurora-opacity);
+  animation: events-aurora-shift 18s ease-in-out infinite alternate;
+}
+
+.events-noise {
+  position: absolute;
+  inset: 0;
+  opacity: var(--events-noise-opacity);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.events-filters-card,
+.events-results-card {
+  border-radius: 1rem;
+  border: 1px solid var(--events-border);
+  background: color-mix(in srgb, var(--p-surface-0) 78%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px
+    color-mix(in srgb, var(--p-primary-950) 10%, transparent);
+  overflow: visible;
+}
+
+:host-context(.dark) .events-filters-card,
+:host-context(.dark) .events-results-card {
+  background: color-mix(in srgb, var(--p-surface-950) 56%, transparent);
+  box-shadow: 0 18px 50px
+    color-mix(in srgb, var(--p-surface-950) 65%, transparent);
+}
+
+/* The payload row's `@container` query needs a container, and the only one on
+   this page is `.es-table-wrap`, which does not contain the filters. Without
+   this the narrow rule matched nothing and the row never stacked (measured
+   2026-09-20). Declared on the card because the card is what owns the filter
+   layout — the same reasoning as `.es-table-wrap` and `.chats-root`.
+   Containment makes this a containing block for absolute descendants; the only
+   ones here are the sr-only labels and the search icon, which are anchored to
+   `.events-search-field`, and both overlay panels use `appendTo="body"`. */
+.events-filters-card {
+  container-type: inline-size;
+  padding: 1rem 1.15rem;
+}
+
+.events-results-card {
+  padding: 1.25rem 1.35rem;
+  min-height: 0;
+}
+
+.events-table-wrap {
+  min-height: 0;
+}
+
+:host ::ng-deep {
+  @include overrides.primeng-table-overrides;
+  @include overlay.table-empty-overlay;
+}
+
+/* The key and the value are one filter, so they share a label and sit on one
+   row with "is" between them. Rendered as two separate labelled fields they
+   read as unrelated boxes — which is exactly how they were read. */
+.ops-toolbar__field--payload {
+  grid-column: 1 / -1;
+}
+
+.events-payload-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.events-payload-filter__key {
+  flex: 0 1 14rem;
+  min-width: 8rem;
+}
+
+.events-payload-filter__is {
+  flex: 0 0 auto;
+  color: var(--p-surface-500);
+  font-size: 0.8125rem;
+}
+
+.events-payload-filter__value {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* PrimeNG draws the clear icon as a bare 16px `<svg>` flush against a 40x36
+   chevron, and anything the icon does not cover belongs to the select — so a
+   near-miss opens the menu instead of clearing, which is what "the X needs two
+   clicks" was (dathq, 2026-09-20, twice).
+
+   The first attempt padded it to 28x28 and fixed the horizontal miss only,
+   leaving a 5px band above and below where a click still hit the select. A
+   click a few pixels high is exactly what a person does; the spec did not
+   catch it because it aimed at the centre. The target now fills the control's
+   full height, so there is no band left to miss. Padding applies to an inline
+   SVG (it is a replaced element, like `img`), so the glyph keeps its size. */
+:host ::ng-deep .events-payload-filter__key > svg {
+  box-sizing: content-box;
+  width: 1rem;
+  height: 1rem;
+  /* Fills the control's *content* box: the 2.375rem height from `ops-table()`
+     less its 1px borders. Padding to the full 2.375rem overflows and grows the
+     host to 40px, which then stops matching the inputs beside it. */
+  padding-block: calc((2.375rem - 1rem) / 2 - 1px);
+  padding-inline: 0.375rem;
+  margin-inline-end: 0.125rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+:host ::ng-deep .events-payload-filter__key > svg:hover {
+  background: color-mix(in srgb, var(--p-surface-900) 8%, transparent);
+}
+
+/* The value box is disabled until a field is chosen — and looked exactly like
+   an enabled one, because PrimeNG's disabled styling lands on a wrapper this
+   input is not inside (measured 2026-09-20: opacity 1, cursor default). A
+   control that refuses input while looking ready to take it is worse than no
+   control. */
+:host ::ng-deep .events-payload-filter__value input:disabled,
+:host ::ng-deep .events-payload-filter__value button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: color-mix(in srgb, var(--p-surface-200) 40%, transparent);
+}
+
+/* Narrow: stack rather than crush two controls and a word into one row. */
+@container (max-width: 34rem) {
+  .events-payload-filter {
+    flex-wrap: wrap;
+  }
+
+  .events-payload-filter__key,
+  .events-payload-filter__value {
+    flex: 1 1 100%;
+  }
+
+  .events-payload-filter__is {
+    display: none;
+  }
+}
+
+.events-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--events-border);
+}
+
+.events-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid
+    color-mix(in srgb, var(--p-primary-400) 32%, var(--p-surface-300));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-surface-0) 82%, transparent);
+  color: var(--events-body-text);
+  font-size: var(--datha-form-font-size);
+  line-height: 1.2;
+  padding: 0.22rem 0.45rem 0.22rem 0.55rem;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.events-filter-chip:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--p-primary-400) 45%,
+    var(--p-surface-300)
+  );
+  background: color-mix(in srgb, var(--p-primary-100) 55%, var(--p-surface-0));
+}
+
+.events-filter-chip__remove {
+  font-size: 0.625rem;
+  opacity: 0.75;
+}
+
+.events-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--datha-form-font-size);
+}
+
+.events-banner--error {
+  border: 1px solid var(--events-banner-error-border);
+  background: var(--events-banner-error-bg);
+  color: var(--events-banner-error-text);
+}
+
+.events-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--datha-form-font-size);
+}
+
+.events-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--events-copy-btn-bg);
+  color: var(--events-copy-btn-text);
+  padding: 0.2rem 0.35rem;
+  cursor: pointer;
+}
+
+.events-copy-btn:hover {
+  background: var(--events-copy-btn-hover-bg);
+}
+
+.events-pagination-meta {
+  color: var(--events-copy);
+  font-size: var(--datha-form-font-size);
+}
+
+.events-meta dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--events-meta-label);
+  margin-bottom: 0.25rem;
+}
+
+.events-meta dd {
+  margin: 0;
+  color: var(--events-meta-value);
+}
+
+.events-section-title {
+  font-size: var(--datha-form-font-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--events-section-title);
+}
+
+.events-pre {
+  margin: 0;
+  max-height: 18rem;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--events-border);
+  background: var(--events-pre-bg);
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--events-pre-text);
+}
+
+@keyframes events-aurora-shift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(18deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .events-aurora {
+    animation: none;
+  }
+}

@@ -1,0 +1,375 @@
+{
+  "THEME": {
+    "LABEL": "Design",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "LANDING": {
+    "HERO_TITLE": "Messenger",
+    "HERO_DESC": "Gruppenchat und Gruppenanrufe für die Plattform. Nachrichten nehmen den dauerhaften REST-Weg und kommen über einen WebSocket an; Anrufe sind direkt auf RTCPeerConnection gebaut — Perfect Negotiation, Trickle ICE, ein TURN-Relay und ein Peer-to-Peer-Mesh — statt an ein Media-SDK abgegeben, denn genau das von Hand zu bauen ist der Sinn dieses Produkts.",
+    "HERO_STATUS": "Alles unten läuft, nichts davon ist geplant. Unterhaltungen, Gruppen, Lesebestätigungen, Bildanhänge, Präsenz und Tippen; Audio- und Videoanrufe mit bis zu vier Personen über ein Mesh, mit Bildschirmfreigabe, fokussierbarer Anrufbühne und Anrufverlauf im Verlauf; und Chatfenster, die sich über jeder Seite der Plattform andocken lassen. Bewusst nicht gebaut ist ein SFU — ein Mesh trägt etwa vier, und das Raummodell, das ein SFU braucht, existiert bereits, also bleibt das eine spätere Phase statt einer Neuentwicklung.",
+    "STACK_INTRO": "Eingesetzte Technik",
+    "STACK_GROUP_CLIENT": "Im Browser",
+    "STACK_GROUP_REALTIME": "Realtime-Ebene",
+    "STACK_GROUP_DATA": "Persistenz-Ebene",
+    "CARD_ANGULAR": "Angular 21 mit Signals und striktem TypeScript, per Module Federation in der Shell. Dieses Remote stellt zwei Module bereit: `./Module` für das Produkt unter `/messenger` und `./HeaderWidget` für das Symbol im Shell-Header.",
+    "CARD_HEADER_WIDGET": "Ein allgegenwärtiges Produkt kann nicht hinter einer Route leben — es braucht Socket, Badge und Klingeln auf jeder Seite. Die Shell rendert das Widget aus einem `environment.headerWidgets`-Eintrag und importiert nie Messenger-Code; ist dieses Remote aus, bleibt der Platz leer und der Header funktioniert weiter.",
+    "CARD_WEBRTC": "RTCPeerConnection direkt gesteuert: Perfect Negotiation (höflicher/unhöflicher Peer) gegen Glare-Fehler, Trickle ICE für Kandidaten im Fluss und DTLS-SRTP-Verschlüsselung, die der Browser gratis liefert. Bildschirmfreigabe ist eine zweite Spur per Renegotiation, nie ein Ersatz für die Kamera.",
+    "CARD_AUTH": "angular-oauth2-oidc mit PKCE; Anmeldung über Google und Microsoft via Go-Gateway, das den internen JWT ausstellt, dem alle Services vertrauen.",
+    "CARD_REALTIME": "Ein Go-Service mit einem WebSocket pro Browser: Präsenz, Tippen, Signalling-Relay und TURN-Credentials. Bewusst vom Nachrichtenspeicher getrennt — zehntausend leerlaufende Sockets und dauerhafte Historie skalieren gegensätzlich.",
+    "CARD_NATS_CORE": "Live-Frames werden über Core-NATS auf `rt.owner.<owner_id>` verteilt, damit jede Socket-Instanz jeden Nutzer bedienen kann und keine Sticky Sessions nötig sind. Core statt JetStream: ein Durable Consumer würde bei jedem Reconnect alte Chat-Frames erneut zustellen.",
+    "CARD_COTURN": "Ein Relay für die 10-20% der Anrufe, die symmetrisches NAT und Firmen-Firewalls blockieren. Credentials werden per HMAC abgeleitet und laufen in Minuten ab; coturn leitet Chiffrat weiter, das es nicht lesen kann.",
+    "CARD_MESSENGER_SERVICE": "Fastify + TypeScript für Unterhaltungen, Gruppen, Nachrichten, Lesebestätigungen und Anrufverlauf. Senden läuft über REST, nie über den Socket: ein dauerhafter Schreibvorgang muss wiederholbar und idempotent sein. Eine Unterhaltung sortiert über ihr eigenes `last_activity_at`, das sowohl die Nachrichten-Transaktion als auch die Anruf-Projektion vorrückt — denn ein Anruf ist ebenfalls Aktivität, und eine nach Nachrichten benannte Spalte könnte darüber nur lügen.",
+    "CARD_ACCOUNTS": "Das Nutzerverzeichnis der Plattform, live auf :3006. Legt dein Profil nach dem Login aus den Identitäts-Headern des Gateways an und beantwortet die Verzeichnissuche — Messenger muss wissen, mit wem du sprechen kannst.",
+    "CARD_POSTGRES": "Nachrichtenverlauf, Mitgliedschaften und Lesebestätigungen. Die langweilige, transaktionale Hälfte — und die, die ein Signalling-Deploy niemals gefährden soll.",
+    "CARD_JETSTREAM": "Jedes Domain-Event geht zusätzlich in den `EVENTS`-Stream, sodass event-store den Nachweis führt und andere Services daraus projizieren können. Log und Leitung sind bewusst verschiedene Transporte.",
+    "FLOWS": {
+      "SECTION_TITLE": "So funktioniert es",
+      "PICKER_ARIA": "Ablauf zum Erkunden wählen",
+      "TAB_MESSAGE": "Nachricht senden",
+      "TAB_CALL": "Anruf aufbauen"
+    },
+    "MESSAGE_FLOW": {
+      "SUBTITLE": "Eine Nachricht wird einmal dauerhaft geschrieben und dann an aktive Sockets verteilt. Für Details auf einen Schritt tippen.",
+      "DIAGRAM_ARIA": "Nachrichtenfluss vom Editor bis zum Empfänger",
+      "PANEL_EMPTY": "Wähle einen Schritt im Diagramm, um zu sehen, was dort passiert.",
+      "PANEL_KICKER": "Was hier passiert",
+      "LINK_POST": "POST /api/messenger",
+      "LINK_PERSIST": "schreiben + committen",
+      "LINK_PUBLISH": "zweimal publizieren",
+      "LINK_FANOUT": "rt.owner.<id>",
+      "LINK_SOCKET": "WebSocket-Frame",
+      "NOTE": "Empfangen läuft über den Socket, Senden nie. Ein Schreibvorgang ohne Persistenz dahinter ist keine gesendete Nachricht.",
+      "COMPOSER": {
+        "TITLE": "Editor (Browser)",
+        "DESC": "Das Remote sendet die Nachricht per HTTP mit einem Idempotenzschlüssel.",
+        "D1": "REST, damit der Schreibvorgang wiederholbar ist",
+        "D2": "Ein Retry ist sicher — gleicher Schlüssel, gleiche Nachricht",
+        "D3": "Keine optimistische Anzeige gilt als zugestellt"
+      },
+      "SERVICE": {
+        "TITLE": "messenger-service",
+        "DESC": "Prüft Mitgliedschaft, setzt den Absender aus dem Gateway-Header und speichert.",
+        "D1": "Identität kommt aus dem vertrauten Header, nie aus dem Body",
+        "D2": "Autorisierung über can(subject, action, resource) — später OPA",
+        "D3": "Doppelter Idempotenzschlüssel liefert die Originalnachricht"
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "Mit dem Commit wird die Nachricht zur Historie.",
+        "D1": "Dauerhaft, bevor jemand von ihr erfährt",
+        "D2": "Lesebestätigungen und Mitgliedschaften liegen daneben",
+        "D3": "Paginierung und Suche lesen hier, nicht am Socket"
+      },
+      "NATS": {
+        "TITLE": "NATS — Log und Leitung",
+        "DESC": "Ein Ereignis, zwei Transporte: JetStream für den Nachweis, Core für die Zustellung.",
+        "D1": "JetStream EVENTS → event-store führt das 90-Tage-Log",
+        "D2": "Core-NATS trägt den Live-Frame ohne Replay",
+        "D3": "Ein Durable Consumer würde beim Reconnect Altes erneut senden"
+      },
+      "REALTIME": {
+        "TITLE": "realtime-service",
+        "DESC": "Abonniert pro verbundenem Nutzer und schiebt den Frame in dessen Socket.",
+        "D1": "Ein Subject je Owner — jede Instanz bedient jeden Nutzer",
+        "D2": "Präsenz und Tippen laufen über dieselbe Verbindung",
+        "D3": "Keine Datenbank auf diesem Pfad — Sockets bleiben billig"
+      },
+      "RECIPIENT": {
+        "TITLE": "Empfänger (Browser)",
+        "DESC": "Der Frame aktualisiert den offenen Verlauf und das Header-Badge.",
+        "D1": "Das Badge zählt ungelesene Unterhaltungen, keine Nachrichten",
+        "D2": "Ein doppelter Frame schadet nicht — das Badge ist eine Menge",
+        "D3": "Zurückgesetzt, wenn Verlauf offen und Tab aktiv ist"
+      }
+    },
+    "CALL_FLOW": {
+      "SUBTITLE": "Signalling läuft über unseren Server, die Medien nicht. Für Details auf einen Schritt tippen.",
+      "DIAGRAM_ARIA": "WebRTC-Anrufaufbau von den Credentials bis zur Medienverbindung",
+      "PANEL_EMPTY": "Wähle einen Schritt im Diagramm, um zu sehen, was dort passiert.",
+      "PANEL_KICKER": "Was hier passiert",
+      "LINK_OFFER": "createOffer",
+      "LINK_RELAY": "SDP über WebSocket",
+      "LINK_CANDIDATES": "Kandidaten trickeln",
+      "LINK_CONNECTED": "Peer-Verbindung",
+      "LINK_FALLBACK": "falls P2P scheitert",
+      "NOTE": "Der Server leitet Angebote und Kandidaten weiter; Audio und Video fließen direkt zwischen den Browsern.",
+      "CREDENTIALS": {
+        "TITLE": "TURN-Credentials",
+        "DESC": "Vor dem Wählen holt der Browser kurzlebige Relay-Credentials vom Gateway.",
+        "D1": "Nur Minuten gültig, pro Anruf ausgestellt",
+        "D2": "username = Ablauf:owner_id, Passwort = HMAC davon",
+        "D3": "Das TURN-Secret verlässt den Server nie"
+      },
+      "OFFER": {
+        "TITLE": "Angebot / Antwort",
+        "DESC": "Beide Seiten bauen eine RTCPeerConnection und beschreiben, was sie senden können.",
+        "D1": "Perfect Negotiation: ein höflicher, ein unhöflicher Peer",
+        "D2": "Glare wird per Rollback gelöst, nicht per Retry-Schleife",
+        "D3": "getUserMedia braucht einen sicheren Kontext — localhost zählt"
+      },
+      "RELAY": {
+        "TITLE": "Signalling-Relay",
+        "DESC": "realtime-service reicht SDP und ICE zwischen den Teilnehmern weiter.",
+        "D1": "Der Server stempelt, wer den Frame gesendet hat",
+        "D2": "Weitergeleitet wird nur zwischen Anrufteilnehmern",
+        "D3": "Ein vom Client gesetztes Absenderfeld gilt nie"
+      },
+      "ICE": {
+        "TITLE": "Trickle ICE",
+        "DESC": "Kandidaten werden ausgetauscht, sobald sie gefunden werden, statt gesammelt.",
+        "D1": "Der Aufbau startet vor Ende der Suche",
+        "D2": "STUN findet die öffentliche Adresse hinter NAT",
+        "D3": "Das erste funktionierende Paar gewinnt"
+      },
+      "MEDIA": {
+        "TITLE": "Medien, Peer-to-Peer",
+        "DESC": "Audio und Video fließen direkt zwischen den Browsern, sobald ein Paar steht.",
+        "D1": "DTLS-SRTP-Verschlüsselung ist in WebRTC Pflicht",
+        "D2": "1:1 ist ein Mesh; ab fünf Teilnehmern kommt ein SFU",
+        "D3": "Ein Wechsel in eine andere App darf den Anruf nicht kappen"
+      },
+      "TURN": {
+        "TITLE": "TURN-Relay (Fallback)",
+        "DESC": "Gibt es keinen direkten Pfad, leitet coturn den verschlüsselten Strom weiter.",
+        "D1": "Symmetrisches NAT und strenge Firewalls brauchen das",
+        "D2": "Das Relay kann nicht lesen, was es weiterleitet",
+        "D3": "Ohne es scheitern 10-20% echter Anrufe schlicht"
+      }
+    },
+    "CARD_MESH": "Ein Gruppenanruf sind N-1 Peer-Verbindungen pro Person, kein Server dazwischen — jeder Browser lädt seine Kamera einmal pro Peer hoch, der Raum kostet insgesamt O(N²) Verbindungen. Genau das deckelt ihn bei vier. Wer in einem Paar das Angebot macht, entscheidet die lexikografisch kleinere Owner-ID (die Regel aus Matrix MSC3401), denn zwei gleichzeitig Beitretende halten jeweils den anderen für den Neuen.",
+    "CARD_ROOM": "Ein Anruf ist ein Raum: eine aus der Mitgliedschaft aufgelöste, nie erweiterte Einladungsmenge plus die Menge der Beigetretenen. Jeder Signalling-Frame nennt sein Ziel und wird gegen diese Einladungsmenge geprüft — das macht es unmöglich, Fremde anzuklingeln. Instanzen senden Heartbeats, und ein Reaper schließt Anrufe, deren Halter gestorben ist: ein Zustandsautomat, den nur der abstürzgefährdetste Prozess schließen kann, ist beim ersten Absturz dauerhaft falsch."
+  },
+  "LOGIN": {
+    "KICKER": "Anmelden",
+    "TITLE": "Messenger",
+    "SUBTITLE": "Melden Sie sich mit Google, Ihrem Microsoft-Arbeits- oder Schulkonto oder einem persönlichen Microsoft-Konto an.",
+    "CONTINUE_GOOGLE": "Mit Google fortfahren",
+    "MICROSOFT_WORK_SCHOOL": "Mit Microsoft fortfahren (Arbeit / Schule)",
+    "MICROSOFT_PERSONAL": "Mit Microsoft fortfahren (Privat)",
+    "SIGNING_IN": "Anmeldung läuft…",
+    "FOOTNOTE": "Mit dem Fortfahren akzeptieren Sie die Zugriffsrichtlinien Ihrer Organisation für diese App.",
+    "ERROR_GENERIC": "Anmeldung nicht abgeschlossen. Bitte erneut versuchen oder Administrator kontaktieren."
+  },
+  "PROFILE": {
+    "MENU_ARIA": "Kontomenü",
+    "TITLE": "Angemeldet als",
+    "SIGN_IN_METHOD": "Anmeldemethode",
+    "NAME": "Name",
+    "EMAIL": "E-Mail",
+    "USERNAME": "Benutzername",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft Entra ID",
+    "METHOD_UNKNOWN": "Unbekannt",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Abmelden"
+  },
+  "DASHBOARD": {
+    "TITLE": "Messenger",
+    "HELP": "<p>Chats, Anrufe und Personen für die Plattform.</p><p>Nutze die Symbolleiste für Hilfe und E-Mail-Support.</p>"
+  },
+  "EMAIL": {
+    "SUBJECT": "Anfrage zur Zugriffshilfe",
+    "BODY": "Sehr geehrtes Support-Team,\n\nich möchte auf Daten in folgender Anwendung zugreifen: {{applicationName}}. Bitte helfen Sie mir bei der Klärung.\n\nKonkret benötige ich Zugriff auf:\n[Bitte beschreiben Sie, auf welche Daten Sie zugreifen müssen]\n\nVielen Dank!"
+  },
+  "BAD_REQUEST": {
+    "title": "Ungültige Anfrage",
+    "message": "Die Anfrage konnte wegen fehlerhafter Syntax nicht verarbeitet werden.<br>Bitte prüfen Sie die Anfrage und versuchen Sie es erneut."
+  },
+  "UNAUTHORIZED": {
+    "title": "Nicht autorisiert",
+    "message": "Sie sind nicht berechtigt, diese Aktion auszuführen.<br>Bitte wenden Sie sich an Ihren Administrator."
+  },
+  "FORBIDDEN": {
+    "title": "Verboten",
+    "message": "Sie haben keine Berechtigung für diese Ressource.<br>Bitte wenden Sie sich an Ihren Administrator."
+  },
+  "NOT_FOUND": {
+    "title": "Nicht gefunden",
+    "message": "Die angeforderte Ressource wurde nicht gefunden.<br>Bitte prüfen Sie die URL und versuchen Sie es erneut."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Interner Serverfehler",
+    "message": "Der Server ist auf einen unerwarteten Fehler gestoßen.<br>Bitte versuchen Sie es später erneut."
+  },
+  "BAD_GATEWAY": {
+    "title": "Bad Gateway",
+    "message": "Der Server hat eine ungültige Antwort von einem Upstream-Server erhalten.<br>Bitte versuchen Sie es später erneut."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Dienst nicht verfügbar",
+    "message": "Der Server ist vorübergehend überlastet oder in Wartung.<br>Bitte versuchen Sie es später erneut."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Gateway-Timeout",
+    "message": "Verbindungs-Timeout: Der Server ist derzeit nicht erreichbar.<br>Bitte versuchen Sie es später erneut."
+  },
+  "CONNECTION_LOST": {
+    "title": "Verbindung verloren",
+    "message": "Ihr Gerät scheint keine Internetverbindung zu haben.<br>Bitte prüfen Sie die Verbindung und versuchen Sie es erneut."
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Verstanden",
+    "CANCEL": "Abbrechen",
+    "CONFIRM": "Bestätigen"
+  },
+  "SUBNAV": {
+    "ARIA": "Messenger-Bereiche",
+    "OVERVIEW": "Übersicht",
+    "CHATS": "Chats",
+    "SUPPORT": "E-Mail-Support"
+  },
+  "MESSENGER": {
+    "WIDGET": {
+      "ARIA": "Messenger öffnen",
+      "TITLE": "Chats",
+      "EMPTY": "Noch keine Unterhaltungen",
+      "SEE_ALL": "Alle im Messenger anzeigen"
+    },
+    "CHATS": {
+      "TITLE": "Chats",
+      "NEW": "Neue Nachricht",
+      "SEARCH": "Unterhaltungen durchsuchen",
+      "EMPTY": "Noch keine Unterhaltungen",
+      "START_TITLE": "Starte deine erste Unterhaltung",
+      "START_HINT": "Wähle jemanden aus dem Verzeichnis. Nachrichten kommen über den Realtime-Socket, gesendet wird per dauerhaftem REST-Schreibvorgang — so geht nichts verloren, wenn ein Socket abbricht.",
+      "LOADING": "Wird geladen…",
+      "NO_MATCH": "Keine Unterhaltungen passen dazu",
+      "PICK_TITLE": "Unterhaltung auswählen",
+      "PICK_HINT": "Wähle links eine Unterhaltung oder beginne eine neue. Nachrichten kommen über den Realtime-Socket; das Senden ist ein dauerhafter REST-Schreibvorgang, es geht also nichts verloren, wenn der Socket abbricht.",
+      "LOAD_FAILED": "Unterhaltungen konnten nicht geladen werden. Sie erscheinen wieder, sobald die Verbindung steht."
+    },
+    "THREAD": {
+      "BACK": "Zurück zu den Unterhaltungen",
+      "COMPOSER": "Nachricht schreiben",
+      "SEND": "Nachricht senden",
+      "SENDING": "Wird gesendet",
+      "RETRY": "Erneut versuchen",
+      "EMPTY": "Noch keine Nachrichten — sag Hallo.",
+      "TYPING": "{{name}} schreibt…",
+      "TYPING_TWO": "{{names}} schreiben…",
+      "TYPING_MANY": "Mehrere Personen schreiben…",
+      "RECONNECTING": "Verbindung wird wiederhergestellt…",
+      "ATTACH": "Datei anhängen",
+      "UPLOADING": "Wird hochgeladen…",
+      "DOWNLOAD": "Herunterladen",
+      "ATTACHMENT_FAILED": "Der Anhang konnte nicht geöffnet werden. Der Link ist möglicherweise abgelaufen — bitte erneut versuchen.",
+      "COMPOSER_HINT": "Enter zum Senden · Shift+Enter für neue Zeile",
+      "TODAY": "Heute",
+      "YESTERDAY": "Gestern",
+      "SEEN": "Gesehen",
+      "JUMP_LATEST": "Zum Neuesten springen"
+    },
+    "PRESENCE": {
+      "ONLINE": "Online",
+      "AWAY": "Abwesend",
+      "OFFLINE": "Offline"
+    },
+    "NEW": {
+      "TITLE": "Neue Nachricht",
+      "SEARCH": "Personen suchen",
+      "SEARCH_PLACEHOLDER": "Name oder E-Mail eingeben",
+      "HINT": "Finde jemanden für eine neue Unterhaltung.",
+      "NO_RESULTS": "Niemand passt dazu"
+    },
+    "CALL": {
+      "ARIA": "Anruf",
+      "INCOMING": "Eingehender Anruf…",
+      "RINGING": "Es klingelt…",
+      "CONNECTING": "Verbindung wird aufgebaut…",
+      "ENDING": "Wird beendet…",
+      "ACCEPT": "Annehmen",
+      "DECLINE": "Ablehnen",
+      "HANG_UP": "Auflegen",
+      "MUTE": "Mikrofon stummschalten",
+      "UNMUTE": "Stummschaltung aufheben",
+      "START": "Anruf starten",
+      "NO_RELAY": "Kein TURN-Relay konfiguriert — dieser Anruf kann in eingeschränkten Netzwerken fehlschlagen.",
+      "ERROR_MIC": "Erlaube den Zugriff auf Mikrofon und Kamera und versuche es erneut.",
+      "ERROR_ICE": "Es konnte kein Pfad für Audio gefunden werden. In diesem Netzwerk ist ein TURN-Relay erforderlich.",
+      "ERROR_AUDIO": "Audio wird vom Browser blockiert. Klicken Sie auf die Seite und versuchen Sie es erneut.",
+      "ERROR_GENERIC": "Der Anruf konnte nicht hergestellt werden.",
+      "WAS_DECLINED": "{{name}} hat den Anruf abgelehnt.",
+      "WAS_MISSED": "{{name}} hat nicht abgenommen.",
+      "WAS_BUSY": "{{name}} führt bereits ein Gespräch.",
+      "WAS_FAILED": "Der Anruf konnte nicht verbunden werden.",
+      "WAS_ENDED": "Anruf beendet.",
+      "DISMISS": "Schließen",
+      "INCOMING_VIDEO": "Eingehender Videoanruf",
+      "CAMERA_OFF": "Kamera ausschalten",
+      "CAMERA_ON": "Kamera einschalten",
+      "CAMERA_PICK": "Kamera wählen",
+      "START_VIDEO": "Videoanruf starten",
+      "CAMERA_ADD": "Kamera einschalten",
+      "PIN": "Anheften",
+      "SHOW_PEOPLE": "Personen anzeigen",
+      "UNPIN": "Lösen",
+      "ROW_AUDIO": "Sprachanruf · {{duration}}",
+      "ROW_VIDEO": "Videoanruf · {{duration}}",
+      "SCREEN_YOURS": "Dein Bildschirm",
+      "SCREEN_OF": "Bildschirm von {{name}}",
+      "ROW_ONGOING": "Laufender Anruf",
+      "ROW_RINGING": "Eingehender Anruf",
+      "ROW_MISSED": "Verpasster Anruf",
+      "ROW_DECLINED": "Anruf abgelehnt",
+      "ROW_ENDED": "Anruf beendet",
+      "ROW_BY_YOU": "Du hast angerufen",
+      "ROW_BY_PEER": "{{name}} hat angerufen",
+      "ERROR_NO_DEVICE": "Kein Mikrofon oder keine Kamera gefunden.",
+      "ERROR_DEVICE_BUSY": "Kamera oder Mikrofon wird von einer anderen App oder einem anderen Tab verwendet.",
+      "ERROR_DEVICE_LIMIT": "Deine Kamera unterstützt diesen Anruf nicht.",
+      "NO_CAMERA_HINT": "Keine Kamera auf diesem Gerät — du siehst die andere Person trotzdem",
+      "EXPAND": "Vergrößern",
+      "MINIMISE": "Verkleinern",
+      "SHARE_SCREEN": "Bildschirm teilen",
+      "STOP_SHARING": "Teilen beenden",
+      "MIC_SILENT": "Dein Mikrofon nimmt nichts auf.",
+      "ERROR_SCREEN": "Bildschirmfreigabe wurde nicht gestartet. Falls du kein Fenster auswählen konntest, erlaube die Bildschirmaufnahme für deinen Browser in den Systemeinstellungen.",
+      "PEER_UNREACHABLE": "Keine Verbindung",
+      "INCOMING_GROUP": "{{name}} ruft an",
+      "IN_CALL": "{{count}} im Anruf",
+      "WAS_EMPTY": "Alle anderen haben den Anruf verlassen.",
+      "ERROR_TOO_MANY": "Dieses Gespräch hat zu viele Teilnehmer für einen Anruf.",
+      "ROW_JOINED": "{{count}} beigetreten",
+      "IN_ANOTHER_TAB": "Dieser Anruf ist bereits in einem anderen Tab geöffnet.",
+      "ONGOING": "Laufender Anruf",
+      "JOIN": "Beitreten",
+      "ERROR_JOIN": "Beitritt zum Anruf fehlgeschlagen. Bitte erneut versuchen."
+    },
+    "GROUP": {
+      "NEW": "Neue Gruppe",
+      "NEW_TITLE": "Neue Gruppe",
+      "HINT": "Füge eine oder mehrere Personen hinzu und benenne die Gruppe.",
+      "TITLE_LABEL": "Gruppenname",
+      "TITLE_PLACEHOLDER": "Gib der Gruppe einen Namen",
+      "CREATE": "Gruppe erstellen",
+      "DETAILS": "Gruppendetails",
+      "MEMBER_COUNT": "{{count}} Mitglieder",
+      "REMOVE": "Entfernen",
+      "ADMIN": "Admin",
+      "YOU": "(du)",
+      "SAVE": "Speichern",
+      "ADD_PEOPLE": "Personen hinzufügen",
+      "ADD_CONFIRM": "{{count}} hinzufügen",
+      "LEAVE": "Gruppe verlassen",
+      "ACTION_FAILED": "Das hat nicht geklappt. Nur ein Admin kann eine Gruppe umbenennen oder Personen hinzufügen.",
+      "YOU_PREFIX": "Du",
+      "LEAVE_PROMPT": "Diese Gruppe verlassen? Du erhältst dann keine Nachrichten mehr.",
+      "CANCEL": "Abbrechen"
+    },
+    "DOCK": {
+      "MINIMISE": "Minimieren",
+      "EXPAND": "Ausklappen",
+      "CLOSE": "Chat schließen",
+      "OPEN_WINDOW": "In einem Fenster öffnen"
+    }
+  },
+  "GENERAL_ERROR": {
+    "title": "Die Anwendung ist abgestürzt.",
+    "message": "Bitte kontaktieren Sie den Support.<br>Nennen Sie Benutzername und Zeitpunkt des Absturzes.<br>Vielen Dank!"
+  },
+  "LANGUAGE": {
+    "LABEL": "Sprache"
+  }
+}

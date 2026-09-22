@@ -1,0 +1,735 @@
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Popover content is body-appended by PrimeNG — component-scoped
+   :host-context(.dark) rules can't reach it, so these live globally. */
+.shell-popover-title {
+  border-bottom: 1px solid var(--p-surface-200);
+}
+
+.dark .shell-popover-title {
+  border-bottom-color: var(--p-surface-700);
+}
+
+.shell-popover-footer {
+  border-top: 1px solid var(--p-surface-200);
+}
+
+.dark .shell-popover-footer {
+  border-top-color: var(--p-surface-700);
+}
+
+/* Ambient backdrop behind the glass chrome. Global: both layouts use
+   .shell-root, and the glass toolbar/sidebar need color behind them to
+   frost — over a flat surface the material is invisible. */
+.shell-root {
+  background:
+    radial-gradient(
+      circle at 16% 0%,
+      color-mix(in srgb, var(--p-primary-400) 32%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      color-mix(in srgb, #0546ff 26%, transparent) 0 14rem,
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 0% 14%,
+      color-mix(in srgb, #ff8fd8 24%, transparent) 0 12rem,
+      transparent 26rem
+    ),
+    radial-gradient(
+      circle at 0% 45%,
+      color-mix(in srgb, #5edfff 34%, transparent) 0 14rem,
+      transparent 30rem
+    ),
+    linear-gradient(
+      145deg,
+      var(--p-primary-50) 0%,
+      var(--p-primary-50) 44%,
+      var(--p-surface-50) 100%
+    );
+}
+
+.dark .shell-root {
+  background:
+    radial-gradient(
+      circle at 16% 0%,
+      color-mix(in srgb, var(--p-primary-600) 26%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      color-mix(in srgb, #0546ff 20%, transparent) 0 14rem,
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 0% 45%,
+      color-mix(in srgb, #8001c6 16%, transparent) 0 14rem,
+      transparent 30rem
+    ),
+    linear-gradient(145deg, var(--p-surface-950) 0%, #100628 50%, #07111f 100%);
+}
+
+/* ---------------------------------------------------------------------------
+ * Notification drawer (shell-notification-bell) — appended to <body> via
+ * p-drawer appendTo, so styling is global. Light first, `.dark` overrides.
+ * ------------------------------------------------------------------------- */
+
+/* Frosted mask, same treatment the lib gives .p-dialog-mask (_overlays.scss —
+   the mask carries the blur; a flat dark mask seams against the glass toolbar).
+   Candidate lib upstream with the next platform-ui minor. */
+.p-drawer-mask.p-overlay-mask {
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation));
+  backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation));
+  transition:
+    backdrop-filter 150ms ease-out,
+    -webkit-backdrop-filter 150ms ease-out;
+}
+
+/* Mask fade-out only animates opacity — backdrop-filter ignores opacity and
+   would stay at full blur until removal. Drop it explicitly on leave.
+   The keyframe animation is load-bearing: PrimeNG removes the mask on
+   `animationend`, so leave-active MUST run a real CSS animation or the mask
+   sticks forever (seen when navigating while the drawer closes). */
+@keyframes shell-drawer-mask-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.p-drawer-mask.p-overlay-mask.p-overlay-mask-leave-active {
+  -webkit-backdrop-filter: blur(0) saturate(1);
+  backdrop-filter: blur(0) saturate(1);
+  animation: shell-drawer-mask-leave 150ms ease-out forwards;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .p-drawer-mask.p-overlay-mask {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* Body-appended select overlays paint a few frames at (0,0) before PrimeNG
+   positions them (measured via rAF probe) — hide those frames with discrete
+   visibility. NEVER animate opacity here: the panel is glass (lib _overlays
+   ::before backdrop-filter) and animated opacity < 1 disables backdrop
+   sampling, flashing the panel see-through. */
+@keyframes shell-overlay-enter {
+  from {
+    visibility: hidden;
+  }
+  to {
+    visibility: visible;
+  }
+}
+
+.p-select-overlay {
+  animation: shell-overlay-enter 75ms steps(1, end);
+}
+
+/* The p-motion wrapper's own enter animation (p-animate-anchored-overlay-enter)
+   fades opacity 0→1 over ~300ms — animated opacity < 1 disables the glass
+   ::before backdrop-filter for the whole fade, so the panel reads see-through
+   until the blur pops in. Replace it for select overlays with the same discrete
+   visibility hold. Must stay a REAL animation: Motion's class cleanup is
+   animationend-driven (same trap as the drawer mask). */
+.p-motion.p-anchored-overlay-enter-active:has(.p-select-overlay) {
+  animation: shell-overlay-enter 75ms steps(1, end);
+}
+
+.p-drawer.shell-notification-drawer {
+  width: min(26rem, 92vw);
+  background: var(--p-surface-50);
+  border-left: 1px solid var(--p-surface-200);
+}
+
+/*
+ * The bottom navigation's overflow sheet.
+ *
+ * PrimeNG gives `position="bottom"` a fixed 10rem height, which either clips
+ * the rows or leaves a band of empty glass depending on how many products have
+ * spilled — the list is what should decide. `height: auto` with a viewport cap
+ * lets it size to its contents and still scroll on a short screen.
+ *
+ * Lives here rather than in the component because PrimeNG builds the drawer's
+ * own chrome: those elements carry no `_ngcontent`, so an encapsulated rule
+ * cannot reach them. The rows inside are this component's own markup and are
+ * styled from its stylesheet.
+ */
+.p-drawer.shell-bottom-sheet {
+  height: auto;
+  max-height: 70vh;
+  background: var(--p-surface-50);
+  border-top: 1px solid var(--p-surface-200);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.dark .p-drawer.shell-bottom-sheet {
+  background: var(--p-surface-900);
+  border-top-color: var(--p-surface-700);
+}
+
+.dark .shell-bottom-sheet .p-drawer-header {
+  border-bottom-color: var(--p-surface-700);
+}
+
+.dark .p-drawer.shell-notification-drawer {
+  background: var(--p-surface-900);
+  border-left-color: var(--p-surface-700);
+}
+
+.shell-notification-drawer .p-drawer-header {
+  padding-bottom: 0.25rem;
+}
+
+.shell-notification-drawer .p-drawer-content {
+  padding-top: 0;
+}
+
+/*
+ * "Mark all read" keeps its words and gives up its icon on a phone.
+ *
+ * Measured at 375x667 (dathq: "a little bit cramp"): the header row gets
+ * 264px for a title, this button, a gear and PrimeNG's close. The label
+ * wrapped over two lines — the button measured **56px tall against the
+ * gear's 35px** — which is the tell, since a wrapped flex line cannot be
+ * tidied, only removed. Unwrapped it needs ~130px and the four of them want
+ * 283px, so something has to go.
+ *
+ * The words go last: they are the affordance, and the icon is decoration
+ * sitting next to an icon-only gear that already looks like a check. Dropping
+ * it and tightening the type fits the row on one line with the title intact.
+ *
+ * Lives here rather than in the component because the drawer is
+ * `appendTo="body"` and `::ng-deep` from a component cannot reach it.
+ */
+@media (max-width: 30rem) {
+  .shell-notification-drawer .shell-mark-all-read {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    padding-inline: 0.5rem;
+  }
+
+  .shell-notification-drawer .shell-mark-all-read .p-button-icon {
+    display: none;
+  }
+}
+
+.dark .shell-notification-drawer .p-drawer-header {
+  border-bottom-color: var(--p-surface-700);
+}
+
+.shell-notification-card {
+  background-color: var(--p-surface-0);
+  border: 1px solid var(--p-surface-200);
+  border-left-width: 3px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+.dark .shell-notification-card {
+  background-color: var(--p-surface-800);
+  border-color: var(--p-surface-700);
+}
+
+.shell-notification-card:hover {
+  border-color: var(--p-surface-300);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.08);
+}
+
+.dark .shell-notification-card:hover {
+  border-color: var(--p-surface-600);
+}
+
+.shell-notification-card[data-severity="info"] {
+  border-left-color: var(--p-primary-500);
+}
+.shell-notification-card[data-severity="warning"] {
+  border-left-color: var(--p-amber-500);
+}
+.shell-notification-card[data-severity="critical"] {
+  border-left-color: var(--p-red-500);
+}
+
+.shell-notification-card--unread {
+  background-color: color-mix(
+    in srgb,
+    var(--p-primary-color) 7%,
+    var(--p-surface-0)
+  );
+}
+
+.dark .shell-notification-card--unread {
+  background-color: color-mix(
+    in srgb,
+    var(--p-primary-color) 16%,
+    var(--p-surface-800)
+  );
+}
+
+.shell-severity-chip[data-severity="info"] {
+  background-color: color-mix(in srgb, var(--p-primary-500) 14%, transparent);
+  color: var(--p-primary-600);
+}
+.shell-severity-chip[data-severity="warning"] {
+  background-color: color-mix(in srgb, var(--p-amber-500) 18%, transparent);
+  color: var(--p-amber-600);
+}
+.shell-severity-chip[data-severity="critical"] {
+  background-color: color-mix(in srgb, var(--p-red-500) 14%, transparent);
+  color: var(--p-red-600);
+}
+
+.dark .shell-severity-chip[data-severity="info"] {
+  color: var(--p-primary-300);
+}
+.dark .shell-severity-chip[data-severity="warning"] {
+  color: var(--p-amber-300);
+}
+.dark .shell-severity-chip[data-severity="critical"] {
+  color: var(--p-red-300);
+}
+
+.shell-notification-source {
+  background-color: var(--p-surface-100);
+  color: var(--p-surface-600);
+}
+
+.dark .shell-notification-source {
+  background-color: var(--p-surface-700);
+  color: var(--p-surface-200);
+}
+
+.shell-drawer-tabs {
+  border-bottom: 1px solid var(--p-surface-200);
+}
+
+.dark .shell-drawer-tabs {
+  border-bottom-color: var(--p-surface-700);
+}
+
+.shell-drawer-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  color: var(--p-surface-500);
+}
+
+.dark .shell-drawer-tab {
+  color: var(--p-surface-400);
+}
+
+.shell-drawer-tab:hover {
+  color: var(--p-surface-800);
+}
+
+.dark .shell-drawer-tab:hover {
+  color: var(--p-surface-100);
+}
+
+.shell-drawer-tab--active {
+  color: var(--p-primary-600);
+  border-bottom-color: var(--p-primary-color);
+}
+
+.dark .shell-drawer-tab--active {
+  color: var(--p-primary-300);
+}
+
+.shell-drawer-tab-badge {
+  background-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
+
+.shell-drawer-error {
+  background-color: color-mix(in srgb, var(--p-red-500) 10%, transparent);
+  color: var(--p-red-600);
+  border: 1px solid color-mix(in srgb, var(--p-red-500) 30%, transparent);
+}
+
+.dark .shell-drawer-error {
+  color: var(--p-red-300);
+}
+
+/* ---------------------------------------------------------------------------
+ * Shell page scaffold — ambient background + glass header/cards shared by all
+ * shell-owned pages (home, settings hub, notification settings).
+ * Single source of truth: pages consume these classes, never copy the styles.
+ * ------------------------------------------------------------------------- */
+
+.shell-page-root {
+  --shell-page-bg:
+    radial-gradient(
+      circle at 16% 10%,
+      color-mix(in srgb, var(--p-primary-300) 26%, transparent) 0 18rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 88% 14%,
+      color-mix(in srgb, var(--p-primary-900) 12%, transparent) 0 16rem,
+      transparent 32rem
+    ),
+    linear-gradient(
+      145deg,
+      var(--p-surface-0) 0%,
+      var(--p-primary-50) 44%,
+      var(--p-surface-50) 100%
+    );
+  --shell-page-ambient: conic-gradient(
+    from 220deg at 50% 45%,
+    color-mix(in srgb, var(--p-primary-50) 86%, white) 0deg,
+    color-mix(in srgb, var(--p-primary-200) 54%, white) 76deg,
+    color-mix(in srgb, var(--p-primary-600) 24%, white) 152deg,
+    color-mix(in srgb, #0546ff 18%, white) 306deg,
+    color-mix(in srgb, var(--p-primary-50) 86%, white) 360deg
+  );
+  --shell-page-ambient-opacity: 0.36;
+  --shell-page-noise-opacity: 0.035;
+  --shell-page-ink: var(--p-surface-950);
+  --shell-page-copy: var(--p-surface-650, var(--p-surface-600));
+  --shell-page-muted: var(--p-surface-500);
+  --shell-page-border: var(--datha-glass-edge);
+  --shell-page-panel-bg: var(--datha-glass-bg-surface);
+  --shell-page-card-hover-bg: color-mix(
+    in srgb,
+    var(--p-primary-50) 62%,
+    var(--p-surface-0)
+  );
+  --shell-page-shadow: 0 18px 56px
+    color-mix(in srgb, var(--p-primary-950) 8%, transparent);
+  position: relative;
+  height: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--shell-page-bg);
+  color: var(--shell-page-ink);
+}
+
+.dark .shell-page-root {
+  --shell-page-bg:
+    radial-gradient(
+      circle at 14% 10%,
+      color-mix(in srgb, var(--p-primary-600) 18%, transparent) 0 18rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 86% 14%,
+      color-mix(in srgb, #0546ff 14%, transparent) 0 16rem,
+      transparent 32rem
+    ),
+    linear-gradient(145deg, var(--p-surface-950) 0%, #100628 50%, #07111f 100%);
+  --shell-page-ambient: conic-gradient(
+    from 220deg at 50% 45%,
+    #0f172a 0deg,
+    #1e1b4b 76deg,
+    #5c44e4 152deg,
+    #8001c6 228deg,
+    #0546ff 306deg,
+    #0f172a 360deg
+  );
+  --shell-page-ambient-opacity: 0.5;
+  --shell-page-noise-opacity: 0.065;
+  --shell-page-ink: var(--p-surface-0);
+  --shell-page-copy: var(--p-surface-300);
+  --shell-page-muted: var(--p-surface-400);
+  --shell-page-card-hover-bg: color-mix(
+    in srgb,
+    var(--p-surface-800) 78%,
+    transparent
+  );
+  --shell-page-shadow: 0 18px 56px
+    color-mix(in srgb, var(--p-surface-950) 42%, transparent);
+}
+
+.shell-page-ambient {
+  position: absolute;
+  inset: -36% -18%;
+  background: var(--shell-page-ambient);
+  filter: blur(86px);
+  opacity: var(--shell-page-ambient-opacity);
+  pointer-events: none;
+}
+
+.shell-page-noise {
+  position: absolute;
+  inset: 0;
+  opacity: var(--shell-page-noise-opacity);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.shell-page-shell {
+  position: relative;
+  z-index: 1;
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+/*
+ * A phone cannot afford desktop gutters.
+ *
+ * 2rem each side plus a card's own 1.5rem spends 112px of a 375px screen —
+ * 30% of the width — on padding, which is what made every settings row read
+ * cramped (dathq, 2026-09-21). Applies to every shell page, deliberately:
+ * they all share this shell and they all had the same margin.
+ */
+@media (max-width: 30rem) {
+  .shell-page-shell {
+    padding: 1.5rem 1rem;
+  }
+
+  .shell-page-header {
+    padding: 1.25rem;
+  }
+}
+
+.shell-page-header {
+  margin-bottom: 2.5rem;
+  padding: 1.75rem;
+  border: 1px solid var(--shell-page-border);
+  border-radius: var(--datha-glass-radius-surface);
+  background: var(--shell-page-panel-bg);
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    var(--shell-page-shadow);
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+  backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+}
+
+.shell-page-kicker {
+  margin: 0 0 0.75rem;
+  color: var(--shell-page-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.shell-page-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--shell-page-ink);
+}
+
+.shell-page-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--shell-page-copy);
+}
+
+.shell-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1.25rem;
+}
+
+.shell-glass-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--shell-page-border);
+  background: var(--shell-page-panel-bg);
+  cursor: pointer;
+  text-align: left;
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+  backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    0 10px 32px color-mix(in srgb, var(--p-primary-950) 6%, transparent);
+  transition:
+    background 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+
+  &:hover {
+    background: var(--shell-page-card-hover-bg);
+    border-color: color-mix(in srgb, var(--p-primary-600) 36%, transparent);
+    box-shadow:
+      0 16px 42px color-mix(in srgb, var(--p-primary-950) 12%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--p-primary-600) 20%, transparent);
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Non-interactive glass panel — same look, no hover affordance.
+.shell-glass-card--static {
+  cursor: default;
+
+  &:hover {
+    background: var(--shell-page-panel-bg);
+    border-color: var(--shell-page-border);
+    box-shadow:
+      inset 0 1px 0 var(--datha-glass-highlight),
+      0 10px 32px color-mix(in srgb, var(--p-primary-950) 6%, transparent);
+    transform: none;
+  }
+}
+
+.shell-glass-card--disabled {
+  cursor: default;
+  opacity: 0.6;
+
+  &:hover {
+    background: var(--shell-page-panel-bg);
+    border-color: var(--shell-page-border);
+    box-shadow:
+      inset 0 1px 0 var(--datha-glass-highlight),
+      0 10px 32px color-mix(in srgb, var(--p-primary-950) 6%, transparent);
+    transform: none;
+  }
+}
+
+.shell-glass-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-600),
+    var(--p-primary-900)
+  );
+  color: var(--p-surface-0);
+  font-size: 1.25rem;
+  box-shadow: 0 12px 28px
+    color-mix(in srgb, var(--p-primary-700) 20%, transparent);
+}
+
+.shell-glass-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--shell-page-ink);
+}
+
+.shell-glass-card__desc {
+  font-size: 0.8125rem;
+  color: var(--shell-page-copy);
+  line-height: 1.5;
+}
+
+.shell-card-grid__empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--shell-page-muted);
+  font-size: 0.9375rem;
+  padding: 3rem 0;
+}
+
+/* The inline control on a preference card (theme, language). Pushed to the
+   card's foot so a grid of mixed cards still lines its descriptions up, and
+   full-width because on a phone this card is the control's only home. */
+/*
+ * A card that hosts a dropdown, which the glass sheen cannot do.
+ *
+ * `.datha-glass-sheen` sets `overflow: hidden` so its `::before` is clipped to
+ * the radius — correct for a card, fatal for a control whose panel opens
+ * downwards. PrimeNG renders the select's overlay **inline**, so it was both
+ * clipped at the card's edge and, being in flow, tall enough to push the
+ * card's own icon out through the top (measured 2026-09-17: content 361px in a
+ * 260px box, icon at y=279 against a card top of y=294).
+ *
+ * So: no sheen here, and the overlay is taken out of flow. `position:
+ * relative` is what it then positions against — the sheen used to provide it.
+ */
+.shell-glass-card--control {
+  position: relative;
+  overflow: visible;
+  cursor: default;
+
+  &:hover {
+    background: var(--shell-page-panel-bg);
+    border-color: var(--shell-page-border);
+    box-shadow:
+      inset 0 1px 0 var(--datha-glass-highlight),
+      0 10px 32px color-mix(in srgb, var(--p-primary-950) 6%, transparent);
+    transform: none;
+  }
+
+  /* Out of flow, so opening the panel cannot resize the card it lives in.
+     No `::ng-deep` — this is a global sheet, where it means nothing. */
+  .p-overlay {
+    position: absolute;
+    z-index: 30;
+  }
+}
+
+.shell-card-control {
+  display: flex;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.shell-card-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--shell-page-muted);
+  border: 1px solid var(--shell-page-border);
+  background: color-mix(in srgb, var(--p-surface-500) 10%, transparent);
+}
+
+.dark
+  .shell-glass-card:not(.shell-glass-card--disabled):not(
+    .shell-glass-card--static
+  ):hover {
+  border-color: color-mix(in srgb, var(--p-primary-300) 42%, transparent);
+  box-shadow:
+    0 16px 42px color-mix(in srgb, var(--p-surface-950) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--p-primary-300) 28%, transparent);
+}
+
+.dark .shell-glass-card__icon {
+  box-shadow: 0 12px 28px
+    color-mix(in srgb, var(--p-primary-700) 34%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-glass-card {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
+  }
+}

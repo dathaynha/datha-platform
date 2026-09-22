@@ -1,0 +1,920 @@
+.chat-sidebar {
+  background: var(--chat-sidebar-bg);
+  border-color: var(--chat-border);
+  color: var(--chat-ink);
+}
+
+.chat-sidebar-header {
+  border-bottom-color: var(--chat-border);
+}
+
+.chat-sidebar-scroll {
+  scrollbar-color: color-mix(in srgb, var(--chat-subtle) 42%, transparent)
+    transparent;
+}
+
+.chat-sidebar-kicker,
+.chat-title,
+.chat-history-title,
+.chat-empty-text,
+.chat-claude-draft,
+.chat-attachment-name {
+  color: var(--chat-ink);
+}
+
+.chat-muted,
+.chat-subtitle,
+.chat-history-meta,
+.chat-sidebar-note,
+.chat-thread-note,
+.chat-composer-limit,
+.chat-composer-hint {
+  color: var(--chat-muted);
+}
+
+.chat-sidebar-primary,
+.chat-soft-button,
+.chat-ghost-button,
+.chat-history-action {
+  color: var(--chat-ink);
+}
+
+.chat-sidebar-primary,
+.chat-soft-button {
+  background: var(--chat-surface-bg);
+  border-color: var(--chat-border);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--p-primary-950) 8%, transparent);
+}
+
+.chat-sidebar-primary:hover,
+.chat-soft-button:hover {
+  background: var(--chat-surface-hover-bg);
+}
+
+.chat-ghost-button:hover,
+.chat-history-action:hover {
+  background: var(--chat-surface-hover-bg);
+  border-color: var(--chat-border);
+}
+
+.chat-history-delete:hover {
+  background: color-mix(in srgb, var(--p-red-500) 12%, transparent);
+  border-color: color-mix(in srgb, var(--p-red-500) 35%, transparent);
+  color: var(--p-red-500);
+}
+
+.chat-history-row {
+  background: color-mix(in srgb, var(--chat-surface-bg) 78%, transparent);
+  border-color: color-mix(in srgb, var(--chat-border) 55%, transparent);
+}
+
+.chat-history-row:hover {
+  background: var(--chat-surface-hover-bg);
+}
+
+.chat-history-row[class*="border-sky-400"] {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--p-primary-100) 62%, var(--p-surface-0)),
+    color-mix(in srgb, #dbeafe 68%, var(--p-surface-0))
+  );
+  border-color: color-mix(in srgb, var(--p-primary-600) 38%, transparent);
+  box-shadow: 0 10px 24px
+    color-mix(in srgb, var(--p-primary-950) 9%, transparent);
+}
+
+:host-context(.dark) .chat-history-row[class*="border-sky-400"] {
+  background: color-mix(in srgb, var(--p-primary-950) 48%, transparent);
+  border-color: color-mix(in srgb, var(--p-primary-300) 42%, transparent);
+}
+
+.chat-rename-input {
+  background: var(--chat-input-bg);
+  border-color: var(--chat-border);
+  color: var(--chat-ink);
+}
+
+.chat-stage {
+  /* A veil over the page gradient rather than a second copy of it: the pane has
+     to read as its own surface, with the background showing through between the
+     two panes. Mirrors messenger-frontend's chats page. */
+  background: var(--chat-stage-bg);
+  border-color: var(--chat-border);
+  backdrop-filter: blur(2px);
+}
+
+.chat-header,
+.chat-composer {
+  background: var(--chat-header-bg);
+  border-color: var(--chat-border);
+}
+
+.chat-thread {
+  scrollbar-color: color-mix(in srgb, var(--chat-subtle) 42%, transparent)
+    transparent;
+}
+
+.chat-thread-loading {
+  background: color-mix(in srgb, var(--p-surface-0) 55%, transparent);
+}
+
+:host-context(.dark) .chat-thread-loading {
+  background: color-mix(in srgb, var(--p-surface-950) 48%, transparent);
+}
+
+.chat-warning {
+  background: color-mix(in srgb, var(--p-amber-100) 72%, transparent);
+  border-color: color-mix(in srgb, var(--p-amber-500) 34%, transparent);
+  color: color-mix(in srgb, var(--p-amber-950) 90%, black);
+}
+
+:host-context(.dark) .chat-warning {
+  background: color-mix(in srgb, var(--p-amber-950) 55%, transparent);
+  color: var(--p-amber-100);
+}
+
+.chat-warning p {
+  color: inherit;
+}
+
+.chat-empty {
+  color: var(--chat-muted);
+}
+
+.chat-empty-icon {
+  color: color-mix(in srgb, var(--chat-muted) 34%, transparent);
+}
+
+.chat-bubble {
+  box-shadow: var(--chat-ambient-shadow);
+}
+
+.chat-bubble--user {
+  background: var(--chat-user-bg);
+  color: var(--chat-user-ink);
+  box-shadow:
+    0 12px 32px color-mix(in srgb, var(--p-primary-700) 26%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--p-surface-0) 16%, transparent);
+}
+
+.chat-bubble--assistant {
+  background: var(--chat-assistant-bg);
+  border-color: var(--chat-assistant-border);
+  color: var(--chat-ink);
+}
+
+.chat-bubble--assistant::before {
+  background-image: linear-gradient(
+    180deg,
+    var(--p-primary-900),
+    var(--p-primary-500)
+  );
+}
+
+:host-context(.dark) .chat-bubble--assistant::before {
+  background-image: linear-gradient(180deg, var(--p-primary-300), #7dd3fc);
+}
+
+.chat-bubble--error {
+  background: color-mix(in srgb, var(--p-red-50) 82%, transparent);
+  border-color: color-mix(in srgb, var(--p-red-500) 24%, transparent);
+  color: var(--p-red-700);
+}
+
+:host-context(.dark) .chat-bubble--error {
+  background: color-mix(in srgb, var(--p-red-950) 52%, transparent);
+  color: var(--p-red-300);
+}
+
+.chat-bubble--typing .chat-typing > span {
+  background: color-mix(in srgb, var(--p-primary-600) 65%, var(--chat-muted));
+}
+
+/* Claude-style composer card */
+.chat-claude-box {
+  background: var(--chat-input-bg);
+  border: 1px solid var(--chat-border);
+  border-radius: 1.35rem;
+  box-shadow: var(--chat-ambient-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 1rem 0.65rem;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.chat-claude-box:focus-within {
+  border-color: color-mix(
+    in srgb,
+    var(--p-primary-500) 32%,
+    var(--chat-border)
+  );
+  box-shadow:
+    var(--chat-ambient-shadow),
+    0 0 0 1px color-mix(in srgb, var(--p-primary-500) 14%, transparent);
+}
+
+.chat-claude-draft {
+  background: transparent;
+  border: 0;
+  color: var(--chat-ink);
+  font-size: 1rem;
+  line-height: 1.55;
+  max-height: 9rem;
+  min-height: 1.75rem;
+  outline: none;
+  padding: 0;
+  resize: none;
+  width: 100%;
+}
+
+.chat-claude-draft::placeholder {
+  color: color-mix(in srgb, var(--chat-muted) 82%, transparent);
+}
+
+.chat-claude-draft:disabled {
+  opacity: 0.55;
+}
+
+.chat-claude-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  min-height: 2rem;
+  padding-top: 0.15rem;
+}
+
+.chat-claude-add {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--chat-muted);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: 1.35rem;
+  font-weight: 300;
+  height: 2rem;
+  justify-content: center;
+  line-height: 1;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  width: 2rem;
+}
+
+.chat-claude-add:not(:disabled):hover {
+  background: var(--chat-surface-hover-bg);
+  color: var(--chat-ink);
+}
+
+.chat-claude-add:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.chat-claude-toolbar-end {
+  align-items: center;
+  display: flex;
+  flex: 1;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.chat-claude-send {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--p-primary-600) 92%,
+    var(--p-surface-950)
+  );
+  border: 0;
+  border-radius: 9999px;
+  color: var(--p-surface-0);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 2rem;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
+  width: 2rem;
+}
+
+.chat-claude-send:not(:disabled):hover {
+  background: var(--p-primary-500);
+}
+
+.chat-claude-send:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.chat-claude-send .pi {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* Model picker: Claude-style text trigger + custom menu (no PrimeNG overlay). */
+.chat-model-picker {
+  position: relative;
+  flex-shrink: 1;
+  max-width: min(16rem, 52vw);
+  min-width: 0;
+}
+
+.chat-model-trigger {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--chat-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 0.2rem;
+  max-width: 100%;
+  min-height: 2rem;
+  padding: 0.2rem 0.35rem;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.chat-model-trigger:not(:disabled):hover,
+.chat-model-trigger[aria-expanded="true"] {
+  background: var(--chat-surface-hover-bg);
+  color: var(--chat-ink);
+}
+
+.chat-model-trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.chat-model-trigger-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-model-chevron {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  opacity: 0.85;
+  transition: transform 0.15s ease;
+}
+
+.chat-model-chevron--open {
+  transform: rotate(180deg);
+}
+
+.chat-model-menu {
+  background: var(--chat-input-bg);
+  border: 1px solid var(--chat-border);
+  border-radius: 0.75rem;
+  bottom: calc(100% + 0.4rem);
+  box-shadow:
+    0 4px 24px color-mix(in srgb, var(--p-surface-950) 28%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--chat-border) 80%, transparent);
+  display: flex;
+  flex-direction: column;
+  max-height: min(18rem, 42vh);
+  max-width: min(18rem, 80vw);
+  min-width: 11rem;
+  overflow: hidden;
+  position: absolute;
+  right: 0;
+  z-index: 40;
+}
+
+.chat-model-menu-search {
+  align-items: center;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--chat-border) 65%, transparent);
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.35rem;
+  padding: 0.4rem 0.45rem;
+}
+
+.chat-model-menu-search .pi-search {
+  color: var(--chat-muted);
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+.chat-model-search-input {
+  background: transparent;
+  border: 0;
+  color: var(--chat-ink);
+  flex: 1;
+  font-size: 0.75rem;
+  min-width: 0;
+  outline: none;
+  padding: 0.15rem 0;
+}
+
+.chat-model-search-input::placeholder {
+  color: color-mix(in srgb, var(--chat-muted) 78%, transparent);
+}
+
+.chat-model-search-input::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+.chat-model-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  overflow-y: auto;
+  padding: 0.35rem;
+}
+
+.chat-model-empty {
+  color: var(--chat-muted);
+  font-size: 0.75rem;
+  margin: 0.35rem 0.45rem;
+  text-align: center;
+}
+
+.chat-model-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  color: var(--chat-ink);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8125rem;
+  gap: 0.5rem;
+  justify-content: space-between;
+  line-height: 1.35;
+  padding: 0.5rem 0.55rem;
+  text-align: left;
+  transition: background 0.12s ease;
+  width: 100%;
+}
+
+.chat-model-option:not(:disabled):hover,
+.chat-model-option--selected {
+  background: var(--chat-surface-hover-bg);
+}
+
+.chat-model-option-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-model-check {
+  color: var(--p-primary-400);
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+.chat-attachment-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--chat-surface-bg) 94%, transparent),
+    color-mix(in srgb, var(--chat-surface-bg) 70%, transparent)
+  );
+  border-color: var(--chat-border);
+  color: var(--chat-ink);
+}
+
+.chat-attachment-card[class*="border-red-400"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--p-red-100) 78%, transparent),
+    color-mix(in srgb, var(--p-red-50) 62%, transparent)
+  );
+  border-color: color-mix(in srgb, var(--p-red-500) 42%, transparent);
+}
+
+:host-context(.dark) .chat-attachment-card[class*="border-red-400"] {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--p-red-950) 48%, transparent),
+    color-mix(in srgb, var(--p-red-950) 24%, transparent)
+  );
+}
+
+.chat-attachment-thumb {
+  background: color-mix(in srgb, var(--p-primary-950) 12%, transparent);
+}
+
+:host-context(.dark) .chat-attachment-thumb {
+  background: color-mix(in srgb, var(--p-surface-950) 42%, transparent);
+}
+
+.chat-attachment-remove {
+  background: var(--chat-surface-bg);
+  border-color: var(--chat-border);
+  color: var(--chat-ink);
+}
+
+.chat-attachment-remove:hover {
+  background: var(--chat-surface-hover-bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :host {
+    --chat-bg: var(--p-surface-0);
+  }
+
+  :host-context(.dark) {
+    --chat-bg: var(--p-surface-950);
+  }
+}
+
+/*
+ * The whole responsive scale for this page, keyed on room rather than window.
+ *
+ * `sm:` was a **viewport** breakpoint, which stops telling the truth the moment
+ * something sits beside this page. Hosted in the shell, a 667x375 landscape
+ * phone reports 667px wide, so `sm:` applied and the desktop layout ran inside
+ * 443px: `sm:w-72` took a fixed 288px for the history and left the chat
+ * **117px**, wrapping its own subtitle one word per line (measured 2026-09-18).
+ * The panes were fixed then; the gutters and bubble widths were not, so at
+ * 834x1112 hosted this page collapsed to one pane (610px of room) while still
+ * taking `sm:px-6` off the 834px window — one page reading two widths
+ * (measured 2026-09-21).
+ *
+ * The rem values are the Tailwind breakpoints unchanged (40/64/80rem = sm/lg/
+ * xl); what changed is what they measure. The container is `cb-page`, declared
+ * on `.chatbot-content` in the layout — this component's own host has to
+ * respond too, and an element cannot query a container it declares.
+ *
+ * Narrow is the base state here, so nothing below 40rem needs a query at all.
+ * The single-pane behaviour itself already existed and is driven by
+ * `historyOpen()`; all these rules do is stop the wide layout applying when the
+ * space is not there.
+ */
+.chat-sidebar {
+  width: 100%;
+}
+
+/* Every bubble is free to use the whole column until there is enough of it
+   that a full-width line would be too long to read. */
+.chat-bubble {
+  max-width: 100%;
+}
+
+/*
+ * The header is one row on a phone, and its second line is the first thing to
+ * go.
+ *
+ * Measured at 375x667 hosted (dathq, 2026-09-21): a 44px toggle square, the
+ * word "Chat" beside it and a full-width subtitle below spent **99px** of a
+ * 490px stage — 20% of the page — and left the thread 204px. The shape is
+ * `messenger-frontend`'s thread header, which solved this already: one row,
+ * a 2rem control, identity beside it.
+ *
+ * The subtitle is static marketing copy, and both things it says are on screen
+ * anyway — the sub-header names the product and the composer's model chip
+ * names the model. It comes back with the room at 40rem. (The short-viewport
+ * block at the end of this file hides it again in landscape; that rule is
+ * later in source order, which is what keeps it winning.)
+ */
+.chat-header {
+  padding-block: 0.75rem;
+}
+
+.chat-subtitle {
+  display: none;
+}
+
+.chat-header,
+.chat-thread {
+  padding-inline: 1.25rem;
+}
+
+/*
+ * The composer's two hints are the phone's to spare.
+ *
+ * Measured at 375x667 (dathq, 2026-09-21): 187px of a 490px stage, against
+ * 246px of thread — 36px of padding, a 20px line reminding you of a 10-file
+ * limit nobody is near, the 94px box that is the actual control, and a 20px
+ * line offering **Shift+Enter**, which a soft keyboard cannot produce. Both
+ * hints come back with the room at 40rem; the limit is enforced either way,
+ * and exceeding it says so.
+ */
+.chat-composer {
+  padding-block: 0.75rem;
+  padding-inline: 1rem;
+}
+
+.chat-composer-limit,
+.chat-composer-hint {
+  display: none;
+}
+
+/*
+ * An attached file is a chip on a phone, a tile when there is room.
+ *
+ * The tile is 7.25rem wide with a 4.25rem preview above its name — 95px of a
+ * 490px stage in portrait and of a 295px one in landscape, where it was
+ * taller than the thread it sat under (measured 2026-09-21, reported both
+ * ways up). The thumbnail earns its place, because it is how you tell which
+ * picture you picked, so it becomes a square beside the name rather than
+ * being dropped.
+ *
+ * `nowrap` matters as much as the height: ten attachments are allowed, and
+ * wrapped tiles would put the screen straight back where it started, so the
+ * strip scrolls sideways and stays one chip tall whatever it holds.
+ */
+.chat-attachment-strip {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 0.125rem;
+}
+
+.chat-attachment-card {
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+  max-width: 11rem;
+  /* Room for the remove button, which stays absolute and stays 28px. */
+  padding-right: 1.75rem;
+}
+
+.chat-attachment-thumb {
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+}
+
+.chat-attachment-name {
+  padding-block: 0;
+}
+
+/* Centred on the chip rather than tucked into a tile's corner; the target
+   keeps its size, because a smaller one is harder to hit, not tidier. */
+.chat-attachment-remove {
+  top: 50%;
+  right: 0.125rem;
+  transform: translateY(-50%);
+}
+
+@container cb-page (min-width: 40rem) {
+  /* `.hidden` is the component's own state, and above this width both panes
+     fit, so neither toggle applies. `.chat-sidebar.hidden` rather than a bare
+     class because Tailwind's `.hidden` is (0,1,0) and source order between the
+     global sheet and component styles is not something to depend on. */
+  .chat-sidebar.hidden,
+  .chat-stage.hidden {
+    display: flex;
+  }
+
+  :host {
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .chat-sidebar {
+    width: 18rem;
+  }
+
+  .chat-sidebar,
+  .chat-stage {
+    border-radius: 1rem;
+    border-width: 1px;
+    border-style: solid;
+    box-shadow: var(--chat-panel-shadow);
+  }
+
+  /* Both panes are on screen, so a control that reveals one is a second
+     control for nothing. */
+  .chat-soft-button.chat-pane-toggle {
+    display: none;
+  }
+
+  .chat-bubble {
+    max-width: 42rem;
+  }
+
+  .chat-header,
+  .chat-thread,
+  .chat-composer {
+    padding-inline: 1.5rem;
+  }
+
+  .chat-header {
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+    align-items: flex-start;
+  }
+
+  .chat-subtitle {
+    display: block;
+  }
+
+  .chat-composer {
+    padding-top: 1rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .chat-composer-limit,
+  .chat-composer-hint {
+    display: block;
+  }
+
+  .chat-attachment-strip {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .chat-attachment-card {
+    flex-direction: column;
+    align-items: stretch;
+    width: 7.25rem;
+    max-width: none;
+    padding-right: 0;
+  }
+
+  .chat-attachment-thumb {
+    height: 4.25rem;
+    width: auto;
+  }
+
+  .chat-attachment-name {
+    padding-block: 0.375rem;
+  }
+
+  .chat-attachment-remove {
+    top: 0.125rem;
+    right: 0.125rem;
+    transform: none;
+  }
+}
+
+@container cb-page (min-width: 64rem) {
+  .chat-bubble {
+    max-width: 48rem;
+  }
+
+  .chat-header,
+  .chat-thread,
+  .chat-composer {
+    padding-inline: 2rem;
+  }
+}
+
+@container cb-page (min-width: 80rem) {
+  .chat-bubble {
+    max-width: 56rem;
+  }
+}
+
+/*
+ * Short viewports — a landscape phone, not a narrow one.
+ *
+ * At 667x375 the shell leaves this page 311px of height, and the composer alone
+ * wanted 187px of it: header + composer ran past the bottom of the stage, which
+ * is `overflow: hidden`, so the Send button was clipped off the screen entirely
+ * and the thread was left 32px (measured 2026-09-18). Nothing overflowed the
+ * document, so no scrollbar appeared to hint at it.
+ *
+ * The composer gives up its optional parts first — the attachment hint and the
+ * generous padding — and the draft area stops reserving three rows it cannot
+ * afford. The thread keeps what is left, which is the part worth having.
+ */
+@media (max-height: 30rem) {
+  .chat-composer {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  /*
+   * Both hints, not just the limit.
+   *
+   * The narrow tier hides these on width, and a landscape phone is **wide** —
+   * so standalone at 667x375 the container cleared 40rem, `Enter to send ·
+   * Shift+Enter for new line` came back, and it came back on the shortest
+   * screen there is. Caught by the landscape spec at
+   * `Expected: < 100, Received: 119.8`, after a hosted-only measurement had
+   * read 92px and looked finished (2026-09-21).
+   */
+  .chat-composer-limit,
+  .chat-composer-hint {
+    display: none;
+  }
+
+  .chat-claude-draft {
+    max-height: 4.5rem;
+    /* The row it reserves when empty; the text still sets the real height. */
+    min-height: 1.5rem;
+  }
+
+  /*
+   * The card's own chrome, not its controls.
+   *
+   * Measured at 667x375 on 2026-09-21: the composer was 111px of a 255px
+   * stage against 92px of thread. 62px of that is the draft row and the
+   * toolbar — a 2rem `+` button and the model chip, which is what the
+   * toolbar's `min-height` is sized to and is not available to give. The
+   * other ~32px was padding and gaps, and that is what goes here.
+   */
+  .chat-composer {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
+  }
+
+  .chat-claude-box {
+    padding: 0.5rem 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .chat-claude-toolbar {
+    padding-top: 0;
+  }
+
+  /*
+   * An attached file is a chip here, not a tile.
+   *
+   * Measured at 667x375 on 2026-09-21: one attachment made the strip **95px**
+   * — taller than the 51px thread underneath it — and pushed the composer to
+   * 195px of a 295px stage; hosted, the shell's chrome takes enough more that
+   * the send row fell past the bottom of `.chat-stage`, which is
+   * `overflow: hidden`, so it was gone rather than scrolled to (dathq, with a
+   * screenshot).
+   *
+   * The thumbnail earns its place — it is how you tell which image you
+   * picked — so it shrinks to a square beside the name rather than being
+   * dropped. `nowrap` matters as much as the height: ten attachments are
+   * allowed, and wrapped tiles would put the screen back where it started,
+   * so the strip scrolls sideways and stays one chip tall whatever it holds.
+   */
+  .chat-attachment-strip {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.125rem;
+  }
+
+  .chat-attachment-card {
+    flex-direction: row;
+    align-items: center;
+    width: auto;
+    max-width: 11rem;
+    padding-right: 1.75rem;
+  }
+
+  .chat-attachment-thumb {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+
+  .chat-attachment-name {
+    padding-block: 0;
+  }
+
+  .chat-attachment-remove {
+    top: 50%;
+    right: 0.125rem;
+    transform: translateY(-50%);
+  }
+
+  .chat-header {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+  }
+
+  /* The subtitle repeats what the launcher tile already said. */
+  .chat-subtitle {
+    display: none;
+  }
+}
+
+/*
+ * The *target* is 44px, the control is not.
+ *
+ * Drawing the whole 2.75rem is what made the header a big square beside a
+ * small word; the guideline is about what a finger can hit, not about how much
+ * ink the button spends. The box keeps its 2rem and a transparent `::after`
+ * carries the reach out. Keyed on `pointer: coarse` because it is a question
+ * about the input device, not about the screen.
+ */
+@media (pointer: coarse) {
+  .chat-pane-toggle {
+    position: relative;
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      height: 2.75rem;
+      width: 2.75rem;
+      transform: translate(-50%, -50%);
+    }
+  }
+}

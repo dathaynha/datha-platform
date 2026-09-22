@@ -1,0 +1,207 @@
+{
+  "THEME": {
+    "LABEL": "Design",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "HOME": {
+    "TITLE": "Ihre Anwendungen",
+    "SUBTITLE": "Wählen Sie eine Anwendung aus, um zu beginnen.",
+    "NO_APPS": "Keine Anwendungen verfügbar."
+  },
+  "LOGIN": {
+    "KICKER": "Platform",
+    "SUBTITLE": "Anmelden, um fortzufahren",
+    "CONTINUE_GOOGLE": "Mit Google fortfahren",
+    "MICROSOFT_WORK_SCHOOL": "Mit Microsoft fortfahren (Schul- / Arbeitskonto)",
+    "MICROSOFT_PERSONAL": "Mit Microsoft fortfahren (Persönlich)",
+    "SIGNING_IN": "Anmeldung läuft…",
+    "ERROR_GENERIC": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "FOOTNOTE": "Mit der Anmeldung stimmen Sie den Nutzungsbedingungen zu."
+  },
+  "PROFILE": {
+    "TITLE": "Mein Profil",
+    "MENU_ARIA": "Profilmenü öffnen",
+    "NAME": "Name",
+    "EMAIL": "E-Mail",
+    "USERNAME": "Benutzername",
+    "SIGN_IN_METHOD": "Anmeldemethode",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft",
+    "METHOD_UNKNOWN": "Unbekannt",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Abmelden",
+    "SUPPORT": "E-Mail-Support"
+  },
+  "BRAND": {
+    "PLATFORM": "Plattform",
+    "WITH_APP": "Plattform, {{appName}}"
+  },
+  "APPS": {
+    "CHATBOT": {
+      "NAME": "Chatbot",
+      "DESCRIPTION": "KI-gestützter Chat-Assistent"
+    },
+    "EVENT_STORE": {
+      "NAME": "Event Store",
+      "DESCRIPTION": "Plattform-Events und DLQ-Betrieb"
+    },
+    "MESSENGER": {
+      "NAME": "Messenger",
+      "DESCRIPTION": "Chat, Präsenz und WebRTC-Anrufe"
+    }
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Verstanden",
+    "CANCEL": "Abbrechen",
+    "CONFIRM": "Bestätigen"
+  },
+  "SIDEBAR": {
+    "COLLAPSE": "Seitenleiste einklappen",
+    "EXPAND": "Seitenleiste ausklappen"
+  },
+  "TIME": {
+    "JUST_NOW": "gerade eben",
+    "MINUTES_AGO": "vor {{count}} Min.",
+    "HOURS_AGO": "vor {{count}} Std.",
+    "DAYS_AGO": "vor {{count}} Tagen"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "Benachrichtigungen",
+    "MENU_ARIA": "Benachrichtigungen öffnen",
+    "MARK_ALL_READ": "Alle gelesen",
+    "MARK_READ": "Gelesen",
+    "MARK_UNREAD": "Ungelesen",
+    "FILTER_ALL": "Alle",
+    "FILTER_UNREAD": "Ungelesen",
+    "SHOW_MORE": "Mehr anzeigen",
+    "LOADING": "Wird geladen…",
+    "EMPTY": "Noch keine Benachrichtigungen.",
+    "EMPTY_UNREAD": "Alles gelesen.",
+    "LOAD_ERROR": "Benachrichtigungen derzeit nicht verfügbar.",
+    "RETRY": "Erneut",
+    "SEVERITY": {
+      "INFO": "Info",
+      "WARNING": "Warnung",
+      "CRITICAL": "Kritisch"
+    },
+    "FILE_CLEANUP": {
+      "TITLE": "Anhang bereinigt",
+      "BODY": "Ein Dateianhang wurde von der Plattform-Bereinigung entfernt."
+    },
+    "CALL_MISSED": {
+      "TITLE": "Verpasster Anruf",
+      "BODY": "Sie haben einen Anruf verpasst."
+    },
+    "DLQ_ARRIVAL": {
+      "TITLE": "Hintergrundaufgabe fehlgeschlagen",
+      "BODY": "Eine Hintergrundaufgabe konnte nicht abgeschlossen werden ({{original_subject}})."
+    },
+    "EMAIL_DIGEST": {
+      "SUBJECT": "Tägliche Übersicht — {{count}} ungelesene Benachrichtigungen",
+      "SUBJECT_ONE": "Tägliche Übersicht — 1 ungelesene Benachrichtigung",
+      "HEADING": "Ihre tägliche Übersicht",
+      "INTRO": "Sie haben {{count}} ungelesene Benachrichtigungen auf der DatHa Platform.",
+      "INTRO_ONE": "Sie haben 1 ungelesene Benachrichtigung auf der DatHa Platform.",
+      "LATEST": "Zuletzt ungelesen",
+      "MORE": "…und {{count}} weitere ungelesene Benachrichtigungen.",
+      "MORE_ONE": "…und 1 weitere ungelesene Benachrichtigung.",
+      "OPEN": "Benachrichtigungen öffnen",
+      "FOOTER": "Sie erhalten diese tägliche Übersicht, weil sie in Ihren Benachrichtigungseinstellungen aktiviert ist."
+    },
+    "SETTINGS_ARIA": "Benachrichtigungseinstellungen"
+  },
+  "GENERAL_ERROR": {
+    "title": "Ein Fehler ist aufgetreten",
+    "message": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+  },
+  "BAD_REQUEST": {
+    "title": "Ungültige Anfrage",
+    "message": "Die Anfrage war ungültig. Bitte überprüfen Sie Ihre Eingaben und versuchen Sie es erneut."
+  },
+  "UNAUTHORIZED": {
+    "title": "Sitzung abgelaufen",
+    "message": "Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an."
+  },
+  "FORBIDDEN": {
+    "title": "Zugriff verweigert",
+    "message": "Sie haben keine Berechtigung, diese Aktion durchzuführen."
+  },
+  "NOT_FOUND": {
+    "title": "Nicht gefunden",
+    "message": "Die angeforderte Ressource wurde nicht gefunden."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Serverfehler",
+    "message": "Ein interner Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut."
+  },
+  "BAD_GATEWAY": {
+    "title": "Dienst nicht verfügbar",
+    "message": "Der Server hat eine ungültige Antwort erhalten. Bitte versuchen Sie es später erneut."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Dienst nicht verfügbar",
+    "message": "Der Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Zeitüberschreitung",
+    "message": "Der Server hat zu lange für eine Antwort gebraucht. Bitte versuchen Sie es erneut."
+  },
+  "CONNECTION_LOST": {
+    "title": "Verbindung unterbrochen",
+    "message": "Es scheint, als ob Ihr Gerät die Internetverbindung verloren hat.<br>Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+  },
+  "REMOTE_UNAVAILABLE": {
+    "title": "App nicht verfügbar",
+    "message": "Diese App konnte gerade nicht geladen werden.<br>Sie ist möglicherweise offline — bitte versuchen Sie es später erneut."
+  },
+  "SETTINGS": {
+    "NOTIFICATIONS": {
+      "TITLE": "Benachrichtigungen",
+      "SUBTITLE": "Lege fest, wie dich Benachrichtigungen außerhalb der App erreichen.",
+      "PUSH_TITLE": "Browser-Push",
+      "PUSH_HINT": "Systembenachrichtigungen, auch bei geschlossenem Tab.",
+      "PUSH_SEVERITY_TITLE": "Mindest-Schweregrad",
+      "PUSH_SEVERITY_HINT": "Nur Push ab diesem Schweregrad.",
+      "DIGEST_TITLE": "E-Mail-Digest",
+      "DIGEST_HINT": "Täglich eine E-Mail mit ungelesenen Benachrichtigungen an Ihre Konto-Adresse.",
+      "SAVE_ERROR": "Speichern fehlgeschlagen. Erneut versuchen.",
+      "PUSH_BLOCKED": "Der Browser blockiert Benachrichtigungen. In den Website-Einstellungen erlauben und erneut versuchen.",
+      "PUSH_DISMISSED": "Berechtigungsdialog geschlossen — zum Wiederholen erneut umschalten.",
+      "PUSH_UNSUPPORTED": "Dieser Browser unterstützt kein Web Push.",
+      "PUSH_ERROR": "Push konnte nicht eingerichtet werden. Konsole prüfen und erneut versuchen."
+    },
+    "NAV": "Einstellungen",
+    "TITLE": "Einstellungen",
+    "SUBTITLE": "Deine Plattform-Einstellungen an einem Ort.",
+    "COMING_SOON": "Bald verfügbar",
+    "CARDS": {
+      "NOTIFICATIONS": {
+        "TITLE": "Benachrichtigungen",
+        "DESC": "Browser-Push und E-Mail-Digest — wie dich Benachrichtigungen außerhalb der App erreichen."
+      },
+      "APPEARANCE": {
+        "TITLE": "Darstellung",
+        "DESC": "Theme für diesen Browser. Gilt für die Shell und alle Apps darin."
+      },
+      "LANGUAGE": {
+        "TITLE": "Sprache & Region",
+        "DESC": "Sprache für diesen Browser. Gilt für die Shell und alle Apps darin."
+      }
+    }
+  },
+  "NAV": {
+    "HOME": "Startseite",
+    "PRIMARY": "Hauptnavigation",
+    "MORE": "Mehr",
+    "MORE_TITLE": "Weitere Bereiche"
+  },
+  "LANGUAGE": {
+    "LABEL": "Sprache"
+  },
+  "EMAIL": {
+    "SUBJECT": "Anfrage zur Zugriffshilfe",
+    "BODY": "Sehr geehrtes Support-Team,\n\nich möchte auf Daten in folgender Anwendung zugreifen: {{applicationName}}. Bitte helfen Sie mir bei der Klärung.\n\nKonkret benötige ich Zugriff auf:\n[Bitte beschreiben Sie, auf welche Daten Sie zugreifen müssen]\n\nVielen Dank!"
+  }
+}

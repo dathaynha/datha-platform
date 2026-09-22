@@ -1,0 +1,69 @@
+:root {
+  --datha-form-font-size: 0.6875rem;
+  --datha-form-padding-y: 0.3rem;
+  --datha-form-padding-x: 0.5rem;
+  --datha-form-line-height: 1.25;
+  --datha-toolbar-height: 3.5rem;
+
+  /* Chrome text (v0.5.0) — navigation layer only. Inactive chrome is neutral;
+     primary color marks the active item, never resting state. Consumed by
+     .datha-sub-header and the shell sidebar so both agree on one recipe. */
+  --datha-chrome-text: var(--p-surface-600);
+  --datha-chrome-text-strong: var(--p-surface-900);
+  --datha-chrome-text-active: var(--p-primary-600);
+  --datha-chrome-hover-bg: var(--p-surface-100);
+  --datha-chrome-active-bg: color-mix(in srgb, var(--p-primary-color) 14%, var(--p-surface-0));
+
+  /* Glass scale (de-facto platform values): surfaces 14, overlays 10, controls 8 */
+  --datha-glass-blur-surface: 14px;
+  --datha-glass-blur-overlay: 10px;
+  --datha-glass-blur-control: 8px;
+
+  /* Liquid Glass (v0.3.0) — web approximation of Apple's material.
+     Chrome/navigation layer only; never on the content layer, never stacked. */
+  --datha-glass-saturation: 170%;
+  --datha-glass-brightness: 1.12;
+  --datha-glass-sheen: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 45%, transparent),
+    color-mix(in srgb, #fff 12%, transparent) 28%,
+    transparent 65%
+  );
+  --datha-glass-shine-color: color-mix(in srgb, #fff 75%, transparent);
+  --datha-glass-bg-surface: color-mix(in srgb, var(--p-surface-0) 45%, transparent);
+  --datha-glass-bg-overlay: color-mix(in srgb, var(--p-surface-0) 60%, transparent);
+  --datha-glass-bg-control: color-mix(in srgb, var(--p-surface-0) 40%, transparent);
+  --datha-glass-bg-solid: var(--p-surface-0);
+  --datha-glass-edge: color-mix(in srgb, var(--p-surface-0) 55%, transparent);
+  --datha-glass-control-edge: color-mix(in srgb, var(--p-surface-400) 55%, transparent);
+  --datha-glass-highlight: color-mix(in srgb, #fff 65%, transparent);
+  --datha-glass-shadow: 0 8px 24px color-mix(in srgb, var(--p-surface-950) 8%, transparent);
+  --datha-glass-radius-surface: 1.25rem;
+  --datha-glass-radius-overlay: 1rem;
+  --datha-glass-radius-control: 9999px;
+}
+
+.dark {
+  --datha-chrome-text: var(--p-surface-300);
+  --datha-chrome-text-strong: var(--p-surface-0);
+  --datha-chrome-text-active: var(--p-primary-300);
+  --datha-chrome-hover-bg: var(--p-surface-800);
+  --datha-chrome-active-bg: color-mix(in srgb, var(--p-primary-color) 22%, transparent);
+
+  --datha-glass-brightness: 1.08;
+  --datha-glass-sheen: linear-gradient(
+    180deg,
+    color-mix(in srgb, #fff 14%, transparent),
+    color-mix(in srgb, #fff 4%, transparent) 28%,
+    transparent 65%
+  );
+  --datha-glass-shine-color: color-mix(in srgb, #fff 22%, transparent);
+  --datha-glass-bg-surface: color-mix(in srgb, var(--p-surface-900) 58%, transparent);
+  --datha-glass-bg-overlay: color-mix(in srgb, var(--p-surface-900) 72%, transparent);
+  --datha-glass-bg-control: color-mix(in srgb, var(--p-surface-800) 46%, transparent);
+  --datha-glass-bg-solid: var(--p-surface-900);
+  --datha-glass-edge: color-mix(in srgb, #fff 14%, transparent);
+  --datha-glass-control-edge: color-mix(in srgb, #fff 18%, transparent);
+  --datha-glass-highlight: color-mix(in srgb, #fff 12%, transparent);
+  --datha-glass-shadow: 0 8px 24px color-mix(in srgb, #000 35%, transparent);
+}

@@ -1,0 +1,40 @@
+<div
+  [class]="
+    isShelled()
+      ? 'event-store-layout flex min-h-0 h-full w-full flex-1 flex-col'
+      : 'event-store-layout flex h-[100dvh] min-h-0 w-full flex-col'
+  "
+>
+  <datha-sub-header [tabs]="tabs()" navAriaLabelKey="SUBNAV.ARIA">
+
+    <!-- Standalone-only: shell owns language + profile + logout when hosted -->
+    @if (!isShelled()) {
+      <datha-theme-select
+        inputId="toolbar-theme"
+        [selected]="selectedTheme()"
+        (selectedChange)="onThemeChange($event)"
+      />
+      <datha-lang-select
+        inputId="toolbar-lang"
+        [languages]="languages"
+        [selected]="selectedLanguage()"
+        (selectedChange)="onLanguageChange($event)"
+      />
+      <datha-profile-popover
+        [name]="profileDisplayName()"
+        [email]="profileEmail()"
+        [username]="showUsernameRow() ? profileUsername() : ''"
+        [signInMethodKey]="providerLabelKey()"
+        [menuItems]="profileMenuItems"
+        (menuItemSelect)="onProfileMenuItem($event)"
+        (logout)="logout()"
+      />
+    }
+  </datha-sub-header>
+
+  <div
+    class="event-store-content relative flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden"
+  >
+    <router-outlet></router-outlet>
+  </div>
+</div>

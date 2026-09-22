@@ -1,0 +1,304 @@
+<section
+  class="landing-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="landing-hero-title"
+>
+  <div class="landing-aurora" aria-hidden="true"></div>
+  <div class="landing-noise" aria-hidden="true"></div>
+
+  <div
+    class="landing-body relative z-10 flex w-full min-w-0 flex-1 flex-col overflow-y-auto"
+  >
+    <header class="w-full max-w-none space-y-5">
+      <h1
+        id="landing-hero-title"
+        class="landing-title text-balance font-extrabold leading-[1.08] tracking-tight"
+      >
+        {{ "LANDING.HERO_TITLE" | translate }}
+      </h1>
+      <div class="landing-copy max-w-4xl leading-relaxed">
+        <p class="m-0">{{ "LANDING.HERO_DESC" | translate }}</p>
+      </div>
+    </header>
+
+    <section class="w-full space-y-4" aria-labelledby="landing-flows-title">
+      <div class="space-y-3 text-left">
+        <h2
+          id="landing-flows-title"
+          class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em]"
+        >
+          {{ "LANDING.FLOWS.SECTION_TITLE" | translate }}
+        </h2>
+
+        <div
+          class="flow-picker"
+          role="tablist"
+          [attr.aria-label]="'LANDING.FLOWS.PICKER_ARIA' | translate"
+        >
+          <button
+            type="button"
+            class="flow-picker__tab"
+            role="tab"
+            id="landing-flow-tab-ingest"
+            [class.flow-picker__tab--active]="isIngestFlow()"
+            [attr.aria-selected]="isIngestFlow()"
+            [attr.tabindex]="isIngestFlow() ? 0 : -1"
+            (click)="setFlowMode('ingest')"
+          >
+            <span class="pi pi-share-alt" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_INGEST" | translate }}
+          </button>
+          <button
+            type="button"
+            class="flow-picker__tab flow-picker__tab--dlq"
+            role="tab"
+            id="landing-flow-tab-dlq"
+            [class.flow-picker__tab--active]="isDlqFlow()"
+            [attr.aria-selected]="isDlqFlow()"
+            [attr.tabindex]="isDlqFlow() ? 0 : -1"
+            (click)="setFlowMode('dlq')"
+          >
+            <span class="pi pi-inbox" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_DLQ" | translate }}
+          </button>
+        </div>
+
+        <p
+          class="landing-muted landing-muted--lead m-0 max-w-3xl leading-relaxed"
+          role="tabpanel"
+          [attr.aria-labelledby]="
+            isIngestFlow() ? 'landing-flow-tab-ingest' : 'landing-flow-tab-dlq'
+          "
+        >
+          {{ activeFlowSubtitleKey() | translate }}
+        </p>
+      </div>
+
+      <div
+        class="landing-flow-grid mx-auto grid w-full min-w-0 gap-8"
+      >
+        @if (isIngestFlow()) {
+          <div
+            class="flex w-full min-w-0 flex-col items-center gap-0"
+            role="group"
+            [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+          >
+            @for (nodeId of ['publisher', 'nats-events', 'ingest', 'postgres-events']; track nodeId) {
+              @if (!$first) {
+                <div class="flow-link" aria-hidden="true">
+                  <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                  <span>{{
+                    $index === 1
+                      ? ("LANDING.INGEST_FLOW.LINK_PUBLISH" | translate)
+                      : $index === 2
+                        ? ("LANDING.INGEST_FLOW.LINK_PULL" | translate)
+                        : ("LANDING.INGEST_FLOW.LINK_PERSIST" | translate)
+                  }}</span>
+                </div>
+              }
+              <button
+                type="button"
+                class="flow-node"
+                [class.flow-node--compact]="$index > 0"
+                [class.flow-node--active]="isIngestFlowSelected($any(nodeId))"
+                [attr.aria-pressed]="isIngestFlowSelected($any(nodeId))"
+                (click)="selectIngestFlowNode($any(nodeId))"
+              >
+                <span
+                  [class]="getIngestFlowNode($any(nodeId)).icon"
+                  [class.text-lg]="$index === 0"
+                  [class.text-base]="$index > 0"
+                  [class.text-violet-200/95]="$index === 0"
+                  [class.text-rose-200/95]="$index === 1"
+                  [class.text-fuchsia-200/95]="$index === 2"
+                  [class.text-emerald-200/90]="$index === 3"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getIngestFlowNode($any(nodeId)).titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getIngestFlowNode($any(nodeId)).descKey | translate
+                }}</span>
+              </button>
+            }
+            <p
+              class="landing-muted landing-muted--note m-0 max-w-md px-2 pt-3 text-center leading-snug"
+            >
+              {{ "LANDING.INGEST_FLOW.NOTE" | translate }}
+            </p>
+          </div>
+        } @else {
+          <div
+            class="flex w-full min-w-0 flex-col items-center gap-0"
+            role="group"
+            [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+          >
+            @for (
+              nodeId of [
+                'consumer',
+                'max-deliver',
+                'dlq-publish',
+                'dlq-ingest',
+                'postgres-dlq',
+                'ops-ui',
+              ];
+              track nodeId
+            ) {
+              @if (!$first) {
+                <div class="flow-link" aria-hidden="true">
+                  <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                  <span>{{
+                    $index === 1
+                      ? ("LANDING.DLQ_FLOW.LINK_RETRY" | translate)
+                      : $index === 2
+                        ? ("LANDING.DLQ_FLOW.LINK_PUBLISH" | translate)
+                        : $index === 3
+                          ? ("LANDING.DLQ_FLOW.LINK_INGEST" | translate)
+                          : $index === 4
+                            ? ("LANDING.DLQ_FLOW.LINK_STORE" | translate)
+                            : ("LANDING.DLQ_FLOW.LINK_OPS" | translate)
+                  }}</span>
+                </div>
+              }
+              <button
+                type="button"
+                class="flow-node flow-node--dlq"
+                [class.flow-node--compact]="$index > 0 && $index < 5"
+                [class.flow-node--active]="isDlqFlowSelected($any(nodeId))"
+                [attr.aria-pressed]="isDlqFlowSelected($any(nodeId))"
+                (click)="selectDlqFlowNode($any(nodeId))"
+              >
+                <span
+                  [class]="getDlqFlowNode($any(nodeId)).icon"
+                  [class.text-lg]="$index === 0 || $index === 5"
+                  [class.text-base]="$index > 0 && $index < 5"
+                  [class.text-rose-200/95]="$index < 3"
+                  [class.text-orange-200/90]="$index === 3"
+                  [class.text-emerald-200/90]="$index === 4"
+                  [class.text-violet-200/95]="$index === 5"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getDlqFlowNode($any(nodeId)).titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getDlqFlowNode($any(nodeId)).descKey | translate
+                }}</span>
+              </button>
+            }
+            <p
+              class="landing-muted landing-muted--note m-0 max-w-md px-2 pt-3 text-center leading-snug"
+            >
+              {{ "LANDING.DLQ_FLOW.NOTE" | translate }}
+            </p>
+          </div>
+        }
+
+        <aside
+          class="flow-panel w-full min-w-0 rounded-2xl border backdrop-blur-md"
+          [class.flow-panel--dlq]="isDlqFlow()"
+          [attr.aria-live]="'polite'"
+        >
+          @if (activeFlowPanel(); as node) {
+            <h3
+              class="flow-panel__title m-0 flex items-center gap-2 font-bold tracking-tight"
+            >
+              <span
+                class="shrink-0"
+                [class]="node.icon"
+                [class.text-rose-300/90]="isDlqFlow()"
+                [class.text-fuchsia-300/90]="isIngestFlow()"
+                aria-hidden="true"
+              ></span>
+              {{ node.titleKey | translate }}
+            </h3>
+            <p
+              class="flow-panel__copy m-0 mt-2 leading-relaxed"
+            >
+              {{ node.descKey | translate }}
+            </p>
+            <p
+              class="flow-panel__kicker m-0 mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em]"
+            >
+              {{ activeFlowPanelKickerKey() | translate }}
+            </p>
+            <ul class="m-0 mt-2 list-none space-y-2.5 p-0" role="list">
+              @for (item of node.details; track item.labelKey) {
+                <li
+                  class="flow-panel__item flex gap-2.5 text-sm leading-snug"
+                  role="listitem"
+                >
+                  <span
+                    class="mt-0.5 shrink-0"
+                    [class]="item.icon"
+                    [class.text-rose-400/85]="isDlqFlow()"
+                    [class.text-fuchsia-400/85]="isIngestFlow()"
+                    aria-hidden="true"
+                  ></span>
+                  <span>{{ item.labelKey | translate }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p
+              class="flow-panel__copy m-0 leading-relaxed"
+            >
+              {{ activeFlowPanelEmptyKey() | translate }}
+            </p>
+          }
+        </aside>
+      </div>
+    </section>
+
+    <div class="landing-stack flex w-full min-w-0 flex-col">
+      <h2
+        class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em]"
+      >
+        {{ "LANDING.STACK_INTRO" | translate }}
+      </h2>
+
+      @for (group of stackCardGroups; track group.titleKey) {
+        <section
+          class="flex w-full min-w-0 flex-col gap-4"
+          [attr.aria-labelledby]="group.headingId"
+        >
+          <h3
+            [id]="group.headingId"
+            class="landing-kicker m-0 text-[0.65rem] font-bold uppercase tracking-[0.2em]"
+          >
+            {{ group.titleKey | translate }}
+          </h3>
+          <div
+            class="landing-cards grid w-full auto-rows-fr"
+            [class]="group.gridClass"
+          >
+            @for (card of group.cards; track card.title) {
+              <div class="flex h-full min-h-[10.5rem]">
+                <p-card class="landing-card h-full w-full">
+                  <div class="flex items-start gap-3">
+                    <div
+                      class="landing-card-icon inline-flex size-9 shrink-0 items-center justify-center rounded-[0.55rem] bg-gradient-to-br from-fuchsia-500/55 to-violet-400/45 text-lg text-fuchsia-100 shadow-[0_0_1.5rem_rgba(232,121,249,0.35)]"
+                      aria-hidden="true"
+                    >
+                      <span class="leading-none" [class]="card.icon"></span>
+                    </div>
+                    <h3
+                      class="landing-card-title m-0 flex-1 text-base font-bold leading-tight tracking-tight"
+                    >
+                      {{ card.title }}
+                    </h3>
+                  </div>
+                  <p
+                    class="landing-card-copy m-0 mt-2.5 text-[0.8125rem] leading-relaxed"
+                  >
+                    {{ card.descKey | translate }}
+                  </p>
+                </p-card>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</section>

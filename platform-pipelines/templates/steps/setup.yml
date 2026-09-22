@@ -1,0 +1,26 @@
+# Checkout + toolchain. Kept separate so every stack gets an identical starting
+# state and a toolchain bump is one edit.
+parameters:
+  - name: nodeVersion
+    type: string
+    default: '24.x'
+  # Repos that consume @datha/* from the platform-npm Azure Artifacts feed need
+  # npmAuthenticate against their own .npmrc before pnpm install.
+  - name: npmAuth
+    type: boolean
+    default: false
+
+steps:
+  - checkout: self
+    fetchDepth: 0
+
+  - task: UseNode@1
+    inputs:
+      version: ${{ parameters.nodeVersion }}
+    displayName: Use Node.js ${{ replace(parameters.nodeVersion, '.x', '') }}
+
+  - ${{ if parameters.npmAuth }}:
+      - task: npmAuthenticate@0
+        inputs:
+          workingFile: .npmrc
+        displayName: Authenticate npm

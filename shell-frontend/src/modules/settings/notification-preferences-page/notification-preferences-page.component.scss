@@ -1,0 +1,80 @@
+// Page scaffold comes from the shared shell-page-* classes (base.scss);
+// only the preference rows and breadcrumb are page-specific.
+.settings-breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  color: var(--shell-page-muted);
+  text-decoration: none;
+  letter-spacing: inherit;
+
+  &:hover {
+    color: var(--p-primary-color);
+  }
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 0;
+
+  & + .settings-row {
+    border-top: 1px solid var(--p-content-border-color);
+  }
+}
+
+// Sub-option of the row above it: indented, tighter, softly separated.
+.settings-row--nested {
+  padding: 1rem 0 1.25rem 3.5rem;
+
+  & + .settings-row {
+    border-top: 1px solid var(--p-content-border-color);
+  }
+}
+
+.settings-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--p-primary-color) 14%, transparent);
+  color: var(--p-primary-color);
+  font-size: 1.05rem;
+}
+
+/*
+ * The severity row stacks on a phone, because its control cannot shrink.
+ *
+ * Measured at 375x667 on 2026-09-21 (dathq: "looks cramp"): the nested row's
+ * 3.5rem indent plus a fixed 11rem select left the label **79px**, wrapping
+ * the heading over two lines and the hint over four — and the row's right
+ * edge landed at **384px** against a card ending at 343 and a viewport of
+ * 375. `.shell-glass-card.datha-glass-sheen` sets `overflow: hidden` so the
+ * sheen can be clipped to the radius, which meant the select was not merely
+ * cramped but **cut off**, with no document overflow to hint at it.
+ *
+ * A toggle is small enough to stay on its row; a 11rem select is not. So the
+ * top-level rows keep their shape and only this one stacks, which is also
+ * what a phone's settings list does everywhere else.
+ */
+.settings-severity-select {
+  width: 11rem;
+}
+
+@media (max-width: 30rem) {
+  .settings-row--nested {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    /* An indent that costs a fifth of the row is a desktop affordance; the
+       border above already says this belongs to the row before it. */
+    padding-left: 1rem;
+  }
+
+  .settings-severity-select {
+    width: 100%;
+  }
+}

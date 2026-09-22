@@ -1,0 +1,89 @@
+<p-button
+  type="button"
+  icon="pi pi-user"
+  [rounded]="true"
+  [outlined]="true"
+  styleClass="datha-profile-trigger"
+  [ariaLabel]="'PROFILE.MENU_ARIA' | translate"
+  (onClick)="profilePopover.toggle($event)"
+/>
+<p-popover #profilePopover [dismissable]="true">
+  <div class="datha-profile-popover-content text-sm">
+    <p
+      class="datha-text-muted datha-popover-title mb-3 pb-2 text-xs font-semibold uppercase tracking-wide"
+    >
+      {{ "PROFILE.TITLE" | translate }}
+    </p>
+    <dl class="flex flex-col gap-3">
+      @if (name()) {
+        <div>
+          <dt class="datha-text-muted text-[0.65rem] font-medium uppercase">
+            {{ "PROFILE.NAME" | translate }}
+          </dt>
+          <dd class="datha-text-strong mt-0.5 break-words font-medium">
+            {{ name() }}
+          </dd>
+        </div>
+      }
+      @if (email()) {
+        <div>
+          <dt class="datha-text-muted text-[0.65rem] font-medium uppercase">
+            {{ "PROFILE.EMAIL" | translate }}
+          </dt>
+          <dd class="datha-text-strong mt-0.5 break-all font-medium">
+            {{ email() }}
+          </dd>
+        </div>
+      }
+      @if (username()) {
+        <div>
+          <dt class="datha-text-muted text-[0.65rem] font-medium uppercase">
+            {{ "PROFILE.USERNAME" | translate }}
+          </dt>
+          <dd class="datha-text-strong mt-0.5 break-all font-medium">
+            {{ username() }}
+          </dd>
+        </div>
+      }
+      @if (signInMethodKey()) {
+        <div>
+          <dt class="datha-text-muted text-[0.65rem] font-medium uppercase">
+            {{ "PROFILE.SIGN_IN_METHOD" | translate }}
+          </dt>
+          <dd class="datha-text-strong mt-0.5 font-medium">
+            {{ signInMethodKey() | translate }}
+          </dd>
+        </div>
+      }
+    </dl>
+    @if (menuItems().length > 0) {
+      <div class="datha-popover-footer mt-4 flex flex-col gap-1 pt-3">
+        @for (item of menuItems(); track item.id) {
+          <p-button
+            type="button"
+            class="w-full"
+            [fluid]="true"
+            [icon]="item.icon ? 'pi ' + item.icon : undefined"
+            iconPos="left"
+            [text]="true"
+            [label]="item.labelKey | translate"
+            (onClick)="onMenuItem(item)"
+          />
+        }
+      </div>
+    }
+    <div class="datha-popover-footer mt-4 pt-3">
+      <p-button
+        type="button"
+        class="w-full"
+        [fluid]="true"
+        icon="pi pi-sign-out"
+        iconPos="left"
+        [text]="true"
+        severity="danger"
+        [label]="'PROFILE.LOG_OUT' | translate"
+        (onClick)="onLogout()"
+      />
+    </div>
+  </div>
+</p-popover>

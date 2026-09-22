@@ -1,0 +1,16 @@
+/**
+ * Same as authenticated shell: use Prime --p-* tokens (Tailwind has no surface scale).
+ */
+
+/* Glass material from global .datha-glass-bar; flatten PrimeNG's own panel. */
+.shell-toolbar {
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.shell-toolbar.p-toolbar {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}

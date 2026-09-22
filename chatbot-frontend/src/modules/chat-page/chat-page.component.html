@@ -1,0 +1,689 @@
+<!-- ── Sidebar ─────────────────────────────────────────────────────────── -->
+<aside
+  class="chat-sidebar h-full min-h-0 w-full shrink-0 flex-col overflow-hidden border-white/[0.08] bg-slate-950/75 backdrop-blur-md"
+  [class.flex]="historyOpen()"
+  [class.hidden]="!historyOpen()"
+  [attr.aria-label]="'CHAT.HISTORY_TITLE' | translate"
+>
+  <div
+    class="chat-sidebar-header flex shrink-0 flex-col gap-3 border-b border-white/[0.08] px-3 py-4"
+  >
+    <div class="flex items-center gap-2">
+      <!-- The way back, compact only: below `sm` this pane replaced the chat,
+           and without this the chat is reachable only by picking a thread. -->
+      <button
+        type="button"
+        class="chat-soft-button chat-pane-toggle flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+        [attr.aria-label]="'CHAT.HISTORY_BACK' | translate"
+        data-testid="chat-history-back"
+        (click)="historyOpen.set(false)"
+      >
+        <i class="pi pi-arrow-left text-sm" aria-hidden="true"></i>
+      </button>
+      <p
+        class="chat-sidebar-kicker m-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em] text-slate-200"
+      >
+        {{ "CHAT.HISTORY_TITLE" | translate }}
+      </p>
+    </div>
+    <button
+      type="button"
+      class="chat-sidebar-primary inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-white/[0.12] bg-white/[0.05] px-3 py-2.5 text-[0.8125rem] font-semibold text-slate-200 shadow-sm transition hover:bg-white/[0.10] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+      (click)="newChat()"
+    >
+      <span class="pi pi-plus text-sm" aria-hidden="true"></span>
+      {{ "CHAT.NEW_CHAT" | translate }}
+    </button>
+  </div>
+
+  <div
+    class="chat-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.12]"
+    (scroll)="onSidebarScroll($event)"
+  >
+    @if (sidebarListLoading()) {
+      <div
+        class="chat-muted flex flex-col items-center justify-center gap-2 py-10 text-slate-300"
+        role="status"
+      >
+        <span class="pi pi-spin pi-spinner text-xl" aria-hidden="true"></span>
+        <span class="text-[0.75rem]">{{ "CHAT.LOADING" | translate }}</span>
+      </div>
+    } @else if (sidebarListError()) {
+      <div class="px-2 py-6 text-center text-[0.8125rem] text-red-400">
+        {{ "CHAT.HISTORY_LOAD_FAILED" | translate }}
+        <button
+          type="button"
+          class="chat-soft-button mt-3 w-full rounded-lg border border-white/[0.10] bg-white/[0.05] px-2 py-2 text-[0.75rem] font-medium text-slate-300 shadow-sm hover:bg-white/[0.08]"
+          (click)="refreshConversationList()"
+        >
+          {{ "CHAT.RETRY" | translate }}
+        </button>
+      </div>
+    } @else if (conversations().length === 0) {
+      <p
+        class="chat-muted m-0 px-2 py-8 text-center text-[0.8125rem] leading-snug text-slate-300"
+      >
+        {{ "CHAT.HISTORY_EMPTY" | translate }}
+      </p>
+    } @else {
+      @for (c of conversations(); track c.id) {
+        <div
+          class="chat-history-row mb-1 flex w-full gap-0.5 rounded-xl border px-2 py-2 transition-colors focus-within:ring-1 focus-within:ring-violet-500/30"
+          [class.border-white/5]="conversationId() !== c.id"
+          [class.bg-white/[0.04]]="conversationId() !== c.id"
+          [class.hover:bg-white/[0.07]]="conversationId() !== c.id"
+          [class.border-sky-400/50]="conversationId() === c.id"
+          [class.bg-white/[0.08]]="conversationId() === c.id"
+          [class.shadow-sm]="conversationId() === c.id"
+          [class.ring-1]="conversationId() === c.id"
+          [class.ring-sky-400/20]="conversationId() === c.id"
+        >
+          @if (renamingConversationId() === c.id) {
+            <div
+              class="flex min-w-0 flex-1 flex-col gap-2 px-1 py-0.5"
+              (click)="$event.stopPropagation()"
+            >
+              <input
+                type="text"
+                [attr.name]="'chat-rename-' + c.id"
+                class="chat-rename-input w-full rounded-lg border border-white/[0.15] bg-white/[0.08] px-2 py-1.5 text-[0.8125rem] text-slate-100 outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:opacity-60"
+                maxlength="200"
+                [(ngModel)]="renameBuffer"
+                [disabled]="renameSaving()"
+                (keydown)="onRenameKeydown($event)"
+                [attr.aria-label]="'CHAT.EDIT_TITLE' | translate"
+              />
+              @if (renameFailed()) {
+                <span class="text-[0.6875rem] text-red-400">{{
+                  "CHAT.RENAME_ERROR" | translate
+                }}</span>
+              }
+              <div class="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  class="chat-soft-button rounded-lg border border-white/[0.12] bg-white/[0.08] px-3 py-1.5 text-[0.75rem] font-semibold text-slate-200 shadow-sm transition hover:bg-white/[0.14] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+                  [disabled]="renameSaving()"
+                  (click)="$event.stopPropagation(); submitRename()"
+                >
+                  {{ "CHAT.RENAME_SAVE" | translate }}
+                </button>
+                <button
+                  type="button"
+                  class="chat-ghost-button rounded-lg border border-transparent px-3 py-1.5 text-[0.75rem] font-medium text-slate-300 transition hover:bg-white/[0.08] focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+                  (click)="$event.stopPropagation(); cancelRename()"
+                >
+                  {{ "CHAT.RENAME_CANCEL" | translate }}
+                </button>
+              </div>
+            </div>
+          } @else {
+            <button
+              type="button"
+              class="flex min-w-0 flex-1 flex-col items-start gap-0.5 rounded-lg px-2 py-1 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+              [disabled]="historyThreadLoading()"
+              (click)="selectConversation(c.id)"
+            >
+              <span
+                class="chat-history-title line-clamp-2 w-full text-[0.8125rem] font-medium leading-snug text-slate-200"
+              >
+                {{
+                  (c.title || "").trim()
+                    ? (c.title || "").trim()
+                    : ("CHAT.UNNAMED_CHAT" | translate)
+                }}
+              </span>
+              <span class="chat-history-meta text-[0.6875rem] text-slate-300">
+                {{ formatListTime(c.last_message_at ?? c.created_at) }}
+                <span class="chat-history-meta"> · </span>
+                {{
+                  "CHAT.MESSAGES_COUNT"
+                    | translate: { count: c.message_count }
+                }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="chat-history-action mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent text-slate-300 transition hover:border-white/[0.15] hover:bg-white/[0.10] hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-30"
+              [disabled]="historyThreadLoading() || busy()"
+              [attr.aria-label]="'CHAT.EDIT_TITLE' | translate"
+              (click)="beginRename($event, c)"
+            >
+              <span class="pi pi-pencil text-sm" aria-hidden="true"></span>
+            </button>
+            <button
+              type="button"
+              class="chat-history-action chat-history-delete mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-transparent text-slate-300 transition hover:border-red-500/30 hover:bg-red-950/50 hover:text-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 disabled:cursor-not-allowed disabled:opacity-30"
+              [disabled]="historyThreadLoading() || busy()"
+              [attr.aria-label]="'CHAT.DELETE_TITLE' | translate"
+              (click)="requestDeleteConversation($event, c.id)"
+            >
+              <span class="pi pi-trash text-sm" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      }
+      @if (sidebarLoadingMore()) {
+        <div
+          class="flex justify-center py-3"
+          role="status"
+          [attr.aria-label]="'CHAT.LOADING' | translate"
+        >
+          <span
+            class="pi pi-spin pi-spinner text-lg text-violet-400/90"
+            aria-hidden="true"
+          ></span>
+        </div>
+      }
+      @if (sidebarMoreFailed()) {
+        <div class="px-2 pb-2 text-center">
+          <p class="m-0 mb-2 text-[0.72rem] text-red-400">
+            {{ "CHAT.HISTORY_MORE_FAILED" | translate }}
+          </p>
+          <button
+            type="button"
+            class="chat-soft-button w-full rounded-lg border border-white/[0.10] bg-white/[0.05] px-2 py-2 text-[0.75rem] font-medium text-slate-300 shadow-sm hover:bg-white/[0.08]"
+            (click)="loadMoreSidebarConversations()"
+          >
+            {{ "CHAT.RETRY" | translate }}
+          </button>
+        </div>
+      }
+      @if (sidebarHasMore() && !sidebarLoadingMore() && !sidebarMoreFailed()) {
+        <div class="px-2 pb-3 pt-1">
+          <button
+            type="button"
+            class="chat-ghost-button w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-2 py-2 text-[0.72rem] font-medium text-slate-400 transition hover:border-white/[0.14] hover:bg-white/[0.07] hover:text-slate-200"
+            (click)="loadMoreSidebarConversations()"
+          >
+            {{ "CHAT.HISTORY_LOAD_MORE" | translate }}
+          </button>
+        </div>
+      }
+      @if (
+        !sidebarHasMore() &&
+        conversations().length > 0 &&
+        !sidebarListLoading()
+      ) {
+        <p
+          class="chat-sidebar-note m-0 px-2 pb-3 pt-0 text-center text-[0.65rem] text-slate-500"
+          role="note"
+        >
+          {{ "CHAT.HISTORY_ALL_LOADED" | translate }}
+        </p>
+      }
+    }
+  </div>
+</aside>
+
+<!-- ── Main content area ───────────────────────────────────────────────── -->
+<div
+  class="chat-stage relative h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+  [class.flex]="!historyOpen()"
+  [class.hidden]="historyOpen()"
+>
+  <div class="chat-noise" aria-hidden="true"></div>
+  <div class="chat-glow" aria-hidden="true"></div>
+
+  <!-- Header -->
+  <header
+    class="chat-header relative z-10 flex shrink-0 items-center gap-3 border-b border-white/[0.08] bg-slate-950/50 backdrop-blur-xl"
+  >
+    <!-- Compact only: above `sm` the history pane is already on screen, so
+         a button that reveals it would be a second control for nothing. -->
+    <button
+      type="button"
+      class="chat-soft-button chat-pane-toggle flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+      [attr.aria-label]="'CHAT.HISTORY_OPEN' | translate"
+      [attr.aria-expanded]="historyOpen()"
+      data-testid="chat-history-open"
+      (click)="historyOpen.set(true)"
+    >
+      <i class="pi pi-list text-sm" aria-hidden="true"></i>
+    </button>
+    <div class="min-w-0 flex-1">
+      <h1
+        id="chat-page-title"
+        class="chat-title text-[clamp(1.35rem,3.2vw,1.65rem)] font-semibold leading-tight tracking-tight text-white"
+      >
+        {{ "CHAT.TITLE" | translate }}
+      </h1>
+      <p class="chat-subtitle m-0 max-w-xl text-[0.8125rem] leading-snug text-slate-200">
+        {{ "CHAT.SUBTITLE" | translate }}
+      </p>
+    </div>
+  </header>
+
+  <!-- Thread -->
+  <div
+    #threadEl
+    class="chat-thread relative z-10 min-h-0 flex-1 basis-0 overflow-y-auto overflow-x-hidden py-4 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/[0.12]"
+    role="log"
+    aria-live="polite"
+    aria-relevant="additions"
+    (scroll)="onThreadScroll($event)"
+  >
+    @if (historyThreadLoading()) {
+      <div
+        class="chat-thread-loading absolute inset-0 z-[1] flex items-center justify-center bg-slate-950/40 backdrop-blur-[2px]"
+        role="status"
+      >
+        <span
+          class="pi pi-spin pi-spinner text-2xl text-violet-400"
+          [attr.aria-label]="'CHAT.LOADING' | translate"
+        ></span>
+      </div>
+    }
+
+    <div #threadScrollContentEl class="relative flex flex-col">
+    @if (threadOlderLoadFailed()) {
+      <div
+        class="chat-warning mb-3 flex flex-col items-center gap-2 rounded-xl border border-amber-500/35 bg-amber-950/55 px-3 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+        role="alert"
+      >
+        <p class="m-0 max-w-md text-[0.82rem] leading-snug text-amber-100/95">
+          {{ "CHAT.OLDER_MESSAGES_FAILED" | translate }}
+        </p>
+        <p-button
+          type="button"
+          class="text-sm"
+          [label]="'CHAT.OLDER_MESSAGES_RETRY' | translate"
+          [text]="true"
+          (onClick)="retryLoadOlderThread()"
+        />
+      </div>
+    }
+    @if (threadOlderLoading()) {
+      <div
+        class="mb-3 flex justify-center py-1"
+        role="status"
+        [attr.aria-label]="'CHAT.LOADING' | translate"
+      >
+        <span
+          class="pi pi-spin pi-spinner text-lg text-violet-400/90"
+          aria-hidden="true"
+        ></span>
+      </div>
+    }
+
+    @if (historyThreadError()) {
+      <div
+        class="flex min-h-[10rem] flex-col items-center justify-center px-4 py-8 text-center"
+      >
+        <p class="m-0 max-w-sm text-[0.9rem] text-red-400">
+          {{ "CHAT.THREAD_LOAD_FAILED" | translate }}
+        </p>
+      </div>
+    } @else if (bubbles().length === 0 && !busy()) {
+      <div
+        class="chat-empty flex min-h-[12rem] flex-1 flex-col items-center justify-center px-4 py-8 text-center text-slate-300"
+      >
+        <span
+          class="chat-empty-icon pi pi-comments mb-3 text-4xl text-white/20"
+          aria-hidden="true"
+        ></span>
+        <p class="chat-empty-text m-0 max-w-xs text-[0.9rem] font-medium leading-snug text-slate-100">
+          {{ "CHAT.EMPTY" | translate }}
+        </p>
+      </div>
+    }
+
+    @for (m of visibleBubbles(); track m.id) {
+      @switch (m.role) {
+        @case ("user") {
+          <div class="mb-2.5 flex justify-end last:mb-0">
+            <div
+              class="chat-bubble chat-bubble--user isolate relative w-fit max-w-full rounded-[1.12rem] rounded-br-sm bg-gradient-to-br from-violet-600 to-purple-800 px-4 py-2.5 text-white shadow-[0_10px_28px_rgba(124,58,237,0.35),inset_0_0_0_1px_rgba(255,255,255,0.12)]"
+            >
+              <p
+                class="m-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[0.9375rem] leading-relaxed"
+              >
+                {{ m.text }}
+              </p>
+              @if (m.attachments?.length) {
+                <div
+                  class="mt-3 flex flex-wrap gap-2 border-t border-white/[0.15] pt-3"
+                  role="group"
+                  [attr.aria-label]="'CHAT.ATTACHMENTS_GROUP' | translate"
+                >
+                  @for (
+                    a of m.attachments;
+                    track a.file_id ?? a.name + $index
+                  ) {
+                    <app-chat-thread-attachment
+                      [fileId]="a.file_id!"
+                      [attachmentName]="a.name"
+                      [mimeType]="a.mime_type ?? null"
+                      [disabled]="busy()"
+                    />
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+        @case ("assistant") {
+          <div class="mb-2.5 flex justify-start last:mb-0">
+            <div
+              class="chat-bubble chat-bubble--assistant isolate relative w-fit max-w-full rounded-[1.12rem] rounded-bl-sm border border-white/[0.10] bg-slate-900/60 pl-[1.15rem] pr-4 py-2.5 text-slate-100 shadow-[0_2px_20px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm before:absolute before:left-2 before:top-2.5 before:bottom-2.5 before:z-0 before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-sky-400 before:to-teal-400"
+            >
+              <p
+                class="relative z-[1] m-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[0.9375rem] leading-relaxed"
+              >
+                {{ m.text }}
+              </p>
+            </div>
+          </div>
+        }
+        @case ("error") {
+          <div class="mb-2.5 flex justify-start last:mb-0">
+            <div
+              class="chat-bubble chat-bubble--error isolate relative w-fit max-w-full rounded-[1.12rem] rounded-bl-sm border border-red-500/25 bg-red-950/50 px-4 py-2.5 text-red-300 shadow-[0_2px_12px_rgba(185,28,28,0.15)] backdrop-blur-sm"
+            >
+              <p
+                class="m-0 whitespace-pre-wrap break-words [overflow-wrap:anywhere] text-[0.9375rem] leading-relaxed"
+              >
+                {{ m.text }}
+              </p>
+              @if (m.id === retryBubbleId()) {
+                <button
+                  type="button"
+                  class="chat-bubble-retry mt-2.5 rounded-lg border border-red-400/25 bg-red-500/10 px-3 py-1.5 text-[0.75rem] font-medium text-red-200 shadow-sm hover:bg-red-500/20"
+                  (click)="retryLast()"
+                >
+                  {{ "CHAT.RETRY" | translate }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+      }
+    }
+
+    @if (
+      !historyThreadLoading() &&
+      !historyThreadError() &&
+      bubbles().length > 0 &&
+      !threadHasMoreOlder() &&
+      !threadOlderLoading() &&
+      !threadOlderLoadFailed() &&
+      !busy()
+    ) {
+      <p
+        class="chat-thread-note mb-2 mt-1 text-center text-[0.7rem] text-slate-500/95"
+        role="note"
+      >
+        {{ "CHAT.THREAD_NEWEST_HINT" | translate }}
+      </p>
+    }
+
+    @if (showTyping()) {
+      <div class="mb-0 flex justify-start" aria-busy="true">
+        <div
+          class="chat-bubble chat-bubble--assistant chat-bubble--typing relative w-fit max-w-full rounded-[1.12rem] rounded-bl-sm border border-white/[0.10] bg-slate-900/60 px-4 py-3.5 shadow-[0_2px_20px_rgba(0,0,0,0.4),inset_0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm"
+        >
+          <div
+            class="flex min-h-5 items-center gap-2 py-0.5"
+            role="status"
+            [attr.aria-label]="pendingLabel()"
+          >
+            <span class="text-sm text-slate-300/80">{{ pendingLabel() }}</span>
+            <div class="chat-typing flex items-center gap-1.5" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+    </div>
+  </div>
+
+  <!-- Composer footer (Claude-style: one card, draft on top, toolbar below) -->
+  <footer
+    class="chat-composer relative z-10 shrink-0 border-t border-white/[0.06] bg-transparent pb-5 pt-4"
+  >
+    <!--
+      Anchored to the composer, not the scroll content, so it stays put while the thread
+      scrolls. `bottom-full` + `mb-3` keeps it fully clear of the composer's top border
+      however tall the composer grows; centering follows the composer column, matching
+      desktop chat convention (a right-edge FAB is a mobile pattern and would crowd the
+      thread scrollbar).
+    -->
+    @if (showJumpToBottom()) {
+      <button
+        type="button"
+        class="chat-jump-to-bottom absolute bottom-full left-1/2 z-20 mb-3 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full border border-white/[0.15] bg-slate-900/90 text-slate-200 shadow-lg shadow-slate-950/40 backdrop-blur-md transition hover:border-white/[0.25] hover:bg-slate-800/90 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
+        [attr.aria-label]="'CHAT.JUMP_TO_BOTTOM' | translate"
+        (click)="jumpToBottom()"
+      >
+        <span class="pi pi-arrow-down text-sm" aria-hidden="true"></span>
+      </button>
+    }
+    <div class="chat-composer-inner w-full">
+    <input
+      #fileInputEl
+      type="file"
+      multiple
+      class="sr-only"
+      [attr.aria-label]="'CHAT.ATTACH_FILES' | translate"
+      [disabled]="busy() || historyThreadLoading()"
+      (change)="onFileInputChange($event)"
+    />
+    @if (attachedFiles().length < maxChatAttachments) {
+      <p class="chat-composer-limit mb-2 ml-1 text-[0.6875rem] tracking-wide text-slate-200">
+        {{
+          "CHAT.ATTACHMENTS_LIMIT" | translate: { max: maxChatAttachments }
+        }}
+      </p>
+    }
+    @if (attachedFiles().length > 0) {
+      <div
+        class="chat-attachment-strip mb-2 flex flex-wrap gap-2"
+        role="group"
+        [attr.aria-label]="'CHAT.ATTACHMENTS_GROUP' | translate"
+      >
+        @for (f of attachedFiles(); track f.client_key; let i = $index) {
+          <div class="relative shrink-0">
+            <button
+              type="button"
+              class="chat-attachment-card flex cursor-pointer overflow-hidden rounded-xl border bg-gradient-to-b text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] outline-none transition hover:border-white/22 focus-visible:ring-2 focus-visible:ring-violet-500/40 disabled:cursor-not-allowed disabled:opacity-50"
+              [class.border-white/[0.14]]="!f.failed"
+              [class.from-white/[0.10]]="!f.failed"
+              [class.to-white/[0.03]]="!f.failed"
+              [class.hover:from-white/[0.14]]="!f.failed"
+              [class.border-red-400/45]="f.failed"
+              [class.from-red-950/45]="f.failed"
+              [class.to-red-950/18]="f.failed"
+              [disabled]="busy() || !f.file_id || f.uploading"
+              [attr.aria-label]="
+                ('CHAT.OPEN_FILE_ATTACHMENT' | translate) + ': ' + f.name
+              "
+              (click)="openAttachmentDownload(f.file_id ?? undefined)"
+            >
+              <div
+                class="chat-attachment-thumb relative flex items-center justify-center overflow-hidden bg-black/25"
+              >
+                @if (attachmentShowsRasterPreview(f)) {
+                  <img
+                    [src]="f.preview_url!"
+                    alt=""
+                    class="pointer-events-none h-full w-full object-cover"
+                  />
+                } @else {
+                  <span
+                    class="pointer-events-none absolute inset-0 opacity-[0.12]"
+                    style="
+                      background: radial-gradient(
+                        ellipse at 50% 35%,
+                        rgba(255, 255, 255, 0.5),
+                        transparent 62%
+                      );
+                    "
+                    aria-hidden="true"
+                  ></span>
+                  <span
+                    class="relative text-2xl opacity-[0.75]"
+                    [class]="attachmentIconClass(f.mime_type, f.name)"
+                    aria-hidden="true"
+                  ></span>
+                }
+                @if (f.uploading) {
+                  <span
+                    class="absolute inset-0 flex items-center justify-center bg-black/45 backdrop-blur-[1px]"
+                    aria-hidden="true"
+                  >
+                    <span
+                      class="pi pi-spinner animate-spin text-lg text-white/90"
+                    ></span>
+                  </span>
+                }
+                @if (f.failed && !f.uploading) {
+                  <span
+                    class="pointer-events-none absolute bottom-1 right-1 flex h-6 w-6 items-center justify-center rounded-md bg-red-950/85 text-red-200 shadow-md ring-1 ring-red-500/30"
+                    aria-hidden="true"
+                  >
+                    <span class="pi pi-exclamation-triangle text-xs"></span>
+                  </span>
+                }
+              </div>
+              <span
+                class="chat-attachment-name truncate px-2 py-1.5 text-[0.65rem] font-medium leading-tight text-slate-50"
+                [title]="f.name"
+              >
+                {{ f.name }}
+              </span>
+            </button>
+            <button
+              type="button"
+              class="chat-attachment-remove absolute right-0.5 top-0.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border border-white/[0.12] bg-slate-950/80 text-slate-100 shadow-md backdrop-blur-sm transition hover:bg-slate-900 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 disabled:cursor-not-allowed disabled:opacity-40"
+              [disabled]="busy() || f.uploading"
+              [attr.aria-label]="'CHAT.REMOVE_ATTACHMENT' | translate"
+              (click)="removeAttachment(i)"
+            >
+              <span class="pi pi-times text-xs" aria-hidden="true"></span>
+            </button>
+          </div>
+        }
+      </div>
+    }
+    <div class="chat-claude-box">
+      <textarea
+        #draftEl
+        id="chat-draft"
+        class="chat-claude-draft"
+        rows="1"
+        [value]="draft()"
+        (input)="onDraftInput($any($event.target).value)"
+        (keydown)="onComposerKeydown($event)"
+        [disabled]="busy() || historyThreadLoading()"
+        [placeholder]="'CHAT.PLACEHOLDER' | translate"
+      ></textarea>
+      <div class="chat-claude-toolbar">
+        <button
+          type="button"
+          class="chat-claude-add"
+          [disabled]="
+            busy() ||
+            historyThreadLoading() ||
+            attachedFiles().length >= maxChatAttachments
+          "
+          [attr.aria-label]="'CHAT.ATTACH_FILES' | translate"
+          (click)="openFilePicker()"
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+        <div class="chat-claude-toolbar-end">
+          <div #modelPickerEl class="chat-model-picker">
+            <button
+              type="button"
+              id="chat-model-select"
+              class="chat-model-trigger"
+              [disabled]="busy() || historyThreadLoading() || chatModelsLoading()"
+              [attr.aria-expanded]="modelMenuOpen()"
+              [attr.aria-haspopup]="'listbox'"
+              [attr.aria-label]="'CHAT.MODEL_LABEL' | translate"
+              (click)="toggleModelMenu($event)"
+            >
+              <span class="chat-model-trigger-label">{{
+                selectedModelLabel()
+              }}</span>
+              <span
+                class="pi pi-chevron-down chat-model-chevron"
+                [class.chat-model-chevron--open]="modelMenuOpen()"
+                aria-hidden="true"
+              ></span>
+            </button>
+            @if (modelMenuOpen()) {
+              <div class="chat-model-menu">
+                <div
+                  class="chat-model-menu-search"
+                  (click)="$event.stopPropagation()"
+                >
+                  <span class="pi pi-search" aria-hidden="true"></span>
+                  <input
+                    #modelSearchInput
+                    type="search"
+                    class="chat-model-search-input"
+                    [value]="modelMenuQuery()"
+                    (input)="onModelMenuQueryInput($any($event.target).value)"
+                    (keydown)="$event.stopPropagation()"
+                    [placeholder]="'CHAT.MODEL_SEARCH' | translate"
+                    [attr.aria-label]="'CHAT.MODEL_SEARCH' | translate"
+                  />
+                </div>
+                <div
+                  class="chat-model-menu-list"
+                  role="listbox"
+                  [attr.aria-label]="'CHAT.MODEL_LABEL' | translate"
+                >
+                  @for (m of filteredModelOptions(); track m.id) {
+                    <button
+                      type="button"
+                      role="option"
+                      class="chat-model-option"
+                      [class.chat-model-option--selected]="
+                        m.id === selectedChatModel()
+                      "
+                      [attr.aria-selected]="m.id === selectedChatModel()"
+                      (click)="pickModel(m.id)"
+                    >
+                      <span class="chat-model-option-label">{{
+                        m.display_name
+                      }}</span>
+                      @if (m.id === selectedChatModel()) {
+                        <span
+                          class="pi pi-check chat-model-check"
+                          aria-hidden="true"
+                        ></span>
+                      }
+                    </button>
+                  } @empty {
+                    <p class="chat-model-empty">
+                      {{ "CHAT.MODEL_SEARCH_EMPTY" | translate }}
+                    </p>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+          @if (draft().trim()) {
+            <button
+              type="button"
+              class="chat-claude-send"
+              [disabled]="busy() || historyThreadLoading() || fileUploadBusy()"
+              [attr.aria-label]="'CHAT.SEND' | translate"
+              (click)="send()"
+            >
+              <span class="pi pi-arrow-up" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      </div>
+    </div>
+    <p class="chat-composer-hint mb-0 mt-2 text-center text-[0.6875rem] tracking-wide">
+      {{ "CHAT.COMPOSER_HINT" | translate }}
+    </p>
+    </div>
+  </footer>
+</div>

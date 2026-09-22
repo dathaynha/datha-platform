@@ -1,0 +1,19 @@
+[config]
+# PR-Agent bundles OpenAI defaults; CI passes Gemini via azure-pipelines/bot-review.yml env (authoritative).
+# ADO/Azure provider loads this file via get_item_content WITHOUT a branch ref — reads default branch tip only,
+# so changes here do not affect PR-Agent until merged to default branch (e.g. main). Keep YAML + this file aligned.
+# Use Google's -latest aliases — bare gemini-1.5-flash often 404s on current v1beta generateContent.
+# Models not listed in PR-Agent MAX_TOKENS require positive custom_model_max_tokens (effective cap still obeys max_model_tokens).
+model = "gemini/gemini-flash-latest"
+fallback_models = ["gemini/gemini-flash-lite-latest"]
+custom_model_max_tokens = 262144
+git_provider = "azure"
+custom_reasoning_model = true
+# Avoid orphan "Preparing review..." on Azure when the run fails mid-flight.
+publish_output_progress = false
+
+[pr_reviewer]
+# PAT used for CI often lacks Pull Request Labels write scope — skip label API calls.
+enable_review_labels_effort = false
+enable_review_labels_security = false
+

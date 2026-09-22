@@ -1,0 +1,49 @@
+// Empty-table overlay layout — import from ops pages (DLQ, Events) so styles ship with the remote in shell MF.
+//
+// A mixin for the same reason as `primeng-table-overrides`: included inside
+// `:host ::ng-deep` on the ops list pages.
+
+@mixin table-empty-overlay {
+  .es-table-wrap--empty > p-table {
+    position: absolute;
+    inset: 0;
+    display: block;
+    flex: none;
+    pointer-events: none;
+  }
+
+  .es-table-wrap--empty > p-table .p-datatable {
+    height: 100%;
+  }
+
+  .es-table-wrap--empty > p-table .p-datatable-table-container {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .es-table-wrap--empty > p-table .p-datatable.es-table {
+    min-height: 12rem;
+  }
+
+  .es-table-wrap--empty ::ng-deep .es-table--empty .p-datatable-tbody {
+    display: none;
+  }
+
+  .es-table-empty-overlay {
+    position: absolute;
+    top: var(--es-table-head-height, 2.75rem);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .es-table-empty-overlay > es-table-empty-state {
+    pointer-events: auto;
+  }
+}

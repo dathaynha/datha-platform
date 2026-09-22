@@ -1,0 +1,17 @@
+# Typecheck the test files. The repos' tsconfig.json excludes **/*.test.ts so the
+# build cannot emit tests into dist/, which also means tsc never sees them — and
+# vitest transpiles with esbuild without typechecking. So a broken mock type is
+# invisible until it happens to fail at runtime. Introducing this gate found real
+# errors in three of the four Node services (2026-09-06), including metrics mocks
+# cast `as never`, which silently disables every property check on them.
+#
+# Runs AFTER unit-tests.yml because that step owns `pnpm install` — the same
+# reason knip sits there. Placed before the install (v8, 2026-09-06) it found no
+# node_modules, fell back to whatever tsc the image had, and failed every run
+# with a bogus TS5108 about the repo's own moduleResolution. Fail-fast would be
+# nicer; having a dependency tree is not optional.
+steps:
+  - script: |
+      set -euo pipefail
+      corepack pnpm typecheck:test
+    displayName: Typecheck tests

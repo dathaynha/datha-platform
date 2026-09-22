@@ -1,0 +1,918 @@
+@use "dock" as dock;
+
+/* Fixed to the viewport, not the header: the dock has to stay put while the
+   page behind it navigates. Bottom-right keeps it clear of the header menus
+   the shell owns. */
+.call-dock {
+  right: 1rem;
+  bottom: 1rem;
+  /* Shared with the chat-window strip, which offsets itself by exactly this
+     so the two corner overlays never cover each other. See styles/base.scss. */
+  width: dock.$width;
+  background: var(--p-content-background);
+  border-color: var(--p-content-border-color);
+  color: var(--p-text-color);
+}
+
+/* An incoming call takes the centre: it is asking a question, and a 20rem chip
+   in a corner is easy to miss and easy to mis-click. */
+.call-dock.is-ring {
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(24rem, calc(100vw - 2rem));
+  padding: 1.5rem;
+  text-align: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.call-dock.is-ring .call-avatar {
+  width: 4rem;
+  height: 4rem;
+  font-size: 1.25rem;
+}
+
+/*
+ * One row when docked: identity left, controls right. Stacked vertically it
+ * was needlessly tall for two lines of text and two buttons. `is-ring`
+ * overrides this back to a centred column for the modal.
+ */
+.call-dock:not(.is-ring):not(.is-stage) {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  width: min(18rem, calc(100vw - 2rem));
+}
+
+/*
+ * A group's docked chip stacks instead of crushing itself into one row.
+ *
+ * The row above fits a 1:1 — a name, a duration and the buttons. A group adds
+ * "· N in the call" to that same line, and at 18rem the text column collapsed
+ * to about forty pixels: the title clipped to "R..." and the duration wrapped
+ * one word per line (dathq, 2026-09-16, with a screenshot).
+ *
+ * Stacked rather than merely wider, which is the same answer the video dock
+ * below already reaches, and it cannot be defeated by a longer group name.
+ */
+.call-dock.is-group:not(.is-ring):not(.is-stage) {
+  flex-direction: column;
+  align-items: stretch;
+  width: min(20rem, calc(100vw - 2rem));
+
+  .call-controls {
+    justify-content: center;
+  }
+}
+
+/* The duration and the headcount are one sentence; they never wrap apart. */
+.call-state {
+  white-space: nowrap;
+}
+
+/*
+ * A video call stops being a one-line dock: it needs a picture. Stacked and
+ * wider, but still a corner dock rather than a takeover, because the phase-2
+ * guarantee is that a call never blocks the app you are using.
+ */
+.call-dock:not(.is-ring):not(.is-stage):has(.call-stage) {
+  flex-direction: column;
+  align-items: stretch;
+  width: min(22rem, calc(100vw - 2rem));
+
+  /* Stacked, the controls own a full-width row — so they centre under the
+     picture rather than hugging its left edge. */
+  .call-controls {
+    justify-content: center;
+    gap: 0.75rem;
+  }
+}
+
+/*
+ * Presentations and people are separate regions.
+ *
+ * A screen is never a participant's tile: it used to replace the camera, so
+ * with both people sharing neither could see the other. Meet's arrangement is
+ * presentations large with the people alongside, and that is what this is.
+ */
+.call-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  background: var(--p-surface-900);
+}
+
+/*
+ * One source holds the stage; the rest sit with the people.
+ *
+ * This used to split the room between two presentations, which sounds fair and
+ * looks like two letterboxed strips in a sea of black — two 16:10 screens in
+ * half-width cells of a wide stage (dathq, 2026-09-16). Meet, Zoom and Teams
+ * all show one presentation and make the others switchable, which is what the
+ * pin does here.
+ */
+.call-screens {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* A screen in the strip: still readable, still one click from the stage. */
+/* `.call-screen-video` already contains and blacks out; this only needs the
+   tile behind it to match so the letterbox is not a lighter slab. */
+.call-aside-screen {
+  background: #000;
+}
+
+/*
+ * The pin. Sits in the tile's corner and only asks for attention on hover or
+ * once it is on — a control on every tile is noise until it is wanted.
+ */
+/* The stage's controls sit together rather than stacking on one another. */
+.call-tile-actions {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.25rem;
+
+  .call-pin {
+    position: static;
+  }
+}
+
+.call-pin {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 45%);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease;
+
+  &.is-on {
+    background: var(--p-primary-color, #6366f1);
+  }
+}
+
+/* Shown on hover, on focus, on touch (no hover to wait for), and while on. */
+.call-tile:hover .call-pin,
+.call-tile:focus-within .call-pin,
+.call-pin:focus-visible,
+.call-pin.is-on {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .call-pin {
+    opacity: 1;
+  }
+}
+
+/*
+ * People fill the stage on their own, and shrink to a strip once there is a
+ * presentation — they are still there, which is the whole point.
+ *
+ * The tiles keep a video shape instead of stretching to whatever height is
+ * going: two people with no presentation used to become tall narrow columns.
+ */
+.call-people {
+  display: grid;
+  gap: 0.375rem;
+  /*
+   * A wide stage puts the two side by side; a narrow one stacks them so each
+   * is big rather than a thin column squeezed next to its neighbour.
+   */
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+  align-content: center;
+  justify-content: center;
+  min-height: 0;
+  flex: 1;
+
+  .call-tile {
+    aspect-ratio: 16 / 9;
+    max-height: 100%;
+    margin-inline: auto;
+    width: 100%;
+  }
+}
+
+/*
+ * Three or more faces.
+ *
+ * `auto-fit` with a 24rem floor is right for two — it puts them side by side
+ * when there is room and stacks them when there is not — but with four tiles
+ * it lays out a single column of 16:9 boxes taller than the stage, and the
+ * bottom two are simply cut off. A fixed two-column grid with equal rows is
+ * what a mesh needs, and the tiles give up their fixed shape to fill it.
+ *
+ * Specificity note: this is (0,2,0) and `.call-stage.is-presenting
+ * .call-people` below is (0,3,0), so the presenting layout still wins while a
+ * screen is up — which is intended, since it sets the same two columns.
+ */
+.call-people.is-grid {
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 1fr;
+  align-content: stretch;
+
+  .call-tile {
+    aspect-ratio: auto;
+    height: 100%;
+    width: 100%;
+    margin-inline: 0;
+  }
+}
+
+/*
+ * An odd number of faces centres the last one instead of leaving a hole.
+ *
+ * Three people in a two-column grid puts one tile against an empty quadrant,
+ * which reads as a fourth person who failed to connect. Meet, Teams and Zoom
+ * all centre the trailing row. The width keeps it the same size as the tiles
+ * above rather than letting it stretch across both columns.
+ */
+.call-people.is-grid.is-odd .call-tile:last-child {
+  grid-column: 1 / -1;
+  width: calc(50% - 0.1875rem);
+  margin-inline: auto;
+}
+
+/*
+ * Whose tile this is. Only rendered in a group, where the dock's own header
+ * names the conversation rather than the person.
+ */
+/*
+ * The glyph is sized against the words, not against the icon font.
+ *
+ * PrimeIcons sets `.pi { font-size: 1rem }`, so beside a 0.625rem label it
+ * came out half again too big (dathq, 2026-09-16). Slightly *under* 1em,
+ * because a glyph fills its em box while lowercase text does not — matching
+ * the numbers still reads as oversized.
+ */
+.call-tile-name .pi {
+  font-size: 0.85em;
+}
+
+.call-tile-name {
+  position: absolute;
+  bottom: 0.25rem;
+  left: 0.375rem;
+  max-width: calc(100% - 0.75rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 0.25rem;
+  background: rgb(0 0 0 / 55%);
+  padding: 0.0625rem 0.3125rem;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/* One pair with no working path. The rest of the call is unaffected. */
+.call-tile-state {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.375rem;
+  border-radius: 0.25rem;
+  background: var(--p-red-600);
+  padding: 0.0625rem 0.3125rem;
+  font-size: 0.625rem;
+  line-height: 1.4;
+  color: #fff;
+}
+
+/*
+ * Alongside a presentation the people sit together and fill the space they
+ * are given. The stacking rule above is for a stage with nothing else on it —
+ * applied here it pushed the second person out of a strip only a few rem tall
+ * and both disappeared.
+ */
+.call-stage.is-presenting .call-people {
+  grid-template-columns: repeat(2, 1fr);
+  align-content: stretch;
+
+  .call-tile {
+    aspect-ratio: auto;
+    height: 100%;
+  }
+}
+
+/*
+ * The strip scrolls rather than hiding people below the fold.
+ *
+ * The mesh caps a call at four (`MAX_CALL_PARTICIPANTS`), so there is no
+ * "too many people" — but all four may share a screen at once, and with one on
+ * the stage the strip holds four people and three screens. Measured at
+ * 1268px of tiles in a 619px strip with `overflow-y: visible` (2026-09-16):
+ * the last three were clipped by the stage with no way to reach them, which is
+ * the same fault as the four-tile column that cut off its bottom two.
+ *
+ * Scrolling is what Meet does with its side strip. A "+N" overflow chip is the
+ * other half of Meet's answer and is not needed here, because N is at most
+ * seven and every one of them is worth a tile.
+ */
+.call-stage.is-presenting .call-people {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/*
+ * Wide enough, and the people move to a column down the right — which is
+ * where Meet puts them, and it stops a presentation being squeezed vertically
+ * by a strip underneath it.
+ */
+.call-stage.is-presenting .call-people {
+  flex: 0 0 clamp(3.5rem, 22%, 7rem);
+}
+
+/*
+ * Who is talking, as a ring around their tile.
+ *
+ * An outline rather than a border: a border would change the tile's box and
+ * nudge every neighbour each time somebody spoke, which is a layout shift
+ * three times a sentence. `outline` is drawn outside the box and costs nothing
+ * to animate.
+ */
+.call-tile.is-speaking {
+  outline: 2px solid var(--p-primary-color, #6366f1);
+  outline-offset: -2px;
+}
+
+.call-tile {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 0.5rem;
+  background: var(--p-surface-800);
+  container-type: size;
+}
+
+.call-remote-video {
+  height: 100%;
+  width: 100%;
+  /* Fill rather than letterbox: a portrait phone camera in a landscape box
+     otherwise leaves two black bars wider than the picture. */
+  object-fit: cover;
+}
+
+/*
+ * Local preview, picture-in-picture. Mirrored, because a preview that is not
+ * mirrored reads as someone else's camera — every video app does this, and
+ * only to the *preview*: what the peer receives is unmirrored.
+ */
+.call-remote-video,
+.call-local-video {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+/* Whole-picture: cropping a shared screen cuts off what is being presented. */
+/*
+ * A screen tile takes the shape of the screen, not of the cell it sits in.
+ *
+ * `aspect-ratio` is set inline from the track's own `videoWidth/videoHeight`
+ * (see `measureScreen`). Without it the tile filled the cell and `contain`
+ * painted the difference black — two shares side by side were mostly black
+ * (dathq, 2026-09-16). `contain` stays: cropping a shared screen hides the
+ * edges of somebody's code, which is worse than a band.
+ *
+ * `auto` on both axes with `max-*: 100%` is what lets the tile shrink to its
+ * own ratio in whichever direction is the tighter fit, and the margins centre
+ * whatever is left over.
+ */
+/*
+ * A pinned *person* fills the stage the way a shared screen does.
+ *
+ * `.call-screens` is a flex container, and a bare `.call-tile` inside it has
+ * no width of its own — measured at 0x619, which `overflow: hidden` then turned
+ * into an empty stage with the avatar clipped away entirely. Sizing belongs on
+ * every child the stage can hold, not only on the one it was built for.
+ */
+.call-stage-tile {
+  flex: 1;
+  height: 100%;
+}
+
+.call-screen-tile {
+  /*
+   * Fills the stage until the track says otherwise.
+   *
+   * `auto` on both axes is what lets the tile shrink to its own ratio — but
+   * only once there *is* a ratio. Before `loadedmetadata` there is none, the
+   * video inside is sized at 100% of the box, and a box with `auto` on both
+   * axes and no intrinsic content collapses to 0x0: the share was live and the
+   * stage was blank (dathq, 2026-09-16, measured at 0x0). So filling is the
+   * default and shrinking is what the measurement earns.
+   */
+  height: 100%;
+  width: 100%;
+  margin: auto;
+  background: #000;
+
+  /*
+   * Height stays definite and the ratio drives the width.
+   *
+   * `auto` on *both* axes leaves the box with nothing to size from — it then
+   * depends on the video's intrinsic size, which is 300x150 for an element
+   * with no frames yet and whatever the track says once there are. That is how
+   * the stage came out 0x0 twice. One definite axis cannot collapse.
+   */
+  &.has-ratio {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+  }
+}
+
+.call-screen-video {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+/*
+ * A camera preview is mirrored, because an unmirrored self-view reads as
+ * someone else's camera — but a shared **screen** must never be, or the text
+ * on it comes out backwards. Only the preview either way: what the peer
+ * receives is never flipped.
+ */
+.call-local-video.is-mirrored {
+  transform: scaleX(-1);
+}
+
+.call-remote-video.is-hidden,
+.call-local-video.is-hidden {
+  /* Hidden but kept in the layout, so nothing jumps when video returns. */
+  visibility: hidden;
+}
+
+/*
+ * The tile fills the whole video area, so the avatar inside it has to be sized
+ * explicitly — left to fill its host, a picture would stretch edge to edge
+ * instead of sitting as a disc in the middle.
+ */
+.call-tile-avatar messenger-avatar {
+  height: clamp(2.5rem, 28cqmin, 7rem);
+  width: clamp(2.5rem, 28cqmin, 7rem);
+  border-radius: 999px;
+}
+
+.call-tile-avatar {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  background: var(--p-surface-800);
+  color: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  font-size: 1rem;
+  font-weight: 600;
+
+  &.is-main {
+    /* Sized off the tile so it scales between the dock and the full stage. */
+    background: var(--p-surface-900);
+    font-size: clamp(1.75rem, 12cqmin, 4rem);
+  }
+}
+
+.call-stage {
+  container-type: size;
+}
+
+.call-dock.is-ring .call-identity {
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+/* Equal-size circular controls. A labelled pill beside a small outlined
+   circle was the mismatch that made the dock look unfinished. */
+.call-button {
+  position: relative;
+  display: inline-flex;
+  height: 2.25rem;
+  width: 2.25rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  /*
+   * Solid white with a dark glyph, not an outlined circle on a dark ground —
+   * an outline reads as disabled and the glyph disappears into the video
+   * behind it (dathq, 2026-09-11). Every call app fills these: the control has
+   * to be legible over whatever the camera happens to be pointing at.
+   */
+  /* A hairline keeps the white buttons from dissolving into a light dock. */
+  border: 1px solid var(--p-surface-900, #0f172a);
+  background: #fff;
+  color: var(--p-surface-900);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+
+  i {
+    font-size: 0.875rem;
+  }
+
+  &:hover {
+    background: color-mix(in srgb, #fff 88%, var(--p-surface-900));
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    background: color-mix(in srgb, #fff 45%, transparent);
+    border-color: color-mix(in srgb, var(--p-surface-900) 35%, transparent);
+    color: color-mix(in srgb, var(--p-surface-900) 55%, transparent);
+    cursor: not-allowed;
+  }
+}
+
+/*
+ * Off states. Solid red with a white glyph, which is the one convention every
+ * call app shares — and the glyph itself now carries the slash, so nothing is
+ * drawn over it.
+ */
+.call-camera.is-off,
+.call-mute.is-muted {
+  border-color: var(--p-red-700, #b91c1c);
+  background: var(--p-red-500);
+  color: #fff;
+
+  &:hover {
+    background: var(--p-red-600);
+  }
+
+  &:disabled {
+    background: color-mix(in srgb, var(--p-red-500) 55%, transparent);
+    color: color-mix(in srgb, #fff 75%, transparent);
+  }
+}
+
+.call-hangup {
+  border-color: var(--p-red-700, #b91c1c);
+  background: var(--p-red-500);
+  color: #fff;
+
+  &:hover {
+    background: var(--p-red-600);
+  }
+}
+
+/* "Ringing…" should look like something in progress. */
+.call-pulse {
+  display: inline-block;
+  height: 0.375rem;
+  width: 0.375rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--p-primary-color);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .call-pulse {
+    animation: call-pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes call-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.call-backdrop {
+  background: color-mix(in srgb, var(--p-surface-950) 45%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .call-dock.is-ring {
+    animation: ring-in 160ms ease-out both;
+  }
+}
+
+@keyframes ring-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -46%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.call-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+}
+
+.call-error {
+  color: var(--p-red-500);
+}
+
+.call-warning {
+  color: var(--p-orange-500);
+}
+
+/* The notice occupies the dock's slot once the call itself is gone. */
+.call-dock-notice {
+  width: min(20rem, calc(100vw - 2rem));
+}
+
+/* Compact enough to sit in the control row rather than wrap it. */
+.call-camera-picker {
+  max-width: 7rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--p-content-border-color);
+  background: var(--p-content-background);
+  color: inherit;
+  font-size: 0.6875rem;
+  padding: 0.25rem 0.375rem;
+}
+
+/* Nothing to turn on, so it must not look pressable. */
+.call-camera:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* ---- Expanded video call -------------------------------------------------
+ *
+ * Meet's shape, not Messenger's: Messenger opens a separate browser window,
+ * and a new document would destroy the RTCPeerConnection — a call surviving
+ * navigation is a phase-2 guarantee. So the call takes over the viewport in
+ * place and minimises back to the dock, which is how Slack huddles work.
+ */
+.call-scrim {
+  background: color-mix(in srgb, var(--p-surface-950) 82%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.call-dock.is-stage {
+  /*
+   * Near the whole viewport, with just enough margin to read as a panel rather
+   * than a takeover. A 72rem cap left it looking like a dialog on a wide
+   * screen and cramped on a narrow one (dathq, 2026-09-11). A separate browser
+   * window — Messenger's answer — is not available to us: a new document
+   * destroys the RTCPeerConnection, and surviving navigation is a phase-2
+   * guarantee.
+   */
+  inset: 1.25rem;
+  left: 1.25rem;
+  top: 1.25rem;
+  transform: none;
+  height: auto;
+  width: auto;
+  max-width: none;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--p-surface-950);
+  border-color: color-mix(in srgb, var(--p-surface-0) 12%, transparent);
+
+  .call-stage {
+    flex: 1;
+    aspect-ratio: auto;
+    min-height: 0;
+    border-radius: 0;
+  }
+
+  /*
+   * `contain`, not `cover`, once the call is expanded.
+   *
+   * Cover crops to fill, which is right for a face and wrong for a shared
+   * screen — it silently cuts off whatever is near the edges, which is exactly
+   * what someone presenting needs you to see (reported 2026-09-11). Letterbox
+   * bars on a camera are a far smaller cost than losing the edge of a screen,
+   * and the compact dock keeps `cover` because a thumbnail has no room to
+   * letterbox.
+   */
+  /* A face fills its tile; only a screen must keep its whole picture. */
+  .call-remote-video,
+  .call-local-video {
+    object-fit: cover;
+  }
+
+  /* Over the picture, as every call app does — the video is the content and
+     chrome should not steal height from it. */
+  .call-identity {
+    position: absolute;
+    left: 1rem;
+    top: 1rem;
+    z-index: 1;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--p-surface-950) 62%, transparent);
+    padding: 0.375rem 0.875rem 0.375rem 0.375rem;
+    backdrop-filter: blur(8px);
+  }
+
+  .call-peer,
+  .call-state {
+    color: var(--p-surface-0);
+  }
+
+  .call-controls {
+    position: absolute;
+    gap: 0.75rem;
+    bottom: 1.5rem;
+    left: 50%;
+    z-index: 1;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--p-surface-950) 70%, transparent);
+    padding: 0.5rem;
+    backdrop-filter: blur(8px);
+  }
+
+  .call-stage {
+    gap: 0.5rem;
+    padding: 0.75rem 0.75rem 5.25rem;
+  }
+
+  .call-stage.is-presenting .call-people {
+    flex: 0 0 clamp(5rem, 18%, 9rem);
+  }
+
+  /*
+   * Wide enough, the people become a column down the right — where Meet puts
+   * them — and wide enough for a camera to read as one. At 9rem the tiles came
+   * out taller than they were wide and a 16:9 picture was letterboxed into a
+   * sliver (dathq, 2026-09-11).
+   *
+   * It has to live *here*, nested in `.is-stage`: the rule above compiles to
+   * the same specificity, so an equivalent rule written earlier in the file
+   * silently lost on source order.
+   */
+  @media (min-width: 60rem) {
+    .call-stage.is-presenting {
+      flex-direction: row;
+    }
+
+    .call-stage.is-presenting .call-people {
+      flex: 0 0 clamp(13rem, 24%, 20rem);
+      grid-template-columns: 1fr;
+      grid-auto-rows: max-content;
+      align-content: start;
+
+      .call-tile {
+        aspect-ratio: 16 / 9;
+        height: auto;
+      }
+    }
+
+    /*
+     * The odd-count centring is a *two-column* rule: it halves the trailing
+     * tile so it matches the pair above it. This column has one track, so
+     * halving it just made the third person smaller than everyone else
+     * (dathq, 2026-09-16, measured at 313, 313, 153).
+     *
+     * Written at (0,6,0) so it beats the (0,5,0) rule outright rather than on
+     * source order — a same-specificity fix here would work today and lose
+     * silently the next time these rules are reordered, which has happened in
+     * this file before.
+     */
+    .call-stage.is-presenting
+      .call-people.is-grid.is-odd
+      .call-tile:last-child {
+      grid-column: auto;
+      width: 100%;
+      margin-inline: 0;
+    }
+  }
+
+  .call-error,
+  .call-warning {
+    position: absolute;
+    left: 50%;
+    top: 4.25rem;
+    z-index: 1;
+    max-width: min(28rem, 80%);
+    transform: translateX(-50%);
+    text-align: center;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--p-surface-950) 70%, transparent);
+    padding: 0.375rem 0.875rem;
+  }
+}
+
+/* Top-right, away from the identity chip and the controls. */
+.call-expand {
+  position: absolute;
+  right: 0.5rem;
+  top: 0.5rem;
+  z-index: 2;
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-surface-950) 55%, transparent);
+  color: var(--p-surface-0);
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--p-surface-950) 75%, transparent);
+  }
+}
+
+/* Sharing is a state people forget they are in, so it is marked, not implied. */
+.call-share.is-on {
+  border-color: transparent;
+  background: var(--p-primary-500);
+  color: #fff;
+
+  &:hover {
+    background: var(--p-primary-600);
+  }
+}
+
+/*
+ * A phone gets the whole screen, and that means resetting the inset too.
+ *
+ * The desktop stage is defined by its four insets (`inset: 1.25rem`) with
+ * `width: auto`. This block overrode the *size* to 100% and left the inset
+ * alone, so `left: 20px` plus `width: 375px` put the right edge at **395px on
+ * a 375px viewport** — and the same 20px past the bottom (measured 2026-09-21
+ * at 375x667, reported as the video-call popup being "a little bit off").
+ * When both insets and a width are set the width wins and `right` is ignored,
+ * which is why it overflowed rather than fitting.
+ *
+ * `border-radius: 0` already said this was meant to be a full-bleed takeover;
+ * the inset is what stopped it being one.
+ */
+@media (max-width: 40rem) {
+  .call-dock.is-stage {
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0;
+  }
+}
+
+/*
+ * One stroke set for every control, replacing the icon font.
+ * PrimeIcons ships no slashed microphone or camera, and drawing the slash in
+ * CSS over the plain glyph looked bolted on (dathq, 2026-09-11).
+ */
+.call-glyph {
+  height: 1.125rem;
+  width: 1.125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  /* The universal "end call" glyph is the handset turned down. */
+  &.is-hangup {
+    fill: currentColor;
+    stroke: none;
+    transform: rotate(135deg);
+  }
+}

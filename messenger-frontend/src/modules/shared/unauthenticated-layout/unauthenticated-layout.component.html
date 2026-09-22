@@ -1,0 +1,18 @@
+<div class="messenger-layout flex min-h-[100dvh] flex-col">
+  <datha-sub-header>
+    <datha-lang-select
+      inputId="login-lang"
+      [languages]="languages"
+      [selected]="selectedLanguage()"
+      (selectedChange)="onLanguageChange($event)"
+    />
+    <p-button
+      [label]="'SUBNAV.SUPPORT' | translate"
+      [text]="true"
+      (onClick)="sendEmail()"
+    />
+  </datha-sub-header>
+  <main class="messenger-content flex min-h-0 flex-1 flex-col">
+    <router-outlet />
+  </main>
+</div>

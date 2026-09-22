@@ -1,0 +1,15 @@
+FILTER_REGEX_EXCLUDE: "(pnpm-lock\\.yaml|package-lock\\.json|yarn\\.lock|azure-pipelines/|dist/|node_modules/)"
+
+YAML_YAMLLINT_FILTER_REGEX_EXCLUDE: "(pnpm-lock\\.yaml|azure-pipelines/)"
+
+DISABLE_LINTERS:
+  - TYPESCRIPT_ES
+  - TYPESCRIPT_STANDARD
+  - SPELL_CSPELL
+
+ENABLE_LINTERS:
+  - TYPESCRIPT_PRETTIER
+  - JSON_PRETTIER
+  - YAML_YAMLLINT
+
+FLAVOR_SUGGESTIONS: false

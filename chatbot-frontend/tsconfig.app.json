@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": [
+    "src/**/*.spec.ts",
+    "src/test.ts",
+    // angular.json fileReplacements substitutes these for environment.ts, so
+    // each is compiled under that path by the build that selects it. Leaving
+    // them in the program as themselves only earns an "unused file" warning.
+    "src/environments/environment.dev.ts",
+    "src/environments/environment.int.ts",
+    "src/environments/environment.prod.ts"
+  ]
+}

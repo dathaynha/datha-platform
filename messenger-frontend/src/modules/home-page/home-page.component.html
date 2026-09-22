@@ -1,0 +1,315 @@
+<section
+  class="landing-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="landing-hero-title"
+>
+  <div class="landing-aurora" aria-hidden="true"></div>
+  <div class="landing-noise" aria-hidden="true"></div>
+
+  <div
+    class="landing-body relative z-10 flex w-full min-w-0 flex-1 flex-col overflow-y-auto"
+  >
+    <header class="w-full max-w-none space-y-5">
+      <h1
+        id="landing-hero-title"
+        class="landing-title text-balance font-extrabold leading-[1.08] tracking-tight"
+      >
+        {{ "LANDING.HERO_TITLE" | translate }}
+      </h1>
+      <div
+        class="landing-copy max-w-4xl leading-relaxed"
+      >
+        <p class="m-0">{{ "LANDING.HERO_DESC" | translate }}</p>
+      </div>
+      <p class="landing-muted landing-muted--lead m-0 max-w-3xl leading-relaxed">
+        {{ "LANDING.HERO_STATUS" | translate }}
+      </p>
+    </header>
+
+    <section class="w-full space-y-4" aria-labelledby="landing-flows-title">
+      <div class="space-y-3 text-left">
+        <h2
+          id="landing-flows-title"
+          class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em]"
+        >
+          {{ "LANDING.FLOWS.SECTION_TITLE" | translate }}
+        </h2>
+
+        <div
+          class="flow-picker"
+          role="tablist"
+          [attr.aria-label]="'LANDING.FLOWS.PICKER_ARIA' | translate"
+        >
+          <button
+            type="button"
+            class="flow-picker__tab"
+            role="tab"
+            id="landing-flow-tab-message"
+            [class.flow-picker__tab--active]="isMessageFlow()"
+            [attr.aria-selected]="isMessageFlow()"
+            [attr.tabindex]="isMessageFlow() ? 0 : -1"
+            (click)="setFlowMode('message')"
+          >
+            <span class="pi pi-comments" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_MESSAGE" | translate }}
+          </button>
+          <button
+            type="button"
+            class="flow-picker__tab flow-picker__tab--call"
+            role="tab"
+            id="landing-flow-tab-call"
+            [class.flow-picker__tab--active]="isCallFlow()"
+            [attr.aria-selected]="isCallFlow()"
+            [attr.tabindex]="isCallFlow() ? 0 : -1"
+            (click)="setFlowMode('call')"
+          >
+            <span class="pi pi-video" aria-hidden="true"></span>
+            {{ "LANDING.FLOWS.TAB_CALL" | translate }}
+          </button>
+        </div>
+
+        <p
+          class="landing-muted landing-muted--lead m-0 max-w-3xl leading-relaxed"
+          role="tabpanel"
+          [attr.aria-labelledby]="
+            isMessageFlow() ? 'landing-flow-tab-message' : 'landing-flow-tab-call'
+          "
+        >
+          {{ activeFlowSubtitleKey() | translate }}
+        </p>
+      </div>
+
+      <div
+        class="landing-flow-grid mx-auto grid w-full min-w-0"
+      >
+        @if (isMessageFlow()) {
+          <div
+            class="landing-flow-column flex w-full min-w-0 flex-col items-center gap-0"
+            role="group"
+            [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+          >
+            @for (
+              nodeId of [
+                'composer',
+                'messenger-service',
+                'postgres',
+                'nats',
+                'realtime-service',
+                'recipient',
+              ];
+              track nodeId
+            ) {
+              @if (!$first) {
+                @let messageLink = messageFlowLinks[$index - 1];
+                <div
+                  class="flow-link"
+                  [class.flow-link--code]="messageLink.code"
+                  aria-hidden="true"
+                >
+                  <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                  <span>{{ messageLink.key | translate }}</span>
+                </div>
+              }
+              <button
+                type="button"
+                class="flow-node"
+                [class.flow-node--compact]="$index > 0 && $index < 5"
+                [class.flow-node--active]="isMessageFlowSelected($any(nodeId))"
+                [attr.aria-pressed]="isMessageFlowSelected($any(nodeId))"
+                (click)="selectMessageFlowNode($any(nodeId))"
+              >
+                <span
+                  [class]="getMessageFlowNode($any(nodeId)).icon"
+                  [class.text-lg]="$index === 0 || $index === 5"
+                  [class.text-base]="$index > 0 && $index < 5"
+                  [class.text-violet-200/95]="$index === 0"
+                  [class.text-fuchsia-200/95]="$index === 1"
+                  [class.text-emerald-200/90]="$index === 2"
+                  [class.text-sky-200/95]="$index === 3 || $index === 4"
+                  [class.text-rose-200/95]="$index === 5"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getMessageFlowNode($any(nodeId)).titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getMessageFlowNode($any(nodeId)).descKey | translate
+                }}</span>
+              </button>
+            }
+            <p
+              class="landing-muted landing-muted--note m-0 max-w-md px-2 pt-3 text-center leading-snug"
+            >
+              {{ "LANDING.MESSAGE_FLOW.NOTE" | translate }}
+            </p>
+          </div>
+        } @else {
+          <div
+            class="landing-flow-column flex w-full min-w-0 flex-col items-center gap-0"
+            role="group"
+            [attr.aria-label]="activeFlowDiagramAriaKey() | translate"
+          >
+            @for (
+              nodeId of [
+                'credentials',
+                'offer',
+                'relay',
+                'ice',
+                'media',
+                'turn',
+              ];
+              track nodeId
+            ) {
+              @if (!$first) {
+                @let callLink = callFlowLinks[$index - 1];
+                <div
+                  class="flow-link"
+                  [class.flow-link--code]="callLink.code"
+                  aria-hidden="true"
+                >
+                  <span class="pi pi-arrow-down text-[0.65rem] opacity-70"></span>
+                  <span>{{ callLink.key | translate }}</span>
+                </div>
+              }
+              <button
+                type="button"
+                class="flow-node flow-node--call"
+                [class.flow-node--compact]="$index > 0 && $index < 5"
+                [class.flow-node--active]="isCallFlowSelected($any(nodeId))"
+                [attr.aria-pressed]="isCallFlowSelected($any(nodeId))"
+                (click)="selectCallFlowNode($any(nodeId))"
+              >
+                <span
+                  [class]="getCallFlowNode($any(nodeId)).icon"
+                  [class.text-lg]="$index === 0 || $index === 4"
+                  [class.text-base]="$index > 0 && $index !== 4"
+                  [class.text-amber-200/95]="$index === 0"
+                  [class.text-violet-200/95]="$index === 1 || $index === 2"
+                  [class.text-sky-200/95]="$index === 3"
+                  [class.text-emerald-200/90]="$index === 4"
+                  [class.text-orange-200/90]="$index === 5"
+                  aria-hidden="true"
+                ></span>
+                <span class="flow-node__title">{{
+                  getCallFlowNode($any(nodeId)).titleKey | translate
+                }}</span>
+                <span class="flow-node__desc">{{
+                  getCallFlowNode($any(nodeId)).descKey | translate
+                }}</span>
+              </button>
+            }
+            <p
+              class="landing-muted landing-muted--note m-0 max-w-md px-2 pt-3 text-center leading-snug"
+            >
+              {{ "LANDING.CALL_FLOW.NOTE" | translate }}
+            </p>
+          </div>
+        }
+
+        <aside
+          class="flow-panel w-full min-w-0 rounded-2xl border backdrop-blur-md"
+          [class.flow-panel--call]="isCallFlow()"
+          [attr.aria-live]="'polite'"
+        >
+          @if (activeFlowPanel(); as node) {
+            <h3
+              class="flow-panel__title m-0 flex items-center gap-2 font-bold tracking-tight"
+            >
+              <span
+                class="shrink-0"
+                [class]="node.icon"
+                [class.text-sky-300/90]="isCallFlow()"
+                [class.text-fuchsia-300/90]="isMessageFlow()"
+                aria-hidden="true"
+              ></span>
+              {{ node.titleKey | translate }}
+            </h3>
+            <p
+              class="flow-panel__copy m-0 mt-2 leading-relaxed"
+            >
+              {{ node.descKey | translate }}
+            </p>
+            <p
+              class="flow-panel__kicker m-0 mt-5 text-[0.65rem] font-bold uppercase tracking-[0.18em]"
+            >
+              {{ activeFlowPanelKickerKey() | translate }}
+            </p>
+            <ul class="m-0 mt-2 list-none space-y-2.5 p-0" role="list">
+              @for (item of node.details; track item.labelKey) {
+                <li
+                  class="flow-panel__item flex gap-2.5 text-sm leading-snug"
+                  role="listitem"
+                >
+                  <span
+                    class="mt-0.5 shrink-0"
+                    [class]="item.icon"
+                    [class.text-sky-400/85]="isCallFlow()"
+                    [class.text-fuchsia-400/85]="isMessageFlow()"
+                    aria-hidden="true"
+                  ></span>
+                  <span>{{ item.labelKey | translate }}</span>
+                </li>
+              }
+            </ul>
+          } @else {
+            <p
+              class="flow-panel__copy m-0 leading-relaxed"
+            >
+              {{ activeFlowPanelEmptyKey() | translate }}
+            </p>
+          }
+        </aside>
+      </div>
+    </section>
+
+    <div class="landing-stack flex w-full min-w-0 flex-col">
+      <h2
+        class="landing-kicker m-0 text-xs font-bold uppercase tracking-[0.22em]"
+      >
+        {{ "LANDING.STACK_INTRO" | translate }}
+      </h2>
+
+      @for (group of stackCardGroups; track group.titleKey) {
+        <section
+          class="flex w-full min-w-0 flex-col gap-4"
+          [attr.aria-labelledby]="group.headingId"
+        >
+          <h3
+            [id]="group.headingId"
+            class="landing-kicker m-0 text-[0.65rem] font-bold uppercase tracking-[0.2em]"
+          >
+            {{ group.titleKey | translate }}
+          </h3>
+          <div
+            class="landing-cards grid w-full auto-rows-fr"
+            [class]="group.gridClass"
+          >
+            @for (card of group.cards; track card.title) {
+              <div class="flex h-full min-h-[10.5rem]">
+                <p-card class="landing-card h-full w-full">
+                  <div class="flex items-start gap-3">
+                    <div
+                      class="landing-card-icon inline-flex size-9 shrink-0 items-center justify-center rounded-[0.55rem] bg-gradient-to-br from-fuchsia-500/55 to-violet-400/45 text-lg text-fuchsia-100 shadow-[0_0_1.5rem_rgba(232,121,249,0.35)]"
+                      aria-hidden="true"
+                    >
+                      <span class="leading-none" [class]="card.icon"></span>
+                    </div>
+                    <h3
+                      class="landing-card-title m-0 flex-1 text-base font-bold leading-tight tracking-tight"
+                    >
+                      {{ card.title }}
+                    </h3>
+                  </div>
+                  <p
+                    class="landing-card-copy m-0 mt-2.5 text-[0.8125rem] leading-relaxed"
+                  >
+                    {{ card.descKey | translate }}
+                  </p>
+                </p-card>
+              </div>
+            }
+          </div>
+        </section>
+      }
+    </div>
+  </div>
+</section>

@@ -1,0 +1,26 @@
+<header class="datha-sub-header datha-glass-bar">
+  @if (tabs().length > 0) {
+    <nav
+      class="datha-sub-header__tabs"
+      [attr.aria-label]="
+        navAriaLabelKey() ? (navAriaLabelKey() | translate) : null
+      "
+    >
+      @for (tab of tabs(); track tab.id) {
+        <a
+          class="datha-sub-header__tab"
+          [routerLink]="tab.route"
+          routerLinkActive="datha-sub-header__tab--active"
+          [routerLinkActiveOptions]="{ exact: !!tab.exact }"
+          #tabLink="routerLinkActive"
+          [attr.aria-current]="tabLink.isActive ? 'page' : null"
+        >
+          {{ tab.labelKey | translate }}
+        </a>
+      }
+    </nav>
+  }
+  <div class="datha-sub-header__actions">
+    <ng-content />
+  </div>
+</header>

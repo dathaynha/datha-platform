@@ -1,0 +1,142 @@
+/* Like the compose dialog, this renders in an overlay outside the page host,
+   so it cannot inherit the --chats-* tokens and uses PrimeNG's palette. */
+.group-label {
+  color: var(--p-text-muted-color);
+}
+
+.group-muted {
+  color: var(--p-text-muted-color);
+}
+
+.group-input {
+  border-color: var(--p-content-border-color);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+
+  &::placeholder {
+    color: var(--p-text-muted-color);
+  }
+
+  &:focus {
+    border-color: var(--p-primary-500);
+  }
+}
+
+.member-row {
+  color: var(--p-text-color);
+
+  &:hover {
+    background: var(--p-content-hover-background);
+  }
+
+  &.is-selected {
+    background: color-mix(
+      in srgb,
+      var(--p-primary-500) 12%,
+      var(--p-content-background)
+    );
+    color: var(--p-primary-color);
+  }
+}
+
+.member-avatar {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-500),
+    var(--p-primary-800)
+  );
+  color: var(--p-primary-contrast-color);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.member-badge {
+  background: color-mix(
+    in srgb,
+    var(--p-primary-500) 16%,
+    var(--p-content-background)
+  );
+  color: var(--p-primary-color);
+}
+
+.group-cta {
+  border: none;
+  background: linear-gradient(
+    135deg,
+    var(--p-primary-500),
+    var(--p-primary-700)
+  );
+  color: var(--p-primary-contrast-color);
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.group-secondary {
+  border: 1px solid var(--p-content-border-color);
+  background: transparent;
+  color: var(--p-text-color);
+
+  &:hover {
+    border-color: var(--p-primary-500);
+    color: var(--p-primary-color);
+  }
+}
+
+/* Destructive, and it stays destructive-looking in both states: the confirm
+   press must not look like a different, safer button than the first one. */
+.group-danger {
+  border: 1px solid
+    color-mix(in srgb, var(--p-red-500) 45%, var(--p-content-border-color));
+  background: transparent;
+  color: var(--p-red-500);
+
+  &:hover {
+    background: color-mix(
+      in srgb,
+      var(--p-red-500) 10%,
+      var(--p-content-background)
+    );
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.leave-confirm {
+  border: 1px solid
+    color-mix(in srgb, var(--p-red-500) 35%, var(--p-content-border-color));
+  background: color-mix(
+    in srgb,
+    var(--p-red-500) 7%,
+    var(--p-content-background)
+  );
+  color: var(--p-text-color);
+}
+
+/* The confirming action is solid where the opener is outlined: the press that
+   actually leaves should not look like the one that only asked. */
+.group-danger-solid {
+  border: none;
+  background: var(--p-red-500);
+  color: #fff;
+
+  &:hover {
+    background: var(--p-red-600);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}

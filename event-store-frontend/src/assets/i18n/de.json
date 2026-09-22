@@ -1,0 +1,369 @@
+{
+  "THEME": {
+    "LABEL": "Design",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "LANDING": {
+    "HERO_TITLE": "Event Store",
+    "HERO_DESC": "Plattform-Ops-UI für das Event-Backbone: Dead-Letter-Einträge durchsuchen, angereicherte Fehler-Payloads prüfen und Nachrichten zurück nach JetStream replayen. Business-Events aller Services landen per NATS-Ingest in Postgres; Poison Messages nach erschöpften Retries gehen in den separaten DLQ-Stream zur Ops-Triage.",
+    "STACK_INTRO": "Technologie",
+    "STACK_GROUP_CLIENT": "Im Browser",
+    "STACK_GROUP_SERVICES": "Service-Schicht",
+    "STACK_GROUP_DATA": "Daten & Messaging",
+    "CARD_ANGULAR": "Angular 21 mit Signals, strict TypeScript und Module Federation in die Shell — standalone auf Port 4002 oder gehostet unter `/event-store`.",
+    "CARD_PRIMENG": "PrimeNG 21 + Aura (`eventStoreAuraPreset`) für Toolbar-Tabs, Karten, Dialoge und Theme-Tokens wie in der Shell.",
+    "CARD_I18N": "@ngx-translate JSON-Kataloge (en/de); Locale wird als `Accept-Language` an gateway-proxied event-store-APIs gesendet.",
+    "CARD_AUTH": "angular-oauth2-oidc mit PKCE; Google- und Microsoft-Anmeldung über das Go-Gateway. Ops-Routen erfordern eine Admin-Rolle vor dem Prod-Rollout.",
+    "CARD_GATEWAY": "Go-API-Gateway: OAuth-Austausch, internes JWT, Reverse-Proxy zu `/api/event-store/*` mit Owner- und Correlation-Headern.",
+    "CARD_EVENT_STORE": "Fastify + TypeScript: Pull-Ingest aus JetStream `EVENTS` nach Postgres, DLQ-API (`GET /dlq`, `POST /dlq/:id/replay`) und Event-Query-Endpunkte.",
+    "CARD_PLATFORM_NATS": "platform-nats-Repo verwaltet JetStream-Topologie (`EVENTS` + `DLQ` Streams, Durables, `max_deliver`). Apps verbinden nur — reconcile vor Consumer-Start.",
+    "CARD_POSTGRES": "Postgres-Tabellen `events` und `dlq_records` mit JSONB-Payloads; Retention-Jobs kürzen Zeilen unabhängig von JetStream `max_age`.",
+    "CARD_NATS": "JetStream: Stream `EVENTS` für durable Business-Subjects; Stream `DLQ` für Poison-Traffic — Topologie aus platform-nats, getrennt vom normalen Ingest.",
+    "FLOWS": {
+      "SECTION_TITLE": "Architektur-Flows",
+      "PICKER_ARIA": "Flow-Diagramm auswählen",
+      "TAB_INGEST": "Event-Ingest",
+      "TAB_DLQ": "DLQ-Muster"
+    },
+    "INGEST_FLOW": {
+      "SUBTITLE": "Klicke auf einen Block für Details. Happy Path: ein Plattform-Service publiziert ein Standard-Envelope nach JetStream `EVENTS`; event-store pull-ingested nach Postgres für Audit und Query — nie vermischt mit DLQ-Traffic.",
+      "DIAGRAM_ARIA": "Event-Ingest-Flow: Schritt wählen für Details",
+      "LINK_PUBLISH": "Envelope publizieren",
+      "LINK_PULL": "Pull · validieren · ack",
+      "LINK_PERSIST": "Zeile persistieren",
+      "NOTE": "Ungültige Envelopes beim Ingest werden terminiert — sie landen nicht im DLQ-Stream.",
+      "PANEL_KICKER": "In diesem Block",
+      "PANEL_EMPTY": "Schritt wählen: Publisher, JetStream EVENTS, event-store-Ingest oder Postgres events-Tabelle.",
+      "PUBLISHER": {
+        "TITLE": "Plattform-Publisher",
+        "DESC": "chatbot-service, file-service, api-gateway und künftige Services emittieren das Standard-Envelope nach durable Write.",
+        "D1": "Subject-Form: `events.<service>.<noun>.<verb>`.",
+        "D2": "Envelope: id, type, service, entity_id, owner_id, correlation_id, timestamp, payload.",
+        "D3": "Fehlgeschlagener Publish → service-lokale Postgres-Outbox bis JetStream zurück ist."
+      },
+      "NATS": {
+        "TITLE": "JetStream · EVENTS-Stream",
+        "DESC": "Durable Fan-out-Puffer nur für Business-Subjects — explizite Includes pro Service-Präfix.",
+        "D1": "Stream `EVENTS` — Replay-Puffer mit platform-nats `max_age` / `max_bytes`.",
+        "D2": "Pull-Durables pro Consumer (`event-store-ingest`, Domain-Handler, …).",
+        "D3": "Topologie aus platform-nats vor App-Start reconciled."
+      },
+      "INGEST": {
+        "TITLE": "event-store-Ingest",
+        "DESC": "Pull-Durable `event-store-ingest` nur auf `EVENTS` — validiert Envelope, schreibt nach Postgres, explicit ack.",
+        "D1": "Begrenzte Fetch-Batches; idempotent auf Event-`id`.",
+        "D2": "Gültiger Envelope → `events`-Zeile mit JSONB-Payload.",
+        "D3": "Malformed Envelope → `term()` (nicht DLQ)."
+      },
+      "POSTGRES": {
+        "TITLE": "Postgres · events",
+        "DESC": "Abfragbarer Audit-Store — Source of Truth für `GET /events`-Filter.",
+        "D1": "Indizierte Spalten für gängige Ops-Filter.",
+        "D2": "`pnpm retain` kürzt Zeilen nach `EVENTS_RETENTION_DAYS`.",
+        "D3": "Events-Tab in dieser UI ruft Gateway → `GET /api/event-store/events` auf."
+      }
+    },
+    "DLQ_FLOW": {
+      "SUBTITLE": "Klicke auf einen Block für Details. DLQ ist ein Ops-Muster — keine dritte Datenspeicher-Technologie. Nach `max_deliver` publizieren Domain-Consumer angereicherte Fehler-Records nach `events.dlq.<sink>`, acken die Poison-Message, und event-store persistiert sie für Triage und Replay.",
+      "DIAGRAM_ARIA": "DLQ-Ops-Muster-Flow: Schritt wählen für Details",
+      "LINK_RETRY": "Handler-Retry",
+      "LINK_PUBLISH": "DLQ-Publish · ack",
+      "LINK_INGEST": "DLQ-Stream · Ingest",
+      "LINK_STORE": "dlq_record persistieren",
+      "LINK_OPS": "Ops-UI · Replay",
+      "NOTE": "Replay republiziert das gespeicherte Envelope auf das Original-Subject im Stream `EVENTS` — event-store ruft andere Services nicht per HTTP auf. Domain-Consumer müssen idempotent bleiben.",
+      "PANEL_KICKER": "In diesem Block",
+      "PANEL_EMPTY": "Schritt wählen: Domain-Consumer, max_deliver, DLQ-Publish, DLQ-Ingest, Postgres dlq_records oder diese Ops-UI.",
+      "CONSUMER": {
+        "TITLE": "Domain-Pull-Consumer",
+        "DESC": "file-service cleanup, event-store-Ingest und andere Durables — explicit ack nach erfolgreicher Verarbeitung.",
+        "D1": "Pull aus `EVENTS` mit service-spezifischem Filter.",
+        "D2": "Transienter Fehler → nak / Retry bis `max_deliver`.",
+        "D3": "`max_deliver` aus platform-nats-Topologie."
+      },
+      "MAX_DELIVER": {
+        "TITLE": "Retries erschöpft",
+        "DESC": "Wenn der Handler innerhalb der broker-konfigurierten Zustellversuche nicht erfolgreich ist, darf der Consumer die Message nicht ewig pending lassen.",
+        "D1": "Per-Durable `max_deliver` aus platform-nats reconcile.",
+        "D2": "Finaler Fehlerpfad: anreichern + Publish auf DLQ-Subject.",
+        "D3": "Nicht dasselbe wie Business-Ingest-Fehler (die nutzen Outbox oder term)."
+      },
+      "PUBLISH": {
+        "TITLE": "DLQ-Publish",
+        "DESC": "Angereicherten Record nach `events.dlq.<logical-sink>` auf Stream `DLQ` publizieren, dann Original-JetStream-Message acken.",
+        "D1": "Payload enthält Original-Subject, correlation_id, owner_id, last_error, optionale Stream-Metadaten.",
+        "D2": "Ack entfernt die Poison-Message aus dem Pending-Set des Consumers.",
+        "D3": "Subject-Muster: `events.dlq.>` — wird nie als normale Business-Zeile ingestiert."
+      },
+      "INGEST": {
+        "TITLE": "event-store DLQ-Ingest",
+        "DESC": "Separates Pull-Durable `event-store-dlq-ingest` auf Stream `DLQ` — nie an `EVENTS` gehängt.",
+        "D1": "Filter `events.dlq.>`.",
+        "D2": "Schreibt `dlq_records` — getrennt von der `events`-Tabelle.",
+        "D3": "Business-Ingest-Consumer liest nie den DLQ-Stream."
+      },
+      "POSTGRES": {
+        "TITLE": "Postgres · dlq_records",
+        "DESC": "Ops-Tabelle für `GET /dlq` — Filter nach sink, correlation_id, Zeit; trackt `replayed_at`.",
+        "D1": "List- + Detail-API für den DLQ-Tab in dieser UI.",
+        "D2": "Längere Retention-Default (`DLQ_RETENTION_DAYS`) als Business-Events.",
+        "D3": "Replay speichert Envelope für Republish auf `EVENTS`."
+      },
+      "OPS_UI": {
+        "TITLE": "Diese Ops-UI",
+        "DESC": "Admin-gated Angular-Remote — DLQ-Zeilen durchsuchen, Fehlerkontext prüfen, Replay wenn sicher auslösen.",
+        "D1": "DLQ-Tab → `GET /api/event-store/dlq` via Gateway.",
+        "D2": "Replay → `POST /api/event-store/dlq/:id/replay` (202).",
+        "D3": "409 wenn bereits replayed; 400 wenn Envelope fehlt."
+      }
+    }
+  },
+  "EVENTS_PAGE": {
+    "TITLE": "Events",
+    "SUBTITLE": "Ingestierte Business-Events aus Postgres abfragen. Nach Service, Typ, Entity, Owner oder Correlation-ID filtern und eine Zeile für das vollständige JSON-Payload öffnen.",
+    "FILTERS": {
+      "SERVICE": "Service",
+      "SERVICE_PLACEHOLDER": "Services wählen…",
+      "TYPE": "Event-Typ",
+      "TYPE_PLACEHOLDER": "Typen wählen…",
+      "ENTITY_ID": "Entity-ID",
+      "ENTITY_PLACEHOLDER": "UUID oder Ressourcen-ID",
+      "CORRELATION_ID": "Correlation-ID",
+      "CORRELATION_SEARCH_PLACEHOLDER": "Nach Correlation-ID suchen…",
+      "OWNER_ID": "Owner-ID",
+      "OWNER_PLACEHOLDER": "google_… oder entra_…",
+      "PAYLOAD": "Payload",
+      "PAYLOAD_IS": "ist",
+      "PAYLOAD_KEY_PLACEHOLDER": "Feld wählen…",
+      "PAYLOAD_VALUE": "Payload-Wert",
+      "PAYLOAD_VALUE_PLACEHOLDER": "Wert wählen oder eingeben…",
+      "FROM": "Von",
+      "TO": "Bis",
+      "SEARCH": "Suchen",
+      "CLEAR": "Zurücksetzen",
+      "ADVANCED_SHOW": "Weitere Filter",
+      "ADVANCED_HIDE": "Weniger Filter",
+      "REMOVE_FILTER_NAMED": "Filter entfernen: {{filter}}",
+      "CHIP_SERVICE": "Service: {{value}}",
+      "CHIP_CORRELATION": "Correlation: {{value}}",
+      "CHIP_TYPE": "Typ: {{value}}",
+      "CHIP_ENTITY": "Entity: {{value}}",
+      "CHIP_OWNER": "Owner: {{value}}",
+      "CHIP_PAYLOAD": "payload.{{key}}: {{value}}",
+      "CHIP_FROM": "Von: {{value}}",
+      "CHIP_TO": "Bis: {{value}}"
+    },
+    "TABLE": {
+      "TIMESTAMP": "Zeitstempel",
+      "TYPE": "Typ",
+      "SERVICE": "Service",
+      "ENTITY_ID": "Entity-ID",
+      "CORRELATION_ID": "Correlation-ID",
+      "VIEW": "Details anzeigen"
+    },
+    "PAGINATION": {
+      "RANGE": "{{from}}–{{to}} von {{total}}",
+      "RANGE_CAPPED": "{{from}}–{{to}} von {{total}}+",
+      "PAGE": "Seite {{page}}",
+      "NONE": "Keine Events"
+    },
+    "EMPTY_FILTERED": "Keine Events für Ihre Filter",
+    "EMPTY_UNFILTERED": "Noch keine Events ingestiert",
+    "EMPTY_HINT_FILTERED": "Filter zurücksetzen oder den Datumsbereich erweitern.",
+    "EMPTY_HINT_UNFILTERED": "Events erscheinen hier, nachdem Services nach JetStream publizieren und event-store sie ingestiert.",
+    "LOADING_LIST": "Events werden geladen…",
+    "ERROR_LOAD": "Events konnten nicht geladen werden. Gateway und event-store prüfen und erneut versuchen.",
+    "DETAIL": {
+      "TITLE": "Event-Details",
+      "BACK": "Zurück zur Liste",
+      "LOADING": "Event wird geladen…",
+      "ERROR": "Dieses Event konnte nicht geladen werden.",
+      "ID": "Event-ID",
+      "TYPE": "Typ",
+      "SERVICE": "Service",
+      "ENTITY_ID": "Entity-ID",
+      "OWNER_ID": "Owner-ID",
+      "CORRELATION_ID": "Correlation-ID",
+      "TIMESTAMP": "Zeitstempel",
+      "PAYLOAD": "Payload",
+      "COPY": "In Zwischenablage kopieren"
+    }
+  },
+  "DLQ_PAGE": {
+    "TITLE": "Dead-Letter-Queue",
+    "SUBTITLE": "Nachrichten prüfen, deren JetStream-Retries erschöpft sind oder deren finale Verarbeitung fehlschlug. Nach Sink filtern, Details öffnen und bei behobener Ursache replayen.",
+    "FILTERS": {
+      "SINK": "Sink",
+      "SINK_PLACEHOLDER": "Sinks wählen…",
+      "CORRELATION_ID": "Correlation-ID",
+      "OWNER_ID": "Owner-ID",
+      "OWNER_PLACEHOLDER": "google_… oder entra_…",
+      "FROM": "Fehlgeschlagen ab",
+      "TO": "Fehlgeschlagen bis",
+      "SEARCH": "Suchen",
+      "CLEAR": "Zurücksetzen",
+      "CORRELATION_SEARCH_PLACEHOLDER": "Nach Correlation-ID suchen…",
+      "ADVANCED_SHOW": "Weitere Filter",
+      "ADVANCED_HIDE": "Weniger Filter",
+      "REMOVE_FILTER_NAMED": "Filter entfernen: {{filter}}",
+      "CHIP_SINK": "Sink: {{value}}",
+      "CHIP_CORRELATION": "Correlation: {{value}}",
+      "CHIP_OWNER": "Owner: {{value}}",
+      "CHIP_FROM": "Ab: {{value}}",
+      "CHIP_TO": "Bis: {{value}}"
+    },
+    "TABLE": {
+      "FAILED_AT": "Fehlgeschlagen",
+      "SINK": "Sink",
+      "CORRELATION_ID": "Correlation-ID",
+      "LAST_ERROR": "Letzter Fehler",
+      "STATUS": "Status",
+      "VIEW": "Details anzeigen"
+    },
+    "STATUS": {
+      "REPLAYED": "Replayed",
+      "PENDING": "Ausstehend"
+    },
+    "PAGINATION": {
+      "RANGE": "{{from}}–{{to}} von {{total}}",
+      "RANGE_CAPPED": "{{from}}–{{to}} von {{total}}+",
+      "NONE": "Keine Einträge"
+    },
+    "EMPTY_FILTERED": "Keine DLQ-Einträge für Ihre Filter",
+    "EMPTY_UNFILTERED": "Noch keine DLQ-Einträge",
+    "EMPTY_HINT_FILTERED": "Filter zurücksetzen oder den Datumsbereich erweitern.",
+    "EMPTY_HINT_UNFILTERED": "Einträge erscheinen hier, nachdem ein Consumer die Retries aufbraucht und auf den DLQ-Stream publiziert.",
+    "LOADING_LIST": "DLQ-Einträge werden geladen…",
+    "ERROR_LOAD": "DLQ-Einträge konnten nicht geladen werden. Gateway und event-store prüfen und erneut versuchen.",
+    "DETAIL": {
+      "TITLE": "DLQ-Eintrag",
+      "BACK": "Zurück zur Liste",
+      "LOADING": "Eintrag wird geladen…",
+      "ERROR": "Dieser Eintrag konnte nicht geladen werden.",
+      "ID": "Eintrags-ID",
+      "SINK": "Sink",
+      "SUBJECT": "DLQ-Subject",
+      "ORIGINAL_SUBJECT": "Original-Subject",
+      "OWNER_ID": "Owner-ID",
+      "CORRELATION_ID": "Correlation-ID",
+      "FAILED_AT": "Fehlgeschlagen",
+      "INGESTED_AT": "Ingested",
+      "REPLAYED_AT": "Replayed",
+      "JETSTREAM": "JetStream",
+      "LAST_ERROR": "Letzter Fehler",
+      "PAYLOAD": "Payload",
+      "ENVELOPE": "Envelope",
+      "NO_ENVELOPE": "Kein Envelope gespeichert — Replay für diesen Eintrag nicht möglich.",
+      "COPY": "In Zwischenablage kopieren"
+    },
+    "REPLAY": {
+      "ACTION": "Nach EVENTS replayen",
+      "CONFIRM_TITLE": "DLQ-Nachricht replayen?",
+      "CONFIRM_MESSAGE": "Der gespeicherte Envelope wird auf <strong>{{subject}}</strong> im EVENTS-Stream republiziert. Domain-Consumer müssen die Nachricht idempotent verarbeiten. Fortfahren?",
+      "SUCCESS": "Replay angenommen — Envelope wurde an JetStream republiziert.",
+      "UNAVAILABLE": "Replay nicht verfügbar — bereits replayed oder Envelope fehlt.",
+      "ERROR_GENERIC": "Replay fehlgeschlagen. Erneut versuchen oder event-store-Logs prüfen.",
+      "ERROR_ALREADY_REPLAYED": "Dieser Eintrag wurde bereits replayed.",
+      "ERROR_NO_ENVELOPE": "Replay nicht möglich — kein gültiger Envelope gespeichert.",
+      "ERROR_NOT_FOUND": "DLQ-Eintrag nicht gefunden."
+    }
+  },
+  "LOGIN": {
+    "KICKER": "Anmelden",
+    "TITLE": "Event Store",
+    "SUBTITLE": "Melden Sie sich mit Google, Ihrem Microsoft-Arbeits- oder Schulkonto oder einem persönlichen Microsoft-Konto an.",
+    "CONTINUE_GOOGLE": "Mit Google fortfahren",
+    "MICROSOFT_WORK_SCHOOL": "Mit Microsoft fortfahren (Arbeit / Schule)",
+    "MICROSOFT_PERSONAL": "Mit Microsoft fortfahren (Privat)",
+    "SIGNING_IN": "Anmeldung läuft…",
+    "FOOTNOTE": "Mit dem Fortfahren akzeptieren Sie die Zugriffsrichtlinien Ihrer Organisation für diese App.",
+    "ERROR_GENERIC": "Anmeldung nicht abgeschlossen. Bitte erneut versuchen oder Administrator kontaktieren."
+  },
+  "PROFILE": {
+    "MENU_ARIA": "Kontomenü",
+    "TITLE": "Angemeldet als",
+    "SIGN_IN_METHOD": "Anmeldemethode",
+    "NAME": "Name",
+    "EMAIL": "E-Mail",
+    "USERNAME": "Benutzername",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft Entra ID",
+    "METHOD_UNKNOWN": "Unbekannt",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Abmelden"
+  },
+  "DASHBOARD": {
+    "TITLE": "Startseite",
+    "HELP": "<p>Dies ist der Hauptbereich der Anwendung nach der Anmeldung.</p><p>Nutzen Sie die Symbolleiste für Hilfe und E-Mail-Support.</p>"
+  },
+  "EMAIL": {
+    "SUBJECT": "Anfrage zur Zugriffshilfe",
+    "BODY": "Sehr geehrtes Support-Team,\n\nich möchte auf Daten in folgender Anwendung zugreifen: {{applicationName}}. Bitte helfen Sie mir bei der Klärung.\n\nKonkret benötige ich Zugriff auf:\n[Bitte beschreiben Sie, auf welche Daten Sie zugreifen müssen]\n\nVielen Dank!"
+  },
+  "BAD_REQUEST": {
+    "title": "Ungültige Anfrage",
+    "message": "Die Anfrage konnte wegen fehlerhafter Syntax nicht verarbeitet werden.<br>Bitte prüfen Sie die Anfrage und versuchen Sie es erneut."
+  },
+  "UNAUTHORIZED": {
+    "title": "Nicht autorisiert",
+    "message": "Sie sind nicht berechtigt, diese Aktion auszuführen.<br>Bitte wenden Sie sich an Ihren Administrator."
+  },
+  "FORBIDDEN": {
+    "title": "Verboten",
+    "message": "Sie haben keine Berechtigung für diese Ressource.<br>Bitte wenden Sie sich an Ihren Administrator."
+  },
+  "NOT_FOUND": {
+    "title": "Nicht gefunden",
+    "message": "Die angeforderte Ressource wurde nicht gefunden.<br>Bitte prüfen Sie die URL und versuchen Sie es erneut."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Interner Serverfehler",
+    "message": "Der Server ist auf einen unerwarteten Fehler gestoßen.<br>Bitte versuchen Sie es später erneut."
+  },
+  "BAD_GATEWAY": {
+    "title": "Bad Gateway",
+    "message": "Der Server hat eine ungültige Antwort von einem Upstream-Server erhalten.<br>Bitte versuchen Sie es später erneut."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Dienst nicht verfügbar",
+    "message": "Der Server ist vorübergehend überlastet oder in Wartung.<br>Bitte versuchen Sie es später erneut."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Gateway-Timeout",
+    "message": "Verbindungs-Timeout: Der Server ist derzeit nicht erreichbar.<br>Bitte versuchen Sie es später erneut."
+  },
+  "CONNECTION_LOST": {
+    "title": "Verbindung verloren",
+    "message": "Ihr Gerät scheint keine Internetverbindung zu haben.<br>Bitte prüfen Sie die Verbindung und versuchen Sie es erneut."
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Verstanden",
+    "CANCEL": "Abbrechen",
+    "CONFIRM": "Bestätigen"
+  },
+  "SUBNAV": {
+    "ARIA": "Event-Store-Bereiche",
+    "OVERVIEW": "Übersicht",
+    "EVENTS": "Events",
+    "DLQ": "DLQ",
+    "SUPPORT": "E-Mail-Support"
+  },
+  "GENERAL_ERROR": {
+    "title": "Die Anwendung ist abgestürzt.",
+    "message": "Bitte kontaktieren Sie den Support.<br>Nennen Sie Benutzername und Zeitpunkt des Absturzes.<br>Vielen Dank!"
+  },
+  "LANGUAGE": {
+    "LABEL": "Sprache"
+  },
+  "PAGINATION": {
+    "LABEL": "Seitennavigation",
+    "FIRST": "Erste Seite",
+    "PREV": "Vorherige Seite",
+    "NEXT": "Nächste Seite",
+    "LAST": "Letzte Seite",
+    "PAGE": "Seite {{page}}",
+    "PAGE_SIZE": "Zeilen pro Seite"
+  }
+}

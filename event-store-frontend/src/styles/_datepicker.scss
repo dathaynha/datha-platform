@@ -1,0 +1,34 @@
+// Opt-in: styleClass="es-datepicker" on p-datepicker input wrapper.
+
+.es-datepicker {
+  width: 100%;
+}
+
+.es-datepicker .p-datepicker-input {
+  width: 100%;
+  font-size: var(--datha-form-font-size) !important;
+  line-height: var(--datha-form-line-height);
+  padding: var(--datha-form-padding-y) 1.65rem var(--datha-form-padding-y) var(--datha-form-padding-x) !important;
+  background: color-mix(in srgb, var(--p-surface-0) 82%, transparent);
+  color: var(--p-surface-900);
+  border-color: color-mix(in srgb, var(--p-primary-400) 32%, var(--p-surface-300));
+  backdrop-filter: blur(8px);
+}
+
+.dark .es-datepicker .p-datepicker-input {
+  background: color-mix(in srgb, var(--p-surface-950) 48%, transparent);
+  color: color-mix(in srgb, var(--p-surface-0) 92%, transparent);
+  border-color: color-mix(in srgb, var(--p-surface-0) 16%, transparent);
+}
+
+.es-datepicker .p-datepicker-input-icon-container,
+.es-datepicker .p-datepicker-input-icon {
+  color: var(--p-surface-500);
+  font-size: 0.625rem !important;
+  inset-inline-end: 0.45rem;
+}
+
+.dark .es-datepicker .p-datepicker-input-icon-container,
+.dark .es-datepicker .p-datepicker-input-icon {
+  color: var(--p-surface-400);
+}

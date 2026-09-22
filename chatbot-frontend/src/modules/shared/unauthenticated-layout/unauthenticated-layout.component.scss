@@ -1,0 +1,29 @@
+/**
+ * Prime Aura exposes --p-* variables under `.dark` (see providePrimeNG darkModeSelector).
+ * Chrome material, tokens and the bar itself come from @datha/platform-ui.
+ */
+@use "@datha/platform-ui/styles/chrome" as chrome;
+
+.chatbot-layout {
+  color: var(--p-surface-800);
+}
+
+:host-context(.dark) .chatbot-layout {
+  color: var(--p-surface-0);
+}
+
+.chatbot-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ambient backdrop — glass chrome is invisible over flat backgrounds. Mixed in
+   from the lib rather than a global class: the remote's global stylesheet never
+   loads in hosted mode, component styles ship with the MF module. */
+.chatbot-layout {
+  @include chrome.ambient;
+}
+
+:host-context(.dark) .chatbot-layout {
+  @include chrome.ambient-dark;
+}

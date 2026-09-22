@@ -1,0 +1,571 @@
+<header
+  class="thread-header flex shrink-0 items-center gap-3 border-b px-4 py-3"
+>
+  <!-- The page's narrow-screen back arrow. A window has no list behind it to
+       go back to, and gets minimise and close at the other end instead. -->
+  @if (!windowed()) {
+    <button
+      type="button"
+      class="thread-back chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border"
+      [attr.aria-label]="'MESSENGER.THREAD.BACK' | translate"
+      (click)="back.emit()"
+    >
+      <i class="pi pi-arrow-left text-sm" aria-hidden="true"></i>
+    </button>
+  }
+
+  <!-- The header itself opens the group's details, which is where WhatsApp,
+       Telegram and Messenger all put it. The icon button stays as the visible
+       affordance; this is the target people actually reach for. -->
+  <div
+    class="thread-identity flex min-w-0 flex-1 items-center gap-3 text-left"
+    [class.is-tappable]="memberCount() > 0"
+    [attr.role]="memberCount() > 0 ? 'button' : null"
+    [attr.tabindex]="memberCount() > 0 ? 0 : null"
+    [attr.aria-label]="
+      memberCount() > 0 ? ('MESSENGER.GROUP.DETAILS' | translate) : null
+    "
+    data-testid="thread-identity"
+    (click)="memberCount() > 0 && details.emit()"
+    (keydown.enter)="memberCount() > 0 && details.emit()"
+    (keydown.space)="memberCount() > 0 && details.emit()"
+  >
+  <span class="thread-avatar relative shrink-0" aria-hidden="true">
+    <!-- The same pictures the bubbles already use. They were only ever wired
+         into the message runs, so the header and the list showed a bare letter
+         for someone whose photo we had all along (dathq, 2026-09-11). -->
+    <messenger-avatar-stack [faces]="faces()" />
+    @if (presence() !== null) {
+      <span
+        class="presence-dot"
+        [class.is-online]="presence() === 'online'"
+        [class.is-away]="presence() === 'away'"
+      ></span>
+    }
+  </span>
+
+  <div class="flex min-w-0 flex-col gap-1">
+    <h2
+      class="thread-title m-0 truncate text-sm font-semibold"
+      data-testid="thread-title"
+    >
+      {{ title() }}
+    </h2>
+    <!-- A thread opened by URL knows its id before it knows whose it is, so
+         the name and presence arrive a moment after the header does. -->
+    @if (title()) {
+      <p class="chats-subtle m-0 text-[0.6875rem]" data-testid="thread-subtitle">
+        @if (memberCount() > 0) {
+          {{ "MESSENGER.GROUP.MEMBER_COUNT" | translate: { count: memberCount() } }}
+        } @else if (presence() === "online") {
+          {{ "MESSENGER.PRESENCE.ONLINE" | translate }}
+        } @else if (presence() === "away") {
+          {{ "MESSENGER.PRESENCE.AWAY" | translate }}
+        } @else {
+          {{ "MESSENGER.PRESENCE.OFFLINE" | translate }}
+        }
+      </p>
+    } @else {
+      <span class="skeleton-bubble skeleton-line-title" aria-hidden="true"></span>
+      <span class="skeleton-bubble skeleton-line-sub" aria-hidden="true"></span>
+    }
+  </div>
+
+  </div>
+
+  @if (memberCount() > 0) {
+    <!-- Members, rename, add and leave all live behind this: a group's chrome
+         is rarely used and would crowd a header that already carries calling. -->
+    <button
+      type="button"
+      class="thread-call chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border"
+      [attr.aria-label]="'MESSENGER.GROUP.DETAILS' | translate"
+      [attr.title]="'MESSENGER.GROUP.DETAILS' | translate"
+      data-testid="thread-details"
+      (click)="details.emit()"
+    >
+      <i class="pi pi-users text-sm" aria-hidden="true"></i>
+    </button>
+  }
+
+  @if (callable()) {
+    <!-- Signalling rides the socket, so calling needs it up — unlike sending,
+         which is a REST write and works offline. Hence disabled, not hidden. -->
+    <button
+      type="button"
+      class="thread-call chats-icon-button ml-auto flex h-8 w-8 items-center justify-center rounded-lg border"
+      [disabled]="!connected()"
+      [attr.aria-label]="'MESSENGER.CALL.START' | translate"
+      data-testid="thread-call"
+      (click)="call.emit('audio')"
+    >
+      <i class="pi pi-phone text-sm" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      class="thread-call chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border"
+      [disabled]="!connected()"
+      [attr.aria-label]="'MESSENGER.CALL.START_VIDEO' | translate"
+      [attr.title]="
+        videoCallable() ? null : ('MESSENGER.CALL.NO_CAMERA_HINT' | translate)
+      "
+      data-testid="thread-call-video"
+      (click)="call.emit('video')"
+    >
+      <i class="pi pi-video text-sm" aria-hidden="true"></i>
+    </button>
+  }
+
+  @if (!connected()) {
+    <!-- The socket is the live layer, not the write path: sending still works
+         while it is down, so this is a notice rather than a blocker. -->
+    <span
+      class="thread-offline shrink-0 text-[0.6875rem]"
+      [class.ml-auto]="!callable()"
+    >
+      {{ "MESSENGER.THREAD.RECONNECTING" | translate }}
+    </span>
+  }
+
+  @if (windowed()) {
+    <button
+      type="button"
+      class="thread-call chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border"
+      [class.ml-auto]="!callable() && connected()"
+      [attr.aria-label]="'MESSENGER.DOCK.MINIMISE' | translate"
+      data-testid="dock-minimise"
+      (click)="minimise.emit()"
+    >
+      <i class="pi pi-minus text-sm" aria-hidden="true"></i>
+    </button>
+    <button
+      type="button"
+      class="thread-call chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border"
+      [attr.aria-label]="'MESSENGER.DOCK.CLOSE' | translate"
+      data-testid="dock-close"
+      (click)="closeWindow.emit()"
+    >
+      <i class="pi pi-times text-sm" aria-hidden="true"></i>
+    </button>
+  }
+</header>
+
+<!--
+  A call happening right now in this thread, with a way in.
+
+  This is the whole of the reconnect story: nothing auto-rejoins, because
+  Messenger does not either — the ongoing call sits in the chat and you press
+  Join (dathq, 2026-09-15). A banner rather than a timeline row, because the
+  call has not happened yet in any past tense and would sort to whenever it
+  started, which is exactly where nobody is looking.
+-->
+@if (ongoingCall(); as live) {
+  <div
+    class="thread-live-call flex shrink-0 items-center gap-2.5 border-b px-4 py-2"
+    data-testid="thread-live-call"
+  >
+    <span
+      class="call-card-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+    >
+      <i
+        class="pi text-[0.75rem]"
+        [class.pi-video]="live.media === 'video'"
+        [class.pi-phone]="live.media !== 'video'"
+        aria-hidden="true"
+      ></i>
+    </span>
+    <span class="flex min-w-0 flex-col">
+      <span class="thread-live-title text-[0.8125rem] font-medium">
+        {{ "MESSENGER.CALL.ONGOING" | translate }}
+      </span>
+      <span class="thread-live-meta text-[0.625rem]">
+        {{
+          "MESSENGER.CALL.IN_CALL"
+            | translate: { count: live.joinedOwnerIds.length }
+        }}
+      </span>
+    </span>
+    <button
+      type="button"
+      class="thread-live-join ml-auto shrink-0 rounded-lg px-3 py-1.5 text-[0.75rem] font-medium"
+      data-testid="thread-join-call"
+      (click)="joinCall.emit(live)"
+    >
+      {{ "MESSENGER.CALL.JOIN" | translate }}
+    </button>
+  </div>
+}
+
+<div
+  #messageScroller
+  class="thread-scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto px-4 py-4"
+  data-testid="thread-messages"
+  role="log"
+  aria-live="polite"
+  aria-relevant="additions"
+  (scroll)="onScroll($event)"
+>
+  @if (loading() && rows().length === 0) {
+    <!-- A skeleton of the layout it is about to become, rather than a spinner
+         or a blur: there is no low-res version of a message to blur up, and a
+         shape in the right place is what makes the wait feel short. -->
+    <div
+      class="thread-skeleton flex flex-col gap-3"
+      data-testid="thread-skeleton"
+      [attr.aria-label]="'MESSENGER.CHATS.LOADING' | translate"
+      aria-busy="true"
+    >
+      @for (width of skeletonWidths; track $index) {
+        <div
+          class="skeleton-row flex items-end gap-2"
+          [class.is-own]="$index % 3 === 2"
+        >
+          @if ($index % 3 !== 2) {
+            <span class="skeleton-avatar shrink-0"></span>
+          }
+          <span class="skeleton-bubble" [style.width.rem]="width"></span>
+        </div>
+      }
+    </div>
+  } @else if (rows().length === 0) {
+    <p class="chats-muted m-0 py-8 text-center text-[0.8125rem]">
+      {{ "MESSENGER.THREAD.EMPTY" | translate }}
+    </p>
+  }
+
+  @for (row of rows(); track row.message.id) {
+    @if (row.separatorAt) {
+      <p
+        class="thread-separator chats-subtle m-0 py-2 text-center text-[0.6875rem]"
+        data-testid="thread-separator"
+      >
+        @if (row.separatorDay === "today") {
+          {{ "MESSENGER.THREAD.TODAY" | translate }}
+        } @else if (row.separatorDay === "yesterday") {
+          {{ "MESSENGER.THREAD.YESTERDAY" | translate }}
+        } @else {
+          {{ row.separatorAt | date: "mediumDate" }}
+        }
+        · {{ row.separatorAt | date: "shortTime" }}
+      </p>
+    }
+    @if (row.call; as record) {
+      <!--
+        A call is attributed, not anonymous. Messenger, WhatsApp and Telegram
+        all render call history as a card on the **caller's** side rather than
+        as a centred system row — centring put it in the same column, colour
+        and size as the day separator, so a call read as a timestamp and
+        neither person could tell who placed it (reported 2026-09-11).
+      -->
+      <div
+        class="message-row call-row flex w-full items-end gap-2"
+        [class.is-own]="row.own"
+        data-testid="thread-call-row"
+      >
+        @if (!row.own) {
+          <span class="message-avatar shrink-0" [title]="row.senderName">
+            <messenger-avatar [url]="row.avatarUrl" [name]="row.senderName" />
+          </span>
+        }
+
+        <div
+          class="call-card flex max-w-[min(80%,32rem)] items-center gap-2.5 rounded-2xl px-3 py-2"
+          [class.is-missed]="record.status === 'missed'"
+          [class.is-declined]="record.status === 'declined'"
+        >
+          <span
+            class="call-card-icon flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          >
+            <i
+              class="pi text-[0.75rem]"
+              [class.pi-video]="record.media === 'video'"
+              [class.pi-phone]="record.media !== 'video'"
+              aria-hidden="true"
+            ></i>
+          </span>
+          <span class="flex min-w-0 flex-col">
+            <span class="call-card-title text-[0.8125rem] font-medium">
+              <!-- The wording rule is shared with the conversation list's
+                   preview line (`helper/call-row-label.ts`) so the two cannot
+                   drift; the `expired` case in particular took a bug report to
+                   get right once already. -->
+              {{
+                callLabel(record).key | translate: callLabel(record).params
+              }}
+            </span>
+            <!-- Who placed it, and when. The side already says it; the line
+                 says it out loud, because a one-sided thread read on a narrow
+                 screen is not a reliable signal on its own. -->
+            <span class="call-card-meta text-[0.625rem]">
+              {{
+                (row.own
+                  ? "MESSENGER.CALL.ROW_BY_YOU"
+                  : "MESSENGER.CALL.ROW_BY_PEER"
+                ) | translate: { name: row.senderName }
+              }}
+              · {{ record.startedAt | date: "shortTime" }}
+              @if (isGroupCall(record) && record.status === "completed") {
+                <!-- Who was rung and who picked up are different questions, and
+                     a group call's answer to the second is the interesting one.
+                     Only on a completed call: a missed one still counts the
+                     caller, who is joined the instant the call is created. -->
+                ·
+                {{
+                  "MESSENGER.CALL.ROW_JOINED"
+                    | translate: { count: joinedCount(record) }
+                }}
+              }
+            </span>
+          </span>
+        </div>
+      </div>
+    } @else {
+      <div
+        class="message-row flex w-full items-end gap-2"
+        [class.is-own]="row.own"
+        [class.starts-run]="row.startsRun"
+        [class.ends-run]="row.endsRun"
+        [attr.data-testid]="'message-row'"
+      >
+        @if (!row.own) {
+          <!-- One avatar per run, beside its last bubble; the spacer keeps every
+               other bubble in the same column. -->
+          @if (row.endsRun) {
+            <span class="message-avatar shrink-0" [title]="row.senderName">
+              <messenger-avatar [url]="row.avatarUrl" [name]="row.senderName" />
+            </span>
+          } @else {
+            <span class="message-avatar-spacer shrink-0" aria-hidden="true"></span>
+          }
+        }
+
+        <div
+          class="message-bubble flex max-w-[min(80%,32rem)] flex-col gap-1"
+          [class.is-media]="showsPreview(row)"
+        >
+          @if (row.showName) {
+            <span
+              class="message-sender text-[0.6875rem] font-semibold"
+              [attr.data-tone]="row.senderTone"
+              data-testid="message-sender"
+              >{{ row.senderName }}</span
+            >
+          }
+          @if (showsPreview(row)) {
+            <!--
+              A picture is shown, not listed. Every mainstream messenger renders
+              an image attachment as the image itself — the bubble chrome comes
+              off (`is-media`) so it reads as a photo rather than as a card with
+              a photo in it. Clicking still opens the full file, through the
+              same freshly minted link as any other attachment.
+            -->
+            <button
+              type="button"
+              class="attachment-image overflow-hidden rounded-2xl"
+              data-testid="attachment-image"
+              [class.has-shape]="!!aspectFor(row)"
+              [style.--media-aspect]="aspectFor(row)"
+              [disabled]="isPendingRow(row)"
+              [attr.aria-label]="
+                ('MESSENGER.THREAD.DOWNLOAD' | translate) +
+                ': ' +
+                row.message.body
+              "
+              (click)="open.emit(row)"
+            >
+              <!-- Off-screen history is not decoded until it is scrolled to:
+                   a thread is mostly pictures you are not looking at. -->
+              <img
+                [src]="row.previewUrl"
+                [alt]="row.message.body"
+                loading="lazy"
+                decoding="async"
+                (load)="onPreviewLoad(row, $event)"
+                (error)="onPreviewError(row)"
+              />
+            </button>
+          } @else if (isAttachment(row)) {
+            <button
+              type="button"
+              class="attachment-card flex items-center gap-2 rounded-lg px-2 py-1.5 text-left"
+              data-testid="attachment-card"
+              [disabled]="isPendingRow(row)"
+              (click)="open.emit(row)"
+            >
+              <i class="pi pi-paperclip text-sm" aria-hidden="true"></i>
+              <span class="flex min-w-0 flex-col">
+                <span class="truncate text-[0.8125rem] font-medium">{{
+                  row.message.body
+                }}</span>
+                <span class="text-[0.625rem]">
+                  @if (isPendingRow(row)) {
+                    {{ "MESSENGER.THREAD.UPLOADING" | translate }}
+                  } @else {
+                    {{ "MESSENGER.THREAD.DOWNLOAD" | translate }}
+                  }
+                </span>
+              </span>
+            </button>
+          } @else {
+            <p class="message-body m-0 whitespace-pre-wrap text-[0.8125rem]">
+              {{ row.message.body }}
+            </p>
+          }
+          <!-- Anchored to the bubble but positioned outside it, so it costs no
+               layout: reserving width for a hidden timestamp is what kept own
+               bubbles off the right edge (reported 2026-09-10). In-flight state
+               is always visible; the timestamp is revealed on hover **and**
+               keyboard focus, since a hover-only stamp is invisible to anyone
+               not using a mouse. -->
+          <span class="message-trailing text-[0.625rem]">
+          @if (isFailedRow(row)) {
+            <button
+              type="button"
+              class="message-retry underline"
+              (click)="retry.emit(row.message.clientMessageId)"
+            >
+              {{ "MESSENGER.THREAD.RETRY" | translate }}
+            </button>
+          } @else if (isPendingRow(row)) {
+            <i
+              class="pi pi-clock chats-subtle"
+              [attr.aria-label]="'MESSENGER.THREAD.SENDING' | translate"
+            ></i>
+          } @else {
+            <time
+              class="message-time chats-subtle"
+              data-testid="message-time"
+              tabindex="0"
+              [attr.datetime]="row.message.createdAt"
+              [title]="row.message.createdAt | date: 'medium'"
+              >{{ row.message.createdAt | date: "shortTime" }}</time
+            >
+          }
+          </span>
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Read state belongs to the conversation, not to any one message, and is
+       shown only while our message is the newest: a reply is itself proof of
+       reading. Avatars rather than the word "Seen", as Messenger does — which
+       also answers *who* once groups arrive. -->
+  @if (seenBy().length > 0) {
+    <p
+      class="message-seen m-0 flex items-center justify-end gap-1"
+      data-testid="message-read"
+      [attr.aria-label]="'MESSENGER.THREAD.SEEN' | translate"
+    >
+      @for (reader of seenBy(); track reader.ownerId) {
+        <span class="seen-avatar" [title]="reader.name">
+          <messenger-avatar [url]="reader.avatarUrl" [name]="reader.name" />
+        </span>
+      }
+    </p>
+  }
+</div>
+
+@if (typists().length > 0) {
+  <p
+    class="thread-typing chats-muted m-0 flex items-center gap-2 px-4 pb-1 text-[0.6875rem]"
+    data-testid="typing-indicator"
+    aria-live="polite"
+  >
+    <span class="typing-dots" aria-hidden="true">
+      <span></span><span></span><span></span>
+    </span>
+    @if (typists().length === 1) {
+      {{ "MESSENGER.THREAD.TYPING" | translate: { name: typingLabel() } }}
+    } @else if (typists().length === 2) {
+      {{ "MESSENGER.THREAD.TYPING_TWO" | translate: { names: typingLabel() } }}
+    } @else {
+      {{ "MESSENGER.THREAD.TYPING_MANY" | translate }}
+    }
+  </p>
+}
+
+<!-- Scrolled up into history: offer the way back rather than dragging the
+     reader down whenever anyone sends anything. -->
+@if (!atBottom()) {
+  <div class="thread-jump-wrap relative">
+    <!-- Geometry matches chatbot-frontend's `chat-jump-to-bottom` exactly —
+         10x10 circle, centred on the composer column, 0.75rem clear of its top
+         border — so the two products behave the same. The old pill sat at the
+         right edge, inches from send, and was easy to hit by accident
+         (reported 2026-09-11). The label is a real tooltip rather than the
+         native `title`, which waits a second and cannot be styled. -->
+    <button
+      type="button"
+      class="thread-jump absolute bottom-3 left-1/2 flex h-10 w-10 -translate-x-1/2 items-center justify-center rounded-full"
+      data-testid="jump-to-latest"
+      [attr.aria-label]="'MESSENGER.THREAD.JUMP_LATEST' | translate"
+      (click)="jumpToLatest()"
+    >
+      <i class="pi pi-arrow-down text-sm" aria-hidden="true"></i>
+      <span
+        class="thread-jump-label pointer-events-none absolute bottom-full left-1/2 mb-2 whitespace-nowrap rounded-md px-2 py-1 text-[0.6875rem] font-medium"
+        aria-hidden="true"
+      >
+        {{ "MESSENGER.THREAD.JUMP_LATEST" | translate }}
+      </span>
+    </button>
+  </div>
+}
+
+<!-- Spacing matches chatbot-frontend's composer footer (1rem inline, widening
+     to 1.5rem with the container rather than with the window)
+     so the two products feel like one platform, and so the input is not jammed
+     against the viewport edge. There is no shared composer component: aligning
+     by convention avoids a shared-frontend release for a padding change. -->
+<form
+  class="thread-composer flex shrink-0 flex-col gap-2 border-t pb-5 pt-3"
+  (submit)="$event.preventDefault(); submit()"
+>
+  <div class="flex items-end gap-2">
+  <!-- The bytes go straight to Azure Blob via a SAS URL; only the metadata
+       calls pass through the gateway. -->
+  <label
+    class="composer-attach flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-xl"
+    [attr.aria-label]="'MESSENGER.THREAD.ATTACH' | translate"
+  >
+    <i class="pi pi-paperclip text-sm" aria-hidden="true"></i>
+    <input
+      type="file"
+      class="hidden"
+      data-testid="composer-attach"
+      (change)="onPickFile($event)"
+    />
+  </label>
+
+  <textarea
+    #composerInput
+    class="composer-input max-h-32 min-h-[2.5rem] w-full resize-none rounded-xl border px-3 py-2 text-[0.8125rem] outline-none"
+    rows="1"
+    data-testid="composer-input"
+    [attr.aria-label]="'MESSENGER.THREAD.COMPOSER' | translate"
+    [attr.placeholder]="'MESSENGER.THREAD.COMPOSER' | translate"
+    [value]="draft()"
+    (input)="onInput($event)"
+      (focus)="read.emit()"
+    (keydown)="onKeydown($event)"
+  ></textarea>
+    <button
+      type="submit"
+      class="composer-send flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+      data-testid="composer-send"
+      [disabled]="!canSend()"
+      [attr.aria-label]="'MESSENGER.THREAD.SEND' | translate"
+    >
+      <i class="pi pi-send text-sm" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <!-- Enter sends and Shift+Enter breaks the line here exactly as in chatbot,
+       so the hint reads the same and the behaviour is discoverable. -->
+  <p
+    class="thread-composer-hint chats-subtle m-0 text-center text-[0.6875rem] tracking-wide"
+  >
+    {{ "MESSENGER.THREAD.COMPOSER_HINT" | translate }}
+  </p>
+</form>

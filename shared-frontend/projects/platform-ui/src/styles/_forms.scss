@@ -1,0 +1,45 @@
+.datha-input.p-inputtext,
+.datha-field .p-inputtext,
+.datha-select.p-select {
+  border-color: color-mix(in srgb, var(--p-primary-400) 32%, var(--p-surface-300));
+  background: color-mix(in srgb, var(--p-surface-0) 82%, transparent);
+  color: var(--p-surface-900);
+  font-size: var(--datha-form-font-size);
+  line-height: var(--datha-form-line-height);
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-control));
+  backdrop-filter: blur(var(--datha-glass-blur-control));
+}
+
+.datha-input.p-inputtext,
+.datha-field .p-inputtext {
+  padding: var(--datha-form-padding-y) var(--datha-form-padding-x);
+}
+
+.datha-select.p-select .p-select-label,
+.datha-select.p-select .p-select-dropdown {
+  padding-block: var(--datha-form-padding-y);
+  padding-inline: var(--datha-form-padding-x);
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.datha-label {
+  color: color-mix(in srgb, var(--p-surface-700) 88%, transparent);
+  font-size: var(--datha-form-font-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dark .datha-input.p-inputtext,
+.dark .datha-field .p-inputtext,
+.dark .datha-select.p-select {
+  border-color: color-mix(in srgb, var(--p-surface-0) 16%, transparent);
+  background: color-mix(in srgb, var(--p-surface-950) 48%, transparent);
+  color: color-mix(in srgb, var(--p-surface-0) 92%, transparent);
+}
+
+.dark .datha-label {
+  color: color-mix(in srgb, var(--p-surface-0) 72%, transparent);
+}

@@ -1,0 +1,207 @@
+{
+  "THEME": {
+    "LABEL": "Theme",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "HOME": {
+    "TITLE": "Your Applications",
+    "SUBTITLE": "Select an application to get started.",
+    "NO_APPS": "No applications available."
+  },
+  "LOGIN": {
+    "KICKER": "Platform",
+    "SUBTITLE": "Sign in to continue",
+    "CONTINUE_GOOGLE": "Continue with Google",
+    "MICROSOFT_WORK_SCHOOL": "Continue with Microsoft (Work / School)",
+    "MICROSOFT_PERSONAL": "Continue with Microsoft (Personal)",
+    "SIGNING_IN": "Signing in…",
+    "ERROR_GENERIC": "Sign-in failed. Please try again.",
+    "FOOTNOTE": "By signing in you accept the terms of service."
+  },
+  "PROFILE": {
+    "TITLE": "My Profile",
+    "MENU_ARIA": "Open profile menu",
+    "NAME": "Name",
+    "EMAIL": "Email",
+    "USERNAME": "Username",
+    "SIGN_IN_METHOD": "Sign-in method",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft",
+    "METHOD_UNKNOWN": "Unknown",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Log out",
+    "SUPPORT": "Email Support"
+  },
+  "BRAND": {
+    "PLATFORM": "Platform",
+    "WITH_APP": "Platform, {{appName}}"
+  },
+  "APPS": {
+    "CHATBOT": {
+      "NAME": "Chatbot",
+      "DESCRIPTION": "AI-powered chat assistant"
+    },
+    "EVENT_STORE": {
+      "NAME": "Event Store",
+      "DESCRIPTION": "Platform events and DLQ operations"
+    },
+    "MESSENGER": {
+      "NAME": "Messenger",
+      "DESCRIPTION": "Chat, presence and WebRTC calling"
+    }
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Got it",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm"
+  },
+  "SIDEBAR": {
+    "COLLAPSE": "Collapse sidebar",
+    "EXPAND": "Expand sidebar"
+  },
+  "TIME": {
+    "JUST_NOW": "just now",
+    "MINUTES_AGO": "{{count}} min ago",
+    "HOURS_AGO": "{{count}} h ago",
+    "DAYS_AGO": "{{count}} d ago"
+  },
+  "NOTIFICATIONS": {
+    "TITLE": "Notifications",
+    "MENU_ARIA": "Open notifications",
+    "MARK_ALL_READ": "Mark all read",
+    "MARK_READ": "Mark read",
+    "MARK_UNREAD": "Mark unread",
+    "FILTER_ALL": "All",
+    "FILTER_UNREAD": "Unread",
+    "SHOW_MORE": "Show more",
+    "LOADING": "Loading…",
+    "EMPTY": "No notifications yet.",
+    "EMPTY_UNREAD": "All caught up.",
+    "LOAD_ERROR": "Notifications are unavailable right now.",
+    "RETRY": "Retry",
+    "SEVERITY": {
+      "INFO": "Info",
+      "WARNING": "Warning",
+      "CRITICAL": "Critical"
+    },
+    "FILE_CLEANUP": {
+      "TITLE": "Attachment cleaned up",
+      "BODY": "A file attachment was removed by the platform cleanup."
+    },
+    "CALL_MISSED": {
+      "TITLE": "Missed call",
+      "BODY": "You missed a call."
+    },
+    "DLQ_ARRIVAL": {
+      "TITLE": "Background task failed",
+      "BODY": "A background task could not be completed ({{original_subject}})."
+    },
+    "EMAIL_DIGEST": {
+      "SUBJECT": "Daily digest — {{count}} unread notifications",
+      "SUBJECT_ONE": "Daily digest — 1 unread notification",
+      "HEADING": "Your daily digest",
+      "INTRO": "You have {{count}} unread notifications on DatHa Platform.",
+      "INTRO_ONE": "You have 1 unread notification on DatHa Platform.",
+      "LATEST": "Latest unread",
+      "MORE": "…and {{count}} more unread notifications.",
+      "MORE_ONE": "…and 1 more unread notification.",
+      "OPEN": "Open notifications",
+      "FOOTER": "You receive this daily digest because it is enabled in your notification settings."
+    },
+    "SETTINGS_ARIA": "Notification settings"
+  },
+  "GENERAL_ERROR": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred. Please try again."
+  },
+  "BAD_REQUEST": {
+    "title": "Bad Request",
+    "message": "The request was invalid. Please check your input and try again."
+  },
+  "UNAUTHORIZED": {
+    "title": "Session expired",
+    "message": "Your session has expired. Please sign in again."
+  },
+  "FORBIDDEN": {
+    "title": "Access denied",
+    "message": "You do not have permission to perform this action."
+  },
+  "NOT_FOUND": {
+    "title": "Not Found",
+    "message": "The requested resource could not be found."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Server Error",
+    "message": "An internal server error occurred. Please try again later."
+  },
+  "BAD_GATEWAY": {
+    "title": "Service Unavailable",
+    "message": "The server received an invalid response. Please try again later."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Service Unavailable",
+    "message": "The service is temporarily unavailable. Please try again later."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Request Timeout",
+    "message": "The server took too long to respond. Please try again."
+  },
+  "CONNECTION_LOST": {
+    "title": "Connection Lost",
+    "message": "It seems like your device has lost internet connectivity.<br>Please check your connection and try again."
+  },
+  "REMOTE_UNAVAILABLE": {
+    "title": "App Unavailable",
+    "message": "This app could not be loaded right now.<br>It may be offline — please try again later."
+  },
+  "SETTINGS": {
+    "NOTIFICATIONS": {
+      "TITLE": "Notification settings",
+      "SUBTITLE": "Choose how notifications reach you outside the app.",
+      "PUSH_TITLE": "Browser push",
+      "PUSH_HINT": "OS-level notifications, even when this tab is closed.",
+      "PUSH_SEVERITY_TITLE": "Minimum severity",
+      "PUSH_SEVERITY_HINT": "Only push notifications at or above this level.",
+      "DIGEST_TITLE": "Email digest",
+      "DIGEST_HINT": "One daily email summarising unread notifications, sent to your account address.",
+      "SAVE_ERROR": "Could not save your preferences. Try again.",
+      "PUSH_BLOCKED": "The browser blocked notifications. Allow them in the site settings and try again.",
+      "PUSH_DISMISSED": "The permission prompt was dismissed — toggle again to retry.",
+      "PUSH_UNSUPPORTED": "This browser does not support Web Push.",
+      "PUSH_ERROR": "Could not set up push notifications. Check the console and try again."
+    },
+    "NAV": "Settings",
+    "TITLE": "Settings",
+    "SUBTITLE": "Your platform preferences, in one place.",
+    "COMING_SOON": "Coming soon",
+    "CARDS": {
+      "NOTIFICATIONS": {
+        "TITLE": "Notifications",
+        "DESC": "Browser push and email digest — how notifications reach you outside the app."
+      },
+      "APPEARANCE": {
+        "TITLE": "Appearance",
+        "DESC": "Theme for this browser. Applies to the shell and every app inside it."
+      },
+      "LANGUAGE": {
+        "TITLE": "Language & Region",
+        "DESC": "Language for this browser. Applies to the shell and every app inside it."
+      }
+    }
+  },
+  "NAV": {
+    "HOME": "Home",
+    "PRIMARY": "Primary navigation",
+    "MORE": "More",
+    "MORE_TITLE": "More destinations"
+  },
+  "LANGUAGE": {
+    "LABEL": "Language"
+  },
+  "EMAIL": {
+    "SUBJECT": "Request for Access Assistance",
+    "BODY": "Dear Support Team,\n\nI would like to access data in the following application: {{applicationName}}. Please assist me in resolving this matter.\n\nSpecifically I need access to the following:\n[Please fill in a detailed description of which data you need access to]\n\nThank you!"
+  }
+}

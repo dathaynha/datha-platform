@@ -1,0 +1,135 @@
+/**
+ * Liquid Glass for PrimeNG overlay panels (dialogs, popovers, select
+ * dropdowns). Global on purpose: PrimeNG body-appends these, so neither
+ * component-scoped rules nor :host-context(.dark) can reach them. Panels get
+ * the overlay-tier material; their inner sections go transparent so the glass
+ * shows through. Content INSIDE panels stays opaque-free of extra blur —
+ * no glass-on-glass.
+ *
+ * DIALOG: no backdrop-filter on the panel at all — a panel-scoped filter's
+ * sampling region leaks an edge-aligned seam on GPU re-raster (random on
+ * hover/open, v0.3.2's layer split did not fix it). The full-viewport MASK
+ * carries the blur instead (no partial-region boundary = no seam) and the
+ * panel is plain tint + shadows. Apple-style frosted modal backdrop.
+ *
+ * POPOVER/SELECT have no mask; they keep the v0.3.2 split — filter and
+ * box-shadow on separate layers (popover arrow owns :before/:after, so its
+ * material sits on .p-popover-content). If the seam ever shows there, the
+ * medicine is dropping their filter for a stronger tint.
+ */
+
+.p-dialog-mask.p-overlay-mask {
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation));
+  backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation));
+}
+
+.p-dialog.p-component {
+  border: 1px solid var(--datha-glass-edge);
+  border-radius: var(--datha-glass-radius-overlay);
+  background: var(--datha-glass-sheen), var(--datha-glass-bg-overlay);
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    var(--datha-glass-shadow);
+}
+
+.p-dialog .p-dialog-header,
+.p-dialog .p-dialog-content,
+.p-dialog .p-dialog-footer {
+  background: transparent;
+}
+
+.p-popover.p-component {
+  border: 1px solid var(--datha-glass-edge);
+  border-radius: var(--datha-glass-radius-overlay);
+  background: transparent;
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    var(--datha-glass-shadow);
+}
+
+.p-popover.p-component .p-popover-content {
+  border-radius: inherit;
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation)) brightness(var(--datha-glass-brightness));
+  backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation)) brightness(var(--datha-glass-brightness));
+  background: var(--datha-glass-bg-overlay);
+}
+
+/* Profile popover content: identity rows are short — don't shrink-wrap. */
+.p-popover.p-component .datha-profile-popover-content {
+  min-width: 15rem;
+}
+
+.p-select-overlay.p-component {
+  border: 1px solid var(--datha-glass-edge);
+  background: transparent;
+}
+
+.p-select-overlay.p-component::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation)) brightness(var(--datha-glass-brightness));
+  backdrop-filter: blur(var(--datha-glass-blur-overlay))
+    saturate(var(--datha-glass-saturation)) brightness(var(--datha-glass-brightness));
+  background: var(--datha-glass-bg-overlay);
+}
+
+/* ::before is positioned — lift static children above it. */
+.p-select-overlay.p-component > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Accessibility: solid panels when the user opts out of transparency. */
+@media (prefers-reduced-transparency: reduce) {
+  .p-dialog-mask.p-overlay-mask {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .p-dialog.p-component,
+  .p-popover.p-component .p-popover-content,
+  .p-select-overlay.p-component::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background: var(--datha-glass-bg-solid);
+  }
+}
+
+/*
+ * Platform menus have no tail.
+ *
+ * Apple draws one only on a *popover* — a transient view — and not on a
+ * pull-down button's menu, which anchors to the button and is what every menu
+ * in this platform actually is. Applied to `.p-popover` rather than to one
+ * component, because a tail on the messenger widget beside a tail-less theme
+ * menu is the inconsistency people notice (dathq, 2026-09-17).
+ *
+ * It also deletes a class of bug: a tail has to be re-positioned by hand
+ * whenever its panel is, and the theme paints it at its own offset from the
+ * token that moves it — two rounds of visibly misplaced arrows before this.
+ */
+.p-popover::before,
+.p-popover::after {
+  display: none;
+}
+
+.p-popover {
+  /* No tail means the panel needs its own breathing room from its trigger. */
+  margin-top: 0.375rem;
+  border-radius: 0.75rem;
+  /* Responsive: never wider than the screen it has to fit on. */
+  max-width: calc(100vw - 1rem);
+}
+
+.p-popover.datha-chooser-panel .p-popover-content {
+  padding: 0.375rem;
+}

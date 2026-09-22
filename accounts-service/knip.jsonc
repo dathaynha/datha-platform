@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/**/*.test.ts"],
+  // Exported but referenced only inside its own file is NOT dead: model files
+  // legitimately export the constituent types of an exported interface or union.
+  "ignoreExportsUsedInFile": true,
+  "project": ["src/**/*.ts"],
+  // Named as a pino transport `target` string, which knip cannot resolve.
+  "ignoreDependencies": ["pino-opentelemetry-transport"],
+}

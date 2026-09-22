@@ -1,0 +1,428 @@
+<section
+  class="events-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="events-page-title"
+>
+  <div class="events-aurora" aria-hidden="true"></div>
+  <div class="events-noise" aria-hidden="true"></div>
+
+  <div
+    class="events-page-body ops-page-body relative z-10 flex w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden"
+  >
+    <header class="w-full shrink-0 space-y-3">
+      <h1
+        id="events-page-title"
+        class="events-title font-bold tracking-tight"
+      >
+        {{ "EVENTS_PAGE.TITLE" | translate }}
+      </h1>
+      <p class="events-subtitle m-0 max-w-4xl leading-relaxed">
+        {{ "EVENTS_PAGE.SUBTITLE" | translate }}
+      </p>
+    </header>
+
+    <div class="events-filters-card w-full min-w-0 shrink-0">
+      <form class="ops-toolbar" (ngSubmit)="search()">
+        <div class="ops-toolbar__primary">
+          <div class="ops-toolbar__lead">
+            <label class="sr-only" for="events-filter-service">
+              {{ "EVENTS_PAGE.FILTERS.SERVICE" | translate }}
+            </label>
+              <!-- The options are fetched now, so the list grows with the
+                   platform: 200px (PrimeNG's default) cut the fifth service
+                   in half the day realtime-service started publishing. Seven
+                   rows (40px each plus the list's 16px of padding), capped
+                   against a landscape phone. -->
+            <p-multiselect
+              inputId="events-filter-service"
+              appendTo="body"
+              scrollHeight="min(18.5rem, 60vh)"
+              [options]="serviceOptions()"
+              [ngModel]="servicesFilter()"
+              (ngModelChange)="onServicesFilterChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="'EVENTS_PAGE.FILTERS.SERVICE_PLACEHOLDER' | translate"
+              [maxSelectedLabels]="2"
+              [filter]="false"
+              [showToggleAll]="false"
+              [showHeader]="false"
+              class="datha-select events-service-filter w-full"
+            />
+          </div>
+
+          <div class="ops-search-field">
+            <span class="pi pi-search ops-search-field__icon" aria-hidden="true"></span>
+            <label class="sr-only" for="events-filter-correlation">
+              {{ "EVENTS_PAGE.FILTERS.CORRELATION_ID" | translate }}
+            </label>
+            <input
+              pInputText
+              id="events-filter-correlation"
+              class="datha-input ops-search-field__input w-full"
+              [value]="correlationIdFilter()"
+              (input)="onTextFilterInput(correlationIdFilter, $event)"
+              [placeholder]="'EVENTS_PAGE.FILTERS.CORRELATION_SEARCH_PLACEHOLDER' | translate"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="ops-toolbar__actions">
+            <p-button
+              type="submit"
+              [label]="'EVENTS_PAGE.FILTERS.SEARCH' | translate"
+              icon="pi pi-search"
+              [loading]="loading()"
+            />
+            <p-button
+              type="button"
+              [label]="'EVENTS_PAGE.FILTERS.CLEAR' | translate"
+              [text]="true"
+              (onClick)="clearFilters()"
+              [disabled]="loading()"
+            />
+            <p-button
+              type="button"
+              [text]="true"
+              [icon]="advancedFiltersOpen() ? 'pi pi-sliders-h' : 'pi pi-sliders-v'"
+              [pt]="{ root: { 'aria-expanded': advancedFiltersOpen() } }"
+              [ariaLabel]="
+                (advancedFiltersOpen()
+                  ? 'EVENTS_PAGE.FILTERS.ADVANCED_HIDE'
+                  : 'EVENTS_PAGE.FILTERS.ADVANCED_SHOW'
+                ) | translate
+              "
+              (onClick)="toggleAdvancedFilters()"
+            />
+          </div>
+        </div>
+
+        @if (advancedFiltersOpen()) {
+          <div class="ops-toolbar__advanced">
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="events-filter-type">
+                {{ "EVENTS_PAGE.FILTERS.TYPE" | translate }}
+              </label>
+              <!-- Picked from the store's own distinct types rather than
+                   typed: free text over ten values meant a typo returned an
+                   empty list, which reads as "no events of that kind". Filter
+                   on, because this list grows with every new publisher. -->
+              <p-multiselect
+                inputId="events-filter-type"
+                appendTo="body"
+                scrollHeight="min(18.5rem, 60vh)"
+                [options]="typeOptions()"
+                [ngModel]="typesSelected()"
+                (ngModelChange)="onTypesFilterChange($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [placeholder]="'EVENTS_PAGE.FILTERS.TYPE_PLACEHOLDER' | translate"
+                [maxSelectedLabels]="2"
+                [filter]="true"
+                [showToggleAll]="false"
+                class="datha-select events-type-filter w-full"
+              />
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="events-filter-entity">
+                {{ "EVENTS_PAGE.FILTERS.ENTITY_ID" | translate }}
+              </label>
+              <input
+                pInputText
+                id="events-filter-entity"
+                class="datha-input w-full"
+                [value]="entityIdFilter()"
+                (input)="onTextFilterInput(entityIdFilter, $event)"
+                [placeholder]="'EVENTS_PAGE.FILTERS.ENTITY_PLACEHOLDER' | translate"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="events-filter-owner">
+                {{ "EVENTS_PAGE.FILTERS.OWNER_ID" | translate }}
+              </label>
+              <input
+                pInputText
+                id="events-filter-owner"
+                class="datha-input w-full"
+                [value]="ownerIdFilter()"
+                (input)="onTextFilterInput(ownerIdFilter, $event)"
+                [placeholder]="'EVENTS_PAGE.FILTERS.OWNER_PLACEHOLDER' | translate"
+                autocomplete="off"
+              />
+            </div>
+
+            <!-- One field, not two: a key and a value that only mean anything
+                 together were rendered as unrelated boxes, and nobody could
+                 tell they combined (dathq, 2026-09-20). The names also come
+                 from the data now — a payload key is an implementation detail
+                 of whichever service published the event, so typing one from
+                 memory was never realistic. One key at a time, added to
+                 whatever the URL already carries; a chip takes one back off. -->
+            <div class="ops-toolbar__field ops-toolbar__field--payload">
+              <label class="datha-label" for="events-filter-payload-key">
+                {{ "EVENTS_PAGE.FILTERS.PAYLOAD" | translate }}
+              </label>
+              <div class="events-payload-filter">
+                <!-- `|| null`: `showClear` renders whenever the model is not
+                     null, and this signal's empty state is "", which is not
+                     null — so a clear button sat there with nothing to clear
+                     on a fresh load (dathq, 2026-09-20). -->
+                <p-select
+                  inputId="events-filter-payload-key"
+                  appendTo="body"
+                  class="datha-select events-payload-filter__key"
+                  styleClass="w-full"
+                  [options]="payloadKeyOptions()"
+                  [ngModel]="payloadKeyInput() || null"
+                  (ngModelChange)="onPayloadKeyChange($event)"
+                  [ngModelOptions]="{ standalone: true }"
+                  [showClear]="true"
+                  [filter]="true"
+                  scrollHeight="min(18.5rem, 60vh)"
+                  [placeholder]="
+                    'EVENTS_PAGE.FILTERS.PAYLOAD_KEY_PLACEHOLDER' | translate
+                  "
+                />
+                <span class="events-payload-filter__is" aria-hidden="true">
+                  {{ "EVENTS_PAGE.FILTERS.PAYLOAD_IS" | translate }}
+                </span>
+                <p-autocomplete
+                  inputId="events-filter-payload-value"
+                  appendTo="body"
+                  class="events-payload-filter__value"
+                  styleClass="w-full"
+                  inputStyleClass="datha-input w-full"
+                  [ngModel]="payloadValueInput()"
+                  (ngModelChange)="payloadValueInput.set($event ?? '')"
+                  [ngModelOptions]="{ standalone: true }"
+                  [suggestions]="payloadValueSuggestions()"
+                  (completeMethod)="onPayloadValueSearch($event)"
+                  [dropdown]="true"
+                  [disabled]="!payloadKeyInput()"
+                  [ariaLabel]="'EVENTS_PAGE.FILTERS.PAYLOAD_VALUE' | translate"
+                  [placeholder]="
+                    'EVENTS_PAGE.FILTERS.PAYLOAD_VALUE_PLACEHOLDER' | translate
+                  "
+                />
+              </div>
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="events-filter-from">
+                {{ "EVENTS_PAGE.FILTERS.FROM" | translate }}
+              </label>
+              <p-datepicker
+                inputId="events-filter-from"
+                [ngModel]="fromFilter()"
+                (ngModelChange)="fromFilter.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [showTime]="true"
+                [hourFormat]="'24'"
+                [showIcon]="true"
+                iconDisplay="input"
+                appendTo="body"
+                [showButtonBar]="true"
+                [dateFormat]="datePickerFormat"
+                [panelStyle]="datepickerPanelStyle"
+                class="es-datepicker w-full"
+                inputClass="w-full"
+                panelClass="es-datepicker-panel"
+              />
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="events-filter-to">
+                {{ "EVENTS_PAGE.FILTERS.TO" | translate }}
+              </label>
+              <p-datepicker
+                inputId="events-filter-to"
+                [ngModel]="toFilter()"
+                (ngModelChange)="toFilter.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [showTime]="true"
+                [hourFormat]="'24'"
+                [showIcon]="true"
+                iconDisplay="input"
+                appendTo="body"
+                [showButtonBar]="true"
+                [dateFormat]="datePickerFormat"
+                [panelStyle]="datepickerPanelStyle"
+                class="es-datepicker w-full"
+                inputClass="w-full"
+                panelClass="es-datepicker-panel"
+              />
+            </div>
+          </div>
+        }
+      </form>
+
+      @if (hasActiveFilters()) {
+        <div class="events-filter-chips" aria-label="Active filters">
+          @for (chip of activeFilters(); track chip.id) {
+            <button
+              type="button"
+              class="events-filter-chip"
+              (click)="removeActiveFilter(chip.id)"
+              [attr.aria-label]="
+                'EVENTS_PAGE.FILTERS.REMOVE_FILTER_NAMED'
+                  | translate: { filter: chip.labelKey | translate: chip.labelParams }
+              "
+            >
+              <span>{{ chip.labelKey | translate: chip.labelParams }}</span>
+              <span class="pi pi-times events-filter-chip__remove" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="events-results-card ops-results-card flex w-full min-w-0 min-h-0 flex-1 flex-col gap-4">
+      @if (listError()) {
+        <div class="events-banner events-banner--error shrink-0" role="alert">
+          <span class="pi pi-exclamation-circle" aria-hidden="true"></span>
+          {{ "EVENTS_PAGE.ERROR_LOAD" | translate }}
+        </div>
+      }
+
+      <!-- PrimeNG's loading mask is a spinner with an aria-hidden icon, so a
+           screen reader was told nothing at all while the table refetched —
+           every filter, sort and page change was silent. The detail pages have
+           always announced theirs; this is the list half, which the string had
+           been sitting unused for. `role="status"` keeps it polite: it is
+           read after whatever the user is doing, not over the top of it. -->
+      <p class="sr-only" role="status" aria-live="polite">
+        @if (loading()) {
+          {{ "EVENTS_PAGE.LOADING_LIST" | translate }}
+        }
+      </p>
+
+      <div
+        class="es-table-wrap events-table-wrap min-h-0 flex-1"
+        [class.es-table-wrap--empty]="showEmptyOverlay()"
+      >
+        <p-table
+          [value]="rows()"
+          [loading]="loading()"
+          [scrollable]="true"
+          scrollHeight="flex"
+          [styleClass]="tableStyleClass()"
+          [tableStyle]="{ 'min-width': 'var(--es-table-min-width, 52rem)' }"
+          [rowHover]="true"
+          [customSort]="true"
+          sortField="timestamp"
+          [sortOrder]="tableSortOrder()"
+          (sortFunction)="onTableSort($event)"
+        >
+        <ng-template pTemplate="header">
+          <tr>
+            <th scope="col" class="es-table__sticky es-table__sticky--head"
+              pSortableColumn="timestamp">
+              <span class="inline-flex items-center gap-1">
+                {{ "EVENTS_PAGE.TABLE.TIMESTAMP" | translate }}
+                <p-sortIcon field="timestamp" />
+              </span>
+            </th>
+            <th scope="col">{{ "EVENTS_PAGE.TABLE.TYPE" | translate }}</th>
+            <th scope="col" class="es-table__secondary">{{ "EVENTS_PAGE.TABLE.SERVICE" | translate }}</th>
+            <th scope="col" class="es-table__secondary">{{ "EVENTS_PAGE.TABLE.ENTITY_ID" | translate }}</th>
+            <th scope="col" class="es-table__secondary">{{ "EVENTS_PAGE.TABLE.CORRELATION_ID" | translate }}</th>
+            <th scope="col" class="es-table__action-col">
+              <span class="sr-only">{{ "EVENTS_PAGE.TABLE.VIEW" | translate }}</span>
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr
+            class="es-table__row cursor-pointer"
+            tabindex="0"
+            (click)="openDetail(row)"
+            (keydown.enter)="openDetail(row)"
+            (keydown.space)="openDetail(row); $event.preventDefault()"
+          >
+            <td class="es-table__primary es-table__sticky whitespace-nowrap">
+              <span class="es-ts es-ts--full">{{ row.timestamp | date: "medium" : undefined : locale }}</span
+              ><span class="es-ts es-ts--compact">{{ row.timestamp | date: "short" : undefined : locale }}</span>
+            </td>
+            <td class="es-table__primary">
+              <code class="events-code">{{ row.type }}</code>
+            </td>
+            <td class="es-table__secondary">
+              <code class="events-code">{{ row.service }}</code>
+            </td>
+            <td class="es-table__secondary">
+              <span class="truncate" [title]="row.entityId ?? ''">
+                {{ truncate(row.entityId, 24) }}
+              </span>
+            </td>
+            <td class="es-table__secondary">
+              <div class="flex min-w-0 items-center gap-1">
+                <span class="truncate" [title]="row.correlationId ?? ''">
+                  {{ truncate(row.correlationId, 20) }}
+                </span>
+                @if (row.correlationId) {
+                  <button
+                    type="button"
+                    class="events-copy-btn"
+                    [attr.aria-label]="'EVENTS_PAGE.DETAIL.COPY' | translate"
+                    (click)="copyText(row.correlationId, $event)"
+                  >
+                    <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="es-table__action">
+              <span class="pi pi-chevron-right es-table__chevron" aria-hidden="true"></span>
+            </td>
+          </tr>
+        </ng-template>
+        </p-table>
+
+        @if (showEmptyOverlay()) {
+          <div class="es-table-empty-overlay" role="status">
+            <es-table-empty-state
+              [titleKey]="emptyTitleKey()"
+              [hintKey]="emptyHintKey()"
+              [icon]="emptyIcon()"
+              [showClearAction]="hasActiveFilters()"
+              clearLabelKey="EVENTS_PAGE.FILTERS.CLEAR"
+              (clearAction)="clearFilters()"
+            />
+          </div>
+        }
+      </div>
+
+      <div class="events-pagination ops-pagination flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <p class="events-pagination-meta m-0 text-sm">
+          @if (cursorMode()) {
+            <!-- No range to show: past the cap the list knows its page number
+                 and nothing about where it sits in a total. -->
+            {{ "EVENTS_PAGE.PAGINATION.PAGE" | translate: { page: cursorPage() } }}
+          } @else if (total() > 0) {
+            {{
+              rangeKey()
+                | translate
+                  : { from: pageFrom(), to: pageTo(), total: total() }
+            }}
+          } @else {
+            {{ "EVENTS_PAGE.PAGINATION.NONE" | translate }}
+          }
+        </p>
+        <es-ops-paginator
+          [offset]="offset()"
+          [pageSize]="pageSize()"
+          [total]="total()"
+          [totalCapped]="totalCapped()"
+          [cursorMode]="cursorMode()"
+          [cursorPage]="cursorPage()"
+          [hasNextCursor]="hasNextCursor()"
+          [pageSizeOptions]="pageSizeOptions"
+          [disabled]="loading()"
+          (pageChange)="onPageChange($event)"
+          (cursorMove)="onCursorMove($event)"
+        />
+      </div>
+    </div>
+  </div>
+</section>

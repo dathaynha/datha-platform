@@ -1,0 +1,375 @@
+{
+  "THEME": {
+    "LABEL": "Theme",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "LANDING": {
+    "HERO_TITLE": "Messenger",
+    "HERO_DESC": "Group chat and group calling for the platform. Messages take a durable REST path and arrive over a WebSocket; calls are hand-built on RTCPeerConnection — perfect negotiation, trickle ICE, a TURN relay and a peer-to-peer mesh — rather than handed to a media SDK, because building that by hand is the point of this product.",
+    "HERO_STATUS": "Everything below is running, not planned. Conversations, groups, read receipts, image attachments, presence and typing; audio and video calls up to four people over a mesh, with screen share, a focusable call stage and call history in the thread; and chat windows you can dock over any page of the platform. What is deliberately not built is an SFU — a mesh holds about four, and the room model an SFU needs already exists, so that stays a later phase rather than a rewrite.",
+    "STACK_INTRO": "Tech we use",
+    "STACK_GROUP_CLIENT": "In the browser",
+    "STACK_GROUP_REALTIME": "Realtime plane",
+    "STACK_GROUP_DATA": "Durable plane",
+    "CARD_ANGULAR": "Angular 21 with signals and strict TypeScript, federated into the shell. This remote exposes two modules: `./Module` for the routed product at `/messenger`, and `./HeaderWidget` for the icon in the shell header.",
+    "CARD_HEADER_WIDGET": "An ambient product cannot live behind a route — it needs a socket, a badge and ringing on every page. The shell renders the widget from an `environment.headerWidgets` entry and never imports messenger code; if this remote is down the slot stays empty and the header still works.",
+    "CARD_WEBRTC": "RTCPeerConnection driven directly: perfect negotiation (polite/impolite peers) to kill glare bugs, trickle ICE so candidates flow as they are found, and DTLS-SRTP encryption the browser does for free. Screen share is a second track added by renegotiation, never a replacement for the camera.",
+    "CARD_AUTH": "angular-oauth2-oidc with PKCE; Google and Microsoft sign-in through the Go gateway, which mints the internal JWT every service trusts.",
+    "CARD_REALTIME": "One Go service holding one WebSocket per browser: presence, typing, signalling relay and TURN credentials. Split from the chat store on purpose — ten thousand idle sockets and durable message history have opposite scaling profiles.",
+    "CARD_NATS_CORE": "Live frames fan out over core NATS on `rt.owner.<owner_id>`, so any socket instance can serve any user and no sticky sessions are needed. Core, not JetStream: a durable consumer would redeliver stale chat frames on every reconnect.",
+    "CARD_COTURN": "A relay for the 10-20% of calls that symmetric NAT and corporate firewalls block. Credentials are HMAC-derived and expire in minutes, so a stolen bundle cannot rent our bandwidth; coturn forwards ciphertext it cannot read.",
+    "CARD_MESSENGER_SERVICE": "Fastify + TypeScript owning conversations, groups, messages, receipts and call history. Sending is REST, never a socket write: a durable write must be retriable and idempotent. A conversation sorts on its own `last_activity_at`, advanced by both the message transaction and the call projection — because a call is activity too, and a column named after messages could only ever lie about that.",
+    "CARD_ACCOUNTS": "The platform's user directory, live on :3006. Upserts your profile from the gateway's identity headers after login and answers directory search — Messenger needs to know who you can talk to before a conversation can exist.",
+    "CARD_POSTGRES": "Message history, conversation membership and receipts. The boring, transactional half of the product — and the half you never want a signalling deploy to endanger.",
+    "CARD_JETSTREAM": "Every domain event is also published to the `EVENTS` stream, so event-store keeps the record and other services can project from it. The log and the wire are deliberately different transports.",
+    "FLOWS": {
+      "SECTION_TITLE": "How it works",
+      "PICKER_ARIA": "Choose a flow to explore",
+      "TAB_MESSAGE": "Sending a message",
+      "TAB_CALL": "Placing a call"
+    },
+    "MESSAGE_FLOW": {
+      "SUBTITLE": "A message is written once, durably, then fanned out to live sockets. Tap any step for detail.",
+      "DIAGRAM_ARIA": "Message flow, from composer to recipient",
+      "PANEL_EMPTY": "Select a step in the diagram to see what happens there.",
+      "PANEL_KICKER": "What happens here",
+      "LINK_POST": "POST /api/messenger",
+      "LINK_PERSIST": "write + commit",
+      "LINK_PUBLISH": "publish twice",
+      "LINK_FANOUT": "rt.owner.<id>",
+      "LINK_SOCKET": "WebSocket frame",
+      "NOTE": "Receiving is a socket; sending never is. A write with no durability behind it is not a sent message.",
+      "COMPOSER": {
+        "TITLE": "Composer (browser)",
+        "DESC": "The remote posts the message over HTTP with an idempotency key.",
+        "D1": "REST, so the write is retriable",
+        "D2": "Retry on failure is safe — same key, same message",
+        "D3": "No optimistic write is treated as delivered"
+      },
+      "SERVICE": {
+        "TITLE": "messenger-service",
+        "DESC": "Validates membership, stamps the sender from the gateway header, and stores.",
+        "D1": "Identity comes from the trusted header, never the body",
+        "D2": "Authorization via can(subject, action, resource) — OPA later",
+        "D3": "Duplicate idempotency key returns the original message"
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "The message becomes history the moment the transaction commits.",
+        "D1": "Durable before anyone is told it exists",
+        "D2": "Receipts and membership live beside it",
+        "D3": "Pagination and search read from here, not from the socket"
+      },
+      "NATS": {
+        "TITLE": "NATS — log and wire",
+        "DESC": "One event, two transports: JetStream for the record, core for delivery.",
+        "D1": "JetStream EVENTS → event-store keeps the 90-day log",
+        "D2": "Core NATS carries the live frame with no replay",
+        "D3": "A durable consumer here would resend stale chat on reconnect"
+      },
+      "REALTIME": {
+        "TITLE": "realtime-service",
+        "DESC": "Subscribes per connected user and pushes the frame down their socket.",
+        "D1": "Subject per owner, so any instance can serve any user",
+        "D2": "Presence and typing ride the same connection",
+        "D3": "No database on this path — sockets stay cheap"
+      },
+      "RECIPIENT": {
+        "TITLE": "Recipient (browser)",
+        "DESC": "The frame updates the open thread and the header badge.",
+        "D1": "Badge counts unread conversations, not messages",
+        "D2": "A duplicate frame is harmless — the badge is a set",
+        "D3": "Cleared when the thread is open and the tab is focused"
+      }
+    },
+    "CALL_FLOW": {
+      "SUBTITLE": "Signalling goes through our server; media does not. Tap any step for detail.",
+      "DIAGRAM_ARIA": "WebRTC call setup, from credentials to connected media",
+      "PANEL_EMPTY": "Select a step in the diagram to see what happens there.",
+      "PANEL_KICKER": "What happens here",
+      "LINK_OFFER": "createOffer",
+      "LINK_RELAY": "SDP over WebSocket",
+      "LINK_CANDIDATES": "trickle candidates",
+      "LINK_CONNECTED": "peer connection",
+      "LINK_FALLBACK": "if P2P fails",
+      "NOTE": "The server relays offers and candidates; audio and video flow directly between the two browsers.",
+      "CREDENTIALS": {
+        "TITLE": "TURN credentials",
+        "DESC": "Before dialling, the browser asks the gateway for short-lived relay credentials.",
+        "D1": "Valid for minutes, issued per call",
+        "D2": "username = expiry:owner_id, password = HMAC of it",
+        "D3": "The TURN secret never leaves the server"
+      },
+      "OFFER": {
+        "TITLE": "Offer / answer",
+        "DESC": "Each side builds an RTCPeerConnection and describes what it can send.",
+        "D1": "Perfect negotiation: one polite peer, one impolite",
+        "D2": "Glare is resolved by rollback, not by retry loops",
+        "D3": "getUserMedia needs a secure context — localhost counts"
+      },
+      "RELAY": {
+        "TITLE": "Signalling relay",
+        "DESC": "realtime-service passes SDP and ICE between the two participants.",
+        "D1": "The server stamps who sent the frame",
+        "D2": "A frame is relayed only between call participants",
+        "D3": "A client-supplied sender field is never trusted"
+      },
+      "ICE": {
+        "TITLE": "Trickle ICE",
+        "DESC": "Candidates are exchanged as they are discovered rather than in one batch.",
+        "D1": "Setup starts before discovery finishes",
+        "D2": "STUN finds the public address behind NAT",
+        "D3": "The first working pair wins"
+      },
+      "MEDIA": {
+        "TITLE": "Media, peer to peer",
+        "DESC": "Audio and video flow directly between browsers once a pair connects.",
+        "D1": "DTLS-SRTP encryption is not optional in WebRTC",
+        "D2": "1:1 is a mesh; an SFU arrives at five participants",
+        "D3": "Navigating to another app must not drop the call"
+      },
+      "TURN": {
+        "TITLE": "TURN relay (fallback)",
+        "DESC": "When no direct path exists, coturn forwards the encrypted stream.",
+        "D1": "Symmetric NAT and strict firewalls need this",
+        "D2": "The relay cannot read what it forwards",
+        "D3": "Without it, 10-20% of real calls simply fail"
+      }
+    },
+    "CARD_MESH": "A group call is N-1 peer connections per person, not a server in the middle — so each browser uploads its camera once per peer and the room costs O(N²) links overall. That is what caps it at four. Who offers in each pair is the lexicographically lower owner id (Matrix MSC3401's rule), because two people joining in the same instant each see the other as the newcomer.",
+    "CARD_ROOM": "A call is a room: an invited set resolved from conversation membership and never widened, plus a joined set. Every signalling frame names its target and is checked against that invited set, which is what makes ringing a stranger impossible. Instances heartbeat and a reaper closes calls whose holder died, because a state machine closed only by the process most likely to crash is permanently wrong the first time that happens."
+  },
+  "LOGIN": {
+    "KICKER": "Sign in",
+    "TITLE": "Messenger",
+    "SUBTITLE": "Use Google, your work or school Microsoft account, or a personal Microsoft account to continue.",
+    "CONTINUE_GOOGLE": "Continue with Google",
+    "MICROSOFT_WORK_SCHOOL": "Continue with Microsoft (Work / School)",
+    "MICROSOFT_PERSONAL": "Continue with Microsoft (Personal)",
+    "SIGNING_IN": "Signing in…",
+    "FOOTNOTE": "By continuing, you agree to your organization's access policies for this app.",
+    "ERROR_GENERIC": "Sign-in didn't complete. Try again or contact your administrator."
+  },
+  "PROFILE": {
+    "MENU_ARIA": "Account menu",
+    "TITLE": "Signed in as",
+    "SIGN_IN_METHOD": "Sign-in method",
+    "NAME": "Name",
+    "EMAIL": "Email",
+    "USERNAME": "Username",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft Entra ID",
+    "METHOD_UNKNOWN": "Unknown",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Log out"
+  },
+  "DASHBOARD": {
+    "TITLE": "Messenger",
+    "HELP": "<p>Chats, calls and people for the platform.</p><p>Use the toolbar for help and email support.</p>"
+  },
+  "EMAIL": {
+    "SUBJECT": "Request for Access Assistance",
+    "BODY": "Dear Support Team,\n\nI would like to access data in the following application: {{applicationName}}. Please assist me in resolving this matter.\n\nSpecifically I need access to the following:\n[Please fill in a detailed description of which data you need access to]\n\nThank you!"
+  },
+  "BAD_REQUEST": {
+    "title": "Bad Request",
+    "message": "The request could not be processed by the server due to malformed syntax.<br>Please verify the request and try again. If the problem persists, contact support for assistance."
+  },
+  "UNAUTHORIZED": {
+    "title": "Unauthorized",
+    "message": "You are not authorized to perform this action.<br>Please contact your administrator for further assistance."
+  },
+  "FORBIDDEN": {
+    "title": "Forbidden",
+    "message": "You do not have the necessary permissions to access this resource.<br>Please contact your administrator for further assistance."
+  },
+  "NOT_FOUND": {
+    "title": "Not Found",
+    "message": "The requested resource could not be found on this server. Please check the URL and try again.<br>If the issue persists, contact support for further assistance."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Internal Server Error",
+    "message": "The server encountered an unexpected condition that prevented it from fulfilling the request.<br>Please try again later.<br>If the problem continues, contact support for further assistance."
+  },
+  "BAD_GATEWAY": {
+    "title": "Bad Gateway",
+    "message": "The server received an invalid response from an upstream server while attempting to fulfill the request.<br>Please try again later.<br>If the issue persists, contact support for further assistance."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Service Unavailable",
+    "message": "The server is currently experiencing technical difficulties due to temporary overloading or maintenance.<br>Please try again later.<br>If the problem continues, contact support for further assistance."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Gateway Timeout",
+    "message": "Connection Timeout: We couldn't connect to the server at this time. This is likely temporary.<br>Please try again later."
+  },
+  "CONNECTION_LOST": {
+    "title": "Connection Lost",
+    "message": "It seems like your device has lost internet connectivity.<br>Please check your connection and try again."
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Got it",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm"
+  },
+  "SUBNAV": {
+    "ARIA": "Messenger sections",
+    "OVERVIEW": "Overview",
+    "CHATS": "Chats",
+    "SUPPORT": "Email Support"
+  },
+  "MESSENGER": {
+    "WIDGET": {
+      "ARIA": "Open messenger",
+      "TITLE": "Chats",
+      "EMPTY": "No conversations yet",
+      "SEE_ALL": "See all in Messenger"
+    },
+    "CHATS": {
+      "TITLE": "Chats",
+      "NEW": "New message",
+      "SEARCH": "Search conversations",
+      "EMPTY": "No conversations yet",
+      "START_TITLE": "Start your first conversation",
+      "START_HINT": "Pick someone from the directory to begin. Messages stream in over the realtime socket, while sending stays a durable REST write — so nothing is lost if a socket drops.",
+      "LOADING": "Loading…",
+      "NO_MATCH": "No conversations match that",
+      "PICK_TITLE": "Pick a conversation",
+      "PICK_HINT": "Choose a thread on the left, or start a new one. Messages arrive over the realtime socket; sending is a durable REST write, so nothing is lost if the socket drops.",
+      "LOAD_FAILED": "Conversations could not be loaded. They will reappear once the connection is back."
+    },
+    "THREAD": {
+      "BACK": "Back to conversations",
+      "COMPOSER": "Write a message",
+      "SEND": "Send message",
+      "SENDING": "Sending",
+      "RETRY": "Retry",
+      "EMPTY": "No messages yet — say hello.",
+      "TYPING": "{{name}} is typing…",
+      "TYPING_TWO": "{{names}} are typing…",
+      "TYPING_MANY": "Several people are typing…",
+      "RECONNECTING": "Reconnecting…",
+      "ATTACH": "Attach a file",
+      "UPLOADING": "Uploading…",
+      "DOWNLOAD": "Download",
+      "ATTACHMENT_FAILED": "That attachment could not be opened. The link may have expired — try again.",
+      "COMPOSER_HINT": "Enter to send · Shift+Enter for new line",
+      "TODAY": "Today",
+      "YESTERDAY": "Yesterday",
+      "SEEN": "Seen",
+      "JUMP_LATEST": "Jump to latest"
+    },
+    "PRESENCE": {
+      "ONLINE": "Online",
+      "AWAY": "Away",
+      "OFFLINE": "Offline"
+    },
+    "NEW": {
+      "TITLE": "New message",
+      "SEARCH": "Search people",
+      "SEARCH_PLACEHOLDER": "Type a name or email",
+      "HINT": "Find someone to start a conversation.",
+      "NO_RESULTS": "Nobody matches that"
+    },
+    "CALL": {
+      "ARIA": "Call",
+      "INCOMING": "Incoming call…",
+      "RINGING": "Ringing…",
+      "CONNECTING": "Connecting…",
+      "ENDING": "Ending…",
+      "ACCEPT": "Accept",
+      "DECLINE": "Decline",
+      "HANG_UP": "Hang up",
+      "MUTE": "Mute microphone",
+      "UNMUTE": "Unmute microphone",
+      "START": "Start a call",
+      "NO_RELAY": "No TURN relay configured — this call may fail on restricted networks.",
+      "ERROR_MIC": "Allow microphone and camera access, then try again.",
+      "ERROR_ICE": "Could not find a path for audio. A TURN relay is needed on this network.",
+      "ERROR_AUDIO": "Audio is blocked by the browser. Click the page, then try again.",
+      "ERROR_GENERIC": "The call could not be completed.",
+      "WAS_DECLINED": "{{name}} declined the call.",
+      "WAS_MISSED": "{{name}} did not answer.",
+      "WAS_BUSY": "{{name}} is on another call.",
+      "WAS_FAILED": "The call could not connect.",
+      "WAS_ENDED": "Call ended.",
+      "DISMISS": "Dismiss",
+      "INCOMING_VIDEO": "Incoming video call",
+      "CAMERA_OFF": "Turn camera off",
+      "CAMERA_ON": "Turn camera on",
+      "CAMERA_PICK": "Choose camera",
+      "START_VIDEO": "Start video call",
+      "CAMERA_ADD": "Turn on camera",
+      "PIN": "Pin",
+      "SHOW_PEOPLE": "Show people",
+      "UNPIN": "Unpin",
+      "ROW_AUDIO": "Audio call · {{duration}}",
+      "ROW_VIDEO": "Video call · {{duration}}",
+      "SCREEN_YOURS": "Your screen",
+      "SCREEN_OF": "{{name}}'s screen",
+      "ROW_ONGOING": "Call in progress",
+      "ROW_RINGING": "Incoming call",
+      "ROW_MISSED": "Missed call",
+      "ROW_DECLINED": "Call declined",
+      "ROW_ENDED": "Call ended",
+      "ROW_BY_YOU": "You called",
+      "ROW_BY_PEER": "{{name}} called",
+      "ERROR_NO_DEVICE": "No microphone or camera was found.",
+      "ERROR_DEVICE_BUSY": "Your camera or microphone is in use by another app or tab.",
+      "ERROR_DEVICE_LIMIT": "Your camera cannot support this call.",
+      "NO_CAMERA_HINT": "No camera on this device — you will still see them",
+      "EXPAND": "Expand",
+      "MINIMISE": "Minimise",
+      "SHARE_SCREEN": "Share screen",
+      "STOP_SHARING": "Stop sharing",
+      "MIC_SILENT": "Your microphone isn't picking anything up.",
+      "ERROR_SCREEN": "Screen sharing didn't start. If you weren't asked to pick a window, allow Screen Recording for your browser in System Settings.",
+      "PEER_UNREACHABLE": "Couldn't connect",
+      "INCOMING_GROUP": "{{name}} is calling",
+      "IN_CALL": "{{count}} in the call",
+      "WAS_EMPTY": "Everyone else left the call.",
+      "ERROR_TOO_MANY": "This conversation has too many people for a call.",
+      "ROW_JOINED": "{{count}} joined",
+      "IN_ANOTHER_TAB": "This call is already open in another tab.",
+      "ONGOING": "Call in progress",
+      "JOIN": "Join",
+      "ERROR_JOIN": "Couldn't join the call. Try again."
+    },
+    "GROUP": {
+      "NEW": "New group",
+      "NEW_TITLE": "New group",
+      "HINT": "Add one or more people, and give the group a name.",
+      "TITLE_LABEL": "Group name",
+      "TITLE_PLACEHOLDER": "Name this group",
+      "CREATE": "Create group",
+      "DETAILS": "Group details",
+      "MEMBER_COUNT": "{{count}} members",
+      "REMOVE": "Remove",
+      "ADMIN": "Admin",
+      "YOU": "(you)",
+      "SAVE": "Save",
+      "ADD_PEOPLE": "Add people",
+      "ADD_CONFIRM": "Add {{count}}",
+      "LEAVE": "Leave group",
+      "ACTION_FAILED": "That did not work. Only an admin can rename a group or add people.",
+      "YOU_PREFIX": "You",
+      "LEAVE_PROMPT": "Leave this group? You will stop receiving its messages.",
+      "CANCEL": "Cancel"
+    },
+    "DOCK": {
+      "MINIMISE": "Minimise",
+      "EXPAND": "Expand",
+      "CLOSE": "Close chat",
+      "OPEN_WINDOW": "Open in a window"
+    }
+  },
+  "GENERAL_ERROR": {
+    "title": "We are sorry that the application crashed.",
+    "message": "Please contact support, we would like to solve the issue.<br>How to help us with investigating the issue? Report your user name and the time the application crashed.<br>Thank you!"
+  },
+  "LANGUAGE": {
+    "LABEL": "Language"
+  }
+}

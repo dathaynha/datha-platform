@@ -1,0 +1,335 @@
+<section
+  class="dlq-root relative flex h-full w-full min-w-0 flex-col overflow-hidden"
+  aria-labelledby="dlq-page-title"
+>
+  <div class="dlq-aurora" aria-hidden="true"></div>
+  <div class="dlq-noise" aria-hidden="true"></div>
+
+  <div
+    class="dlq-page-body ops-page-body relative z-10 flex w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden"
+  >
+    <header class="w-full shrink-0 space-y-3">
+      <h1
+        id="dlq-page-title"
+        class="dlq-title font-bold tracking-tight"
+      >
+        {{ "DLQ_PAGE.TITLE" | translate }}
+      </h1>
+      <p class="dlq-subtitle m-0 max-w-4xl leading-relaxed">
+        {{ "DLQ_PAGE.SUBTITLE" | translate }}
+      </p>
+    </header>
+
+    <div class="dlq-filters-card w-full min-w-0 shrink-0">
+      <form class="ops-toolbar" (ngSubmit)="search()">
+        <div class="ops-toolbar__primary">
+          <div class="ops-toolbar__lead">
+            <label class="sr-only" for="dlq-filter-sink">
+              {{ "DLQ_PAGE.FILTERS.SINK" | translate }}
+            </label>
+              <!-- The options are fetched now, so the list grows with the
+                   platform: 200px (PrimeNG's default) cut the fifth service
+                   in half the day realtime-service started publishing. Seven
+                   rows (40px each plus the list's 16px of padding), capped
+                   against a landscape phone. -->
+            <p-multiselect
+              inputId="dlq-filter-sink"
+              appendTo="body"
+              scrollHeight="min(18.5rem, 60vh)"
+              [options]="sinkOptions()"
+              [ngModel]="sinksFilter()"
+              (ngModelChange)="onSinksFilterChange($event)"
+              [ngModelOptions]="{ standalone: true }"
+              [placeholder]="'DLQ_PAGE.FILTERS.SINK_PLACEHOLDER' | translate"
+              [maxSelectedLabels]="2"
+              [filter]="false"
+              [showToggleAll]="false"
+              [showHeader]="false"
+              class="datha-select w-full"
+            />
+          </div>
+
+          <div class="ops-search-field">
+            <span class="pi pi-search ops-search-field__icon" aria-hidden="true"></span>
+            <label class="sr-only" for="dlq-filter-correlation">
+              {{ "DLQ_PAGE.FILTERS.CORRELATION_ID" | translate }}
+            </label>
+            <input
+              pInputText
+              id="dlq-filter-correlation"
+              class="datha-input ops-search-field__input w-full"
+              [value]="correlationIdFilter()"
+              (input)="onTextFilterInput(correlationIdFilter, $event)"
+              [placeholder]="'DLQ_PAGE.FILTERS.CORRELATION_SEARCH_PLACEHOLDER' | translate"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="ops-toolbar__actions">
+            <p-button
+              type="submit"
+              [label]="'DLQ_PAGE.FILTERS.SEARCH' | translate"
+              icon="pi pi-search"
+              [loading]="loading()"
+            />
+            <p-button
+              type="button"
+              [label]="'DLQ_PAGE.FILTERS.CLEAR' | translate"
+              [text]="true"
+              (onClick)="clearFilters()"
+              [disabled]="loading()"
+            />
+            <p-button
+              type="button"
+              [text]="true"
+              [icon]="advancedFiltersOpen() ? 'pi pi-sliders-h' : 'pi pi-sliders-v'"
+              [pt]="{ root: { 'aria-expanded': advancedFiltersOpen() } }"
+              [ariaLabel]="
+                (advancedFiltersOpen()
+                  ? 'DLQ_PAGE.FILTERS.ADVANCED_HIDE'
+                  : 'DLQ_PAGE.FILTERS.ADVANCED_SHOW'
+                ) | translate
+              "
+              (onClick)="toggleAdvancedFilters()"
+            />
+          </div>
+        </div>
+
+        @if (advancedFiltersOpen()) {
+          <div class="ops-toolbar__advanced">
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="dlq-filter-owner">
+                {{ "DLQ_PAGE.FILTERS.OWNER_ID" | translate }}
+              </label>
+              <input
+                pInputText
+                id="dlq-filter-owner"
+                class="datha-input w-full"
+                [value]="ownerIdFilter()"
+                (input)="onTextFilterInput(ownerIdFilter, $event)"
+                [placeholder]="'DLQ_PAGE.FILTERS.OWNER_PLACEHOLDER' | translate"
+                autocomplete="off"
+              />
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="dlq-filter-from">
+                {{ "DLQ_PAGE.FILTERS.FROM" | translate }}
+              </label>
+              <p-datepicker
+                inputId="dlq-filter-from"
+                [ngModel]="fromFilter()"
+                (ngModelChange)="fromFilter.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [showTime]="true"
+                [hourFormat]="'24'"
+                [showIcon]="true"
+                iconDisplay="input"
+                appendTo="body"
+                [showButtonBar]="true"
+                [dateFormat]="datePickerFormat"
+                [panelStyle]="datepickerPanelStyle"
+                class="es-datepicker w-full"
+                inputClass="w-full"
+                panelClass="es-datepicker-panel"
+              />
+            </div>
+
+            <div class="ops-toolbar__field">
+              <label class="datha-label" for="dlq-filter-to">
+                {{ "DLQ_PAGE.FILTERS.TO" | translate }}
+              </label>
+              <p-datepicker
+                inputId="dlq-filter-to"
+                [ngModel]="toFilter()"
+                (ngModelChange)="toFilter.set($event)"
+                [ngModelOptions]="{ standalone: true }"
+                [showTime]="true"
+                [hourFormat]="'24'"
+                [showIcon]="true"
+                iconDisplay="input"
+                appendTo="body"
+                [showButtonBar]="true"
+                [dateFormat]="datePickerFormat"
+                [panelStyle]="datepickerPanelStyle"
+                class="es-datepicker w-full"
+                inputClass="w-full"
+                panelClass="es-datepicker-panel"
+              />
+            </div>
+          </div>
+        }
+      </form>
+
+      @if (hasActiveFilters()) {
+        <div class="dlq-filter-chips" aria-label="Active filters">
+          @for (chip of activeFilters(); track chip.id) {
+            <button
+              type="button"
+              class="dlq-filter-chip"
+              (click)="removeActiveFilter(chip.id)"
+              [attr.aria-label]="
+                'DLQ_PAGE.FILTERS.REMOVE_FILTER_NAMED'
+                  | translate: { filter: chip.labelKey | translate: chip.labelParams }
+              "
+            >
+              <span>{{ chip.labelKey | translate: chip.labelParams }}</span>
+              <span class="pi pi-times dlq-filter-chip__remove" aria-hidden="true"></span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="dlq-results-card ops-results-card flex w-full min-w-0 min-h-0 flex-1 flex-col gap-4">
+      @if (listError()) {
+        <div class="dlq-banner dlq-banner--error shrink-0" role="alert">
+          <span class="pi pi-exclamation-circle" aria-hidden="true"></span>
+          {{ "DLQ_PAGE.ERROR_LOAD" | translate }}
+        </div>
+      }
+
+      <!-- PrimeNG's loading mask is a spinner with an aria-hidden icon, so a
+           screen reader was told nothing at all while the table refetched —
+           every filter, sort and page change was silent. The detail pages have
+           always announced theirs; this is the list half, which the string had
+           been sitting unused for. `role="status"` keeps it polite: it is
+           read after whatever the user is doing, not over the top of it. -->
+      <p class="sr-only" role="status" aria-live="polite">
+        @if (loading()) {
+          {{ "DLQ_PAGE.LOADING_LIST" | translate }}
+        }
+      </p>
+
+      <div
+        class="es-table-wrap dlq-table-wrap min-h-0 flex-1"
+        [class.es-table-wrap--empty]="showEmptyOverlay()"
+      >
+        <p-table
+          [value]="rows()"
+          [loading]="loading()"
+          [scrollable]="true"
+          scrollHeight="flex"
+          [styleClass]="tableStyleClass()"
+          [tableStyle]="{ 'min-width': 'var(--es-table-min-width, 48rem)' }"
+          [rowHover]="true"
+          [customSort]="true"
+          sortField="failedAt"
+          [sortOrder]="tableSortOrder()"
+          (sortFunction)="onTableSort($event)"
+        >
+        <ng-template pTemplate="header">
+          <tr>
+            <th scope="col" class="es-table__sticky es-table__sticky--head"
+              pSortableColumn="failedAt">
+              <span class="inline-flex items-center gap-1">
+                {{ "DLQ_PAGE.TABLE.FAILED_AT" | translate }}
+                <p-sortIcon field="failedAt" />
+              </span>
+            </th>
+            <th scope="col">{{ "DLQ_PAGE.TABLE.SINK" | translate }}</th>
+            <th scope="col">{{ "DLQ_PAGE.TABLE.STATUS" | translate }}</th>
+            <th scope="col" class="es-table__secondary">{{ "DLQ_PAGE.TABLE.LAST_ERROR" | translate }}</th>
+            <th scope="col" class="es-table__secondary">{{ "DLQ_PAGE.TABLE.CORRELATION_ID" | translate }}</th>
+            <th scope="col" class="es-table__action-col">
+              <span class="sr-only">{{ "DLQ_PAGE.TABLE.VIEW" | translate }}</span>
+            </th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-row>
+          <tr
+            class="es-table__row cursor-pointer"
+            tabindex="0"
+            (click)="openDetail(row)"
+            (keydown.enter)="openDetail(row)"
+            (keydown.space)="openDetail(row); $event.preventDefault()"
+          >
+            <td class="es-table__primary es-table__sticky whitespace-nowrap">
+              <span class="es-ts es-ts--full">{{ row.failedAt | date: "medium" : undefined : locale }}</span
+              ><span class="es-ts es-ts--compact">{{ row.failedAt | date: "short" : undefined : locale }}</span>
+            </td>
+            <td class="es-table__primary">
+              <code class="dlq-code">{{ row.sink }}</code>
+            </td>
+            <td>
+              @if (isReplayed(row)) {
+                <span class="dlq-status dlq-status--replayed">
+                  <span class="dlq-status__dot" aria-hidden="true"></span>
+                  {{ "DLQ_PAGE.STATUS.REPLAYED" | translate }}
+                </span>
+              } @else {
+                <span class="dlq-status dlq-status--pending">
+                  <span class="dlq-status__dot" aria-hidden="true"></span>
+                  {{ "DLQ_PAGE.STATUS.PENDING" | translate }}
+                </span>
+              }
+            </td>
+            <td class="es-table__secondary">
+              <span class="line-clamp-2" [title]="row.lastError">
+                {{ truncate(row.lastError, 72) }}
+              </span>
+            </td>
+            <td class="es-table__secondary">
+              <div class="flex min-w-0 items-center gap-1">
+                <span class="truncate" [title]="row.correlationId ?? ''">
+                  {{ truncate(row.correlationId, 20) }}
+                </span>
+                @if (row.correlationId) {
+                  <button
+                    type="button"
+                    class="dlq-copy-btn"
+                    [attr.aria-label]="'DLQ_PAGE.DETAIL.COPY' | translate"
+                    (click)="copyText(row.correlationId, $event)"
+                  >
+                    <span class="pi pi-copy text-xs" aria-hidden="true"></span>
+                  </button>
+                }
+              </div>
+            </td>
+            <td class="es-table__action">
+              <span class="pi pi-chevron-right es-table__chevron" aria-hidden="true"></span>
+            </td>
+          </tr>
+        </ng-template>
+        </p-table>
+
+        @if (showEmptyOverlay()) {
+          <div class="es-table-empty-overlay" role="status">
+            <es-table-empty-state
+              [titleKey]="emptyTitleKey()"
+              [hintKey]="emptyHintKey()"
+              [icon]="emptyIcon()"
+              [showClearAction]="hasActiveFilters()"
+              clearLabelKey="DLQ_PAGE.FILTERS.CLEAR"
+              (clearAction)="clearFilters()"
+            />
+          </div>
+        }
+      </div>
+
+      <div class="dlq-pagination ops-pagination flex shrink-0 flex-wrap items-center justify-between gap-3">
+        <p class="dlq-pagination-meta m-0 text-sm">
+          @if (total() > 0) {
+            {{
+              rangeKey()
+                | translate
+                  : { from: pageFrom(), to: pageTo(), total: total() }
+            }}
+          } @else {
+            {{ "DLQ_PAGE.PAGINATION.NONE" | translate }}
+          }
+        </p>
+        <es-ops-paginator
+          [offset]="offset()"
+          [pageSize]="pageSize()"
+          [total]="total()"
+          [totalCapped]="totalCapped()"
+          [pageSizeOptions]="pageSizeOptions"
+          [disabled]="loading()"
+          (pageChange)="onPageChange($event)"
+        />
+      </div>
+    </div>
+  </div>
+</section>

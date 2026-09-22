@@ -1,0 +1,357 @@
+{
+  "THEME": {
+    "LABEL": "Design",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "LANDING": {
+    "HERO_TITLE": "Chatbot-Spielwiese",
+    "HERO_DESC": "Produktionsnaher Chat mit Angular 21 und einem Go-API-Gateway: OAuth am Rand, asynchrones Gemini-Streaming per SSE, Dateianhänge über Azure Blob, durchsuchbare Modellauswahl und dauerhafte Threads zum Umbenennen oder Löschen. Postgres ist die Quelle der Wahrheit; Redis liefert Live-Chunks; NATS koordiniert die Bereinigung verwaister Dateien, wenn eine Konversation gelöscht wird.",
+    "STACK_INTRO": "Tech we use",
+    "STACK_GROUP_CLIENT": "Im Browser",
+    "STACK_GROUP_SERVICES": "Service-Schicht",
+    "STACK_GROUP_DATA": "Daten & Modelle",
+    "CARD_ANGULAR": "Angular 21 mit Signals, strict TypeScript, Module Federation in die Shell und getrennte Chat-Clients (`MessageService`, `MessageStreamService`, `ConversationService`, `ChatModelService`) entlang der Gateway-Routen.",
+    "CARD_PRIMENG": "PrimeNG 21 + Aura für Shell-Layout, Dialoge und Bestätigungen; Chat mit Claude-artigem Composer und eigenem durchsuchbaren Modellmenü (kein Standard-`p-select`-Overlay).",
+    "CARD_AUTH": "angular-oauth2-oidc mit PKCE; Google- und Microsoft-Anmeldung über das Go-Gateway mit kurzlebigen internen JWTs – der Browser hält nie `client_secret`.",
+    "CARD_API": "chatbot-service (FastAPI): Postgres-first Messages, Redis-Queue + SSE-Streams, `GET /models`, JetStream `chatbot.message.sent` (mit Outbox-Retry), `DELETE /conversations` mit verwaist-sicherem `conversation.deleted`.",
+    "CARD_POSTGRES": "chatbot-service Postgres: Konversationen, Messages, `message_files`, `event_outbox`. file-service Postgres: Blob-Metadaten pro Owner. Alembic pro Service.",
+    "CARD_REDIS": "Job-Queue (`chatbot:jobs`) und Streams pro Job (`chatbot:events:{job_id}`) für SSE über Replikas; Clients reconnecten mit `Last-Event-ID`.",
+    "CARD_GEMINI": "Worker nutzt das gewählte Modell (`streamGenerateContent`); Sidebar-Titel mit Gemini Flash Lite. Optional `CHAT_MODEL_ALLOWLIST`; API-Key nur auf chatbot-service.",
+    "CARD_I18N": "@ngx-translate JSON-Kataloge (en/de); Locale als `Accept-Language` bei jedem gateway-proxied API-Aufruf.",
+    "CARD_GATEWAY": "Go-API-Gateway: OAuth-Austausch, internes JWT, `stream_token` bei `POST /messages`, Reverse-Proxy zu Chat-, Datei- und Event-Store-APIs.",
+    "CARD_FILE_SERVICE": "Fastify: SAS vorbereiten → Browser-PUT nach Azure → Confirm in Postgres; publiziert `file.uploaded`; konsumiert `conversation.deleted` für verwaiste Blobs.",
+    "CARD_EVENT_STORE": "TypeScript-Service: Pull-Ingest aus JetStream `EVENTS` nach Postgres — `chatbot.message.sent`, `file.uploaded`, `conversation.deleted` und weitere Plattform-Subjects.",
+    "CARD_AZURE_BLOB": "Anhangs-Bytes in Azure Blob; SAS für Browser-Upload und serverseitiges Löschen. chatbot-service nur `file_id`-Referenzen — keine Byte-Proxies.",
+    "CARD_NATS": "JetStream-Stream `EVENTS`: `file.uploaded`, `chatbot.message.sent`, `conversation.deleted` (und `file.deleted`). Topologie aus platform-nats; Outbox bei Publish-Fehler.",
+    "FLOWS": {
+      "SECTION_TITLE": "Architektur-Abläufe",
+      "PICKER_ARIA": "Wähle, welches Flussdiagramm angezeigt wird",
+      "TAB_MESSAGE": "Nachricht senden",
+      "TAB_DELETE": "Chat löschen"
+    },
+    "FLOW": {
+      "TITLE": "How a message moves",
+      "SUBTITLE": "Klicke auf einen Block für Details. Happy Path: Anhänge (optional) per SAS in Azure Blob → Modell wählen → senden. Plattform-Events (`file.uploaded`, `chatbot.message.sent`) landen in JetStream fürs Audit; die Chat-Latenz hängt an Postgres + Redis + SSE.",
+      "DIAGRAM_ARIA": "Chatbot architecture flow: select a step to read details",
+      "LINK_HTTP": "HTTP · SSE",
+      "LINK_BLOB": "SAS vorbereiten · direktes PUT",
+      "LINK_EVENTS": "JetStream · Plattform-Events",
+      "LINK_INGEST": "event-store Ingest",
+      "EVENTS_NOTE": "NATS-Publishes sind async und blockieren nicht — bei Ausfall gehen Zeilen in die Postgres-Outbox des jeweiligen Services.",
+      "LINK_BRANCH": "Persistieren · Queue · Streams",
+      "LINK_QUEUE": "Worker streamt · Titel mit Lite",
+      "LINK_GATEWAY": "Route · JWT · Dateien",
+      "LOOP_NOTE": "FastAPI liest per XREAD aus dem Redis Stream `chatbot:events:{job_id}` und leitet Chunks als SSE weiter – mit mehreren API-Replikaten sicher, da der Stream in Redis liegt, nicht in einem Prozess.",
+      "DELIVERY_KICKER": "Ship it",
+      "PANEL_KICKER": "Inside this block",
+      "PANEL_EMPTY": "Schritt wählen: Angular, Gateway, chatbot-service, file-service, Azure Blob, NATS, event-store, Postgres, Redis, Worker oder Azure DevOps.",
+      "ANGULAR": {
+        "TITLE": "Angular 21 (Browser)",
+        "DESC": "Login, Home und Chat-UI – HttpClient + EventSource für gestreamte Antworten; standalone oder als Shell-Remote.",
+        "D1": "Strict TypeScript, Standalone-Komponenten, Signals für lokalen UI-State.",
+        "D2": "@ngx-translate; Locale → Accept-Language bei API-Aufrufen.",
+        "D3": "PrimeNG 21 + Aura: Toolbar, Karten, Bestätigungsdialoge, Theme-Tokens.",
+        "D4": "angular-oauth2-oidc mit PKCE; Token-Austausch nur über das Go-Gateway.",
+        "D5": "Route Guards + APP_INITIALIZER, damit OIDC vor geschützten Routen fertig ist.",
+        "D6": "Chat-API-Clients nach Route gruppiert: messages, streams, conversations, models.",
+        "D7": "Composer: SAS-Anhänge, Claude-artige Eingabekarte, durchsuchbares Modellmenü (localStorage).",
+        "D8": "Sidebar: paginierte Historie, Umbenennen, Löschen mit Bestätigung, Thread öffnen."
+      },
+      "FASTAPI": {
+        "TITLE": "FastAPI (chatbot-service)",
+        "DESC": "HTTP-Grenze für Chat und Modelle – Auth und CORS liegen am Gateway.",
+        "D1": "Router für conversations, messages, stream und `GET /models`.",
+        "D2": "Postgres zuerst: User-Nachricht (und Dateirefs) persistieren, dann einreihen.",
+        "D3": "Job nach Redis mit Owner, Modell-ID, Correlation-ID und Anhangsdeskriptoren.",
+        "D4": "SSE-Handler XREAD auf den Job-Stream; `done` mit Konversationstitel aus Postgres anreichern.",
+        "D5": "JWT + `X-Owner-ID` vom Gateway – keine Google-Credentials in diesem Service.",
+        "D6": "User-Nachrichten speichern nur `file_id`-Referenzen — Bytes bleiben in Azure Blob über file-service.",
+        "D7": "`GET /models` proxyt Google `models.list` (gefiltert) für die UI-Auswahl.",
+        "D8": "Nach dem dauerhaften User-Write: Publish `events.chatbot.message.sent` (`type`: `chatbot.message.sent`, Rolle user).",
+        "D9": "Fehlgeschlagener JetStream-Publish → Zeile in `event_outbox`; API-Drain retried auf Stream `EVENTS`."
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "System of record for conversations, message rows, and completed assistant text + metadata (or failure state).",
+        "D1": "Relational model for threads and ordered messages; migrations for schema evolution.",
+        "D2": "Assistant completion written when the stream ends — Redis chunks are not the sole truth.",
+        "D3": "Async SQLAlchemy (or equivalent) from the same service codebase as the API."
+      },
+      "REDIS": {
+        "TITLE": "Redis",
+        "DESC": "Entkoppelt lange Modell-Läufe vom HTTP-Request: Jobs per BLPOP einreihen und Live-Chunks über Redis Streams ausliefern.",
+        "D1": "Job-Queue (`chatbot:jobs`): BLPOP, damit POST /messages schnell nach dem dauerhaften Postgres-Write zurückgibt.",
+        "D2": "Redis Streams (`chatbot:events:{job_id}`): Worker XADDs Chunks; FastAPI XREADs und leitet sie an SSE-Clients weiter.",
+        "D3": "Last-Event-ID-Reconnect: jedes SSE-Event trägt die Stream-Entry-ID; XREAD nimmt beim Reconnect dort auf – kein Datenverlust."
+      },
+      "WORKER": {
+        "TITLE": "Worker + Google AI",
+        "DESC": "Hintergrundprozess: gewähltes Gemini-Modell streamen und Chunks nach Redis publizieren.",
+        "D1": "Separater Prozess von Uvicorn – unabhängig skalieren und deployen.",
+        "D2": "`streamGenerateContent` mit der Modell-ID aus dem Job (deine Picker-Wahl).",
+        "D3": "Inkrementelle Chunks per XADD; vollständigen Assistententext am Ende in Postgres speichern.",
+        "D4": "Lädt Anhangsbytes vom file-service (Azure Blob hinter SAS-Download) für multimodale Turns.",
+        "D5": "Sidebar-Titel per `generateContent` auf Gemini Flash Lite nach der ersten Antwort.",
+        "D6": "Reiht `chatbot.message.sent` (assistant) in die Outbox ein, nachdem die Antwort persistiert ist — dasselbe Subject wie beim API-User-Event."
+      },
+      "ADO": {
+        "TITLE": "Azure DevOps",
+        "DESC": "Jeder Service ist ein eigenes Repo mit YAML-Pipelines (Build, Test, Bot-Review mit Gemini).",
+        "D1": "Getrennte ADO-Repos: Gateway, chatbot-service, file-service, Frontends, platform-nats, event-store.",
+        "D2": "PR-Pipelines: Unit-Tests, MegaLinter, optional PR-Agent-Review.",
+        "D3": "Variable Groups für Secrets; Deploy-Reihenfolge respektiert NATS-Topologie vor Consumern."
+      },
+      "GATEWAY": {
+        "TITLE": "API-Gateway (Go)",
+        "DESC": "Ein Browser-Einstiegspunkt: OAuth, JWT, Proxy und Stream-Tokens.",
+        "D1": "Google-OAuth-Austausch – hält `client_secret`; Browser sendet es nicht nachgelagert.",
+        "D2": "Stellt interne JWTs für den Browser nach OAuth aus; nachgelagerte Services prüfen kein JWT.",
+        "D3": "Validiert Bearer-JWT am Edge und setzt `X-Owner-ID` auf jeder Proxy-Route.",
+        "D4": "Fügt `stream_token` bei `POST /messages` für scoped SSE-Zugriff hinzu.",
+        "D5": "Proxyt `/api/chatbot/v1/*`, `/api/files/*` und weitere Plattform-Routen."
+      },
+      "FILE_SERVICE": {
+        "TITLE": "Dateidienst (Fastify)",
+        "DESC": "Steuert Chat-Anhänge: Postgres-Metadaten, Azure-Blob-Bytes, Gateway-Auth.",
+        "D1": "`POST /files/prepare` liefert `file_id` und kurzlebige SAS-URL zum Upload.",
+        "D2": "`POST /files/confirm` speichert Name, Größe, MIME, Owner und Blob-Pfad nach erfolgreichem PUT.",
+        "D3": "Chat `POST /messages` sendet nur `file_id`-Referenzen — keine Rohbytes.",
+        "D4": "Vertrauenswürdiges `X-Owner-ID` vom Gateway bei Prepare, Confirm und Download.",
+        "D5": "Stellt SAS-Download für den Worker bereit, wenn Gemini Inline-Anhangsdaten braucht.",
+        "D6": "Bei Confirm: Publish `events.file.file.uploaded` (`type`: `file.uploaded`) mit Standard-Envelope."
+      },
+      "AZURE_BLOB": {
+        "TITLE": "Azure Blob Storage",
+        "DESC": "Hier liegen die Anhangs-Bytes — Browser lädt direkt hoch; Services lesen über file-service.",
+        "D1": "Composer-Upload: Browser-PUT auf die SAS-URL aus Prepare (kein Byte-Proxy durch chatbot-service).",
+        "D2": "Container und Pfad werden bei Confirm in der Dateizeile gespeichert.",
+        "D3": "Worker-Multimodal liest dasselbe Objekt über file-service — Gemini bekommt keine langlebigen SAS-URLs."
+      },
+      "NATS": {
+        "TITLE": "NATS JetStream",
+        "DESC": "Gemeinsamer Stream `EVENTS` für plattformweites Audit — die Chat-UX wartet nicht auf diese Publishes.",
+        "D1": "`events.file.file.uploaded` vom file-service nach erfolgreichem Confirm.",
+        "D2": "`events.chatbot.message.sent` von chatbot-service API, sobald die User-Nachricht in Postgres liegt.",
+        "D3": "`events.chatbot.message.sent` erneut vom Worker (Rolle assistant) nach Stream-Ende — oft per Outbox.",
+        "D4": "Standard-Envelope pro Subject: `type`, `service`, `entity_id`, `owner_id`, `correlation_id`, `payload`."
+      },
+      "EVENT_STORE": {
+        "TITLE": "Event Store",
+        "DESC": "Pull-Consumer ingested `events.chatbot.>` und `events.file.>` aus JetStream nach Postgres für Abfrage und Replay.",
+        "D1": "Ingest von `file.uploaded` und `chatbot.message.sent` neben anderen Plattform-Subjects.",
+        "D2": "Retention und Query-APIs sind getrennt von den operativen chatbot-service-Tabellen.",
+        "D3": "DLQ-Verkehr (`events.dlq.>`) wird nicht als normale Business-Events gespeichert."
+      }
+    },
+    "DELETE_FLOW": {
+      "TITLE": "So funktioniert Löschen",
+      "SUBTITLE": "Chat löschen ist für Postgres und die HTTP-Antwort synchron; die Azure-Blob-Bereinigung läuft asynchron. Es werden nur `file_id`s publiziert, die in keiner anderen Konversation desselben Owners mehr vorkommen — geteilte Anhänge bleiben erhalten.",
+      "DIAGRAM_ARIA": "Ablauf beim Löschen einer Konversation: Schritt auswählen für Details",
+      "LINK_DELETE": "DELETE · Bestätigung",
+      "LINK_GATEWAY": "Proxy · JWT · Owner",
+      "LINK_COMMIT": "Verwaiste finden · Kaskade",
+      "LINK_PUBLISH": "Commit · JetStream-Publish",
+      "LINK_ASYNC": "Async · parallele Consumer",
+      "LINK_BLOB": "Postgres-Zeile · Azure-Blob",
+      "NOTE": "Die API antwortet mit 204 sobald Postgres committed. file-service soft-deleted Metadaten, entfernt Bytes aus Azure Blob Storage, event-store ingested das Envelope im Hintergrund; fehlgeschlagene Publishes können später aus der Outbox nachgezogen werden.",
+      "PANEL_KICKER": "In diesem Schritt",
+      "PANEL_EMPTY": "Schritt wählen: Angular, Gateway, chatbot-service, Postgres, NATS, file-service, Azure Blob oder event-store.",
+      "ANGULAR": {
+        "TITLE": "Angular 21 (Browser)",
+        "DESC": "Chat-UI löst nach Bestätigung; der Browser wartet nicht auf Azure Blob oder NATS-Bereinigung.",
+        "D1": "Chat-löschen-Steuerung am aktiven Thread (Sidebar-Menü / Papierkorb).",
+        "D2": "PrimeNG-Bestätigungsdialog vor dem Netzwerkaufruf.",
+        "D3": "`ConversationService.delete(id)` → `DELETE /api/chatbot/v1/conversations/{id}` über das Gateway.",
+        "D4": "Bei 204: Thread aus dem lokalen State entfernen und ggf. navigieren."
+      },
+      "GATEWAY": {
+        "TITLE": "API-Gateway (Go)",
+        "DESC": "Leitet das DELETE mit denselben JWT- und Owner-Headern wie alle Chat-Routen weiter.",
+        "D1": "Validiert internes JWT auf dem proxied DELETE.",
+        "D2": "Setzt `X-Owner-ID` und `X-Correlation-ID` für Owner-Scope und Tracing.",
+        "D3": "Reverse-Proxy zu chatbot-service; keine Konversationsdaten im Gateway."
+      },
+      "FASTAPI": {
+        "TITLE": "FastAPI (chatbot-service)",
+        "DESC": "Besitzt die Delete-Transaktion, die Liste verwaister `file_id`s und NATS-Publish (oder Outbox).",
+        "D1": "Vor dem Delete: SQL findet `file_id`s nur in diesem Thread, die in keiner anderen Konversation des Owners vorkommen (`NOT EXISTS`).",
+        "D2": "Löscht die Konversation; Kaskade entfernt Messages und `message_files`, dann Commit.",
+        "D3": "Nach Commit: Publish `events.chatbot.conversation.deleted` mit Standard-Envelope + `payload.file_ids` (nur Verwaiste).",
+        "D4": "Ist JetStream down: Zeile in Postgres `event_outbox`; API-Drain versucht später erneut.",
+        "D5": "Antwortet sofort mit 204 — blockiert nie auf file-service oder Blob-Löschung."
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "Maßgebliche Entfernung des Threads; Publish nur nach erfolgreichem Commit.",
+        "D1": "`message_files` verknüpft Nachrichten mit `file_id`s für die Verwaisten-Erkennung.",
+        "D2": "FK-Kaskade löscht Messages und Links mit der Konversationszeile.",
+        "D3": "Fehlgeschlagene Deletes rollen zurück — kein NATS-Event bei Fehler."
+      },
+      "NATS": {
+        "TITLE": "NATS JetStream",
+        "DESC": "Trägt das Plattform-Event, damit file-service und event-store ohne HTTP-Kopplung reagieren.",
+        "D1": "Subject `events.chatbot.conversation.deleted` auf Stream `EVENTS`.",
+        "D2": "Envelope: `type`, `service`, `entity_id`, `owner_id`, `correlation_id`, `payload.file_ids[]`.",
+        "D3": "Leeres `file_ids` ist gültig, wenn es keine Anhänge gab oder alle Dateien noch woanders genutzt werden."
+      },
+      "FILE_SERVICE": {
+        "TITLE": "Dateidienst (Fastify)",
+        "DESC": "Pull-Consumer steuert die Bereinigung: zuerst Postgres-Metadaten, dann Azure-Blob-Bytes.",
+        "D1": "Durable Consumer `file-service-conversation-cleanup` auf `events.chatbot.conversation.deleted`.",
+        "D2": "Pro `file_id`: Envelope-`owner_id` muss zur Zeile in der file-service-Postgres passen.",
+        "D3": "Soft-Delete der Metadatenzeile nach Owner-Prüfung.",
+        "D4": "Azure Blob Storage SDK löscht das Objekt am gespeicherten Blob-Pfad.",
+        "D5": "Sendet `events.file.file.deleted` pro Erfolg; Doppelzustellung → loggen und ack."
+      },
+      "AZURE_BLOB": {
+        "TITLE": "Azure Blob Storage",
+        "DESC": "Anhangs-Bytes liegen hier — Upload per SAS aus dem Browser; Löschen serverseitig durch file-service.",
+        "D1": "Jede bestätigte Dateizeile speichert Container/Pfad vom Upload.",
+        "D2": "Verwaisten-Bereinigung entfernt das Objekt nach erfolgreichem Postgres-Soft-Delete.",
+        "D3": "Upload leitet keine Bytes durch chatbot-service; Delete blockiert nicht die 204 des Nutzers."
+      },
+      "EVENT_STORE": {
+        "TITLE": "Event Store",
+        "DESC": "Nimmt dieselbe JetStream-Nachricht für Audit und Replay auf — steuert das sichtbare Löschen nicht.",
+        "D1": "Pull-Ingest aus `EVENTS` gemäß Plattform-Topologie.",
+        "D2": "Speichert das Envelope für Betrieb und Auswertung.",
+        "D3": "DLQ-Subjects werden nicht als normale Business-Events ingested."
+      }
+    }
+  },
+  "CHAT": {
+    "TITLE": "Chat",
+    "SUBTITLE": "KI-Assistent, betrieben mit Google Gemini Flash",
+    "EMPTY": "Send a message to start the thread. Replies land here as you iterate.",
+    "PLACEHOLDER": "Wie kann ich dir heute helfen?",
+    "SEND": "Send",
+    "LOADING": "Model is thinking…",
+    "PENDING_QUEUED": "In Warteschlange",
+    "PENDING_RETRYING": "Dienst überlastet — neuer Versuch ({{attempt}}/{{max}})",
+    "PENDING_WORDS": ["Denkt nach", "Überlegt", "Formuliert"],
+    "COMPOSER_HINT": "Enter zum Senden · Umschalt+Enter für neue Zeile",
+    "MODEL_LABEL": "Modell",
+    "MODEL_SEARCH": "Modelle suchen",
+    "MODEL_SEARCH_EMPTY": "Keine Treffer",
+    "NEW_CHAT": "Neuer Chat",
+    "RENAME_SAVE": "Speichern",
+    "RENAME_CANCEL": "Abbrechen",
+    "HISTORY_TITLE": "Chats",
+    "HISTORY_LOAD_MORE": "Weitere Chats laden",
+    "HISTORY_ALL_LOADED": "Alle Chats in dieser Liste sind sichtbar.",
+    "HISTORY_MORE_FAILED": "Weitere Chats konnten nicht geladen werden.",
+    "HISTORY_EMPTY": "Noch keine Konversationen",
+    "HISTORY_LOAD_FAILED": "Chats konnten nicht geladen werden",
+    "THREAD_LOAD_FAILED": "Nachrichten konnten nicht geladen werden",
+    "MESSAGES_COUNT": "{{count}} Nachrichten",
+    "RETRY": "Erneut versuchen",
+    "UNNAMED_CHAT": "Unbenannter Chat",
+    "EDIT_TITLE": "Chattitel bearbeiten",
+    "RENAME_ERROR": "Titel konnte nicht gespeichert werden",
+    "DELETE_TITLE": "Chat löschen",
+    "DELETE_CONFIRM": "Diesen Chat und alle Nachrichten dauerhaft löschen?",
+    "DELETE_ERROR": "Chat konnte nicht gelöscht werden",
+    "ATTACH_FILES": "Dateien anhängen",
+    "ATTACHMENTS_LIMIT": "Pro Nachricht höchstens {{max}} Dateien.",
+    "REMOVE_ATTACHMENT": "Anhang entfernen",
+    "ATTACHMENT_TOO_LARGE": "Jede Datei darf höchstens {{maxMb}} MB groß sein.",
+    "ATTACHMENT_UPLOAD_FAILED": "Datei konnte nicht hochgeladen werden",
+    "OPEN_FILE_ATTACHMENT": "Datei öffnen",
+    "ATTACHMENTS_GROUP": "Anhänge",
+    "ATTACHMENT_UNAVAILABLE": "Nicht verfügbar",
+    "OLDER_MESSAGES_FAILED": "Ältere Nachrichten konnten nicht geladen werden.",
+    "OLDER_MESSAGES_RETRY": "Erneut versuchen",
+    "THREAD_NEWEST_HINT": "Neueste Nachrichten — nach oben für ältere Einträge scrollen.",
+    "JUMP_TO_BOTTOM": "Zur neuesten Nachricht springen",
+    "HISTORY_OPEN": "Chats anzeigen",
+    "HISTORY_BACK": "Zurück zum Chat"
+  },
+  "LOGIN": {
+    "KICKER": "Anmelden",
+    "TITLE": "Chatbot",
+    "SUBTITLE": "Melde dich mit Google, einem Microsoft-Schul-/Arbeitskonto oder einem persönlichen Microsoft-Konto an.",
+    "CONTINUE_GOOGLE": "Mit Google fortfahren",
+    "MICROSOFT_WORK_SCHOOL": "Mit Microsoft fortfahren (Schul- / Arbeitskonto)",
+    "MICROSOFT_PERSONAL": "Mit Microsoft fortfahren (Persönlich)",
+    "SIGNING_IN": "Anmelden…",
+    "FOOTNOTE": "Mit der Anmeldung stimmst du den Zugriffsrichtlinien deiner Organisation für diese App zu.",
+    "ERROR_GENERIC": "Anmeldung fehlgeschlagen. Bitte erneut versuchen oder Administrator kontaktieren."
+  },
+  "PROFILE": {
+    "MENU_ARIA": "Konto-Menü",
+    "TITLE": "Angemeldet als",
+    "SIGN_IN_METHOD": "Anmeldemethode",
+    "NAME": "Name",
+    "EMAIL": "E-Mail",
+    "USERNAME": "Benutzername",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft Entra ID",
+    "METHOD_UNKNOWN": "Unbekannt",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Abmelden"
+  },
+  "DASHBOARD": {
+    "TITLE": "Home",
+    "HELP": "<p>Dies ist der Hauptbereich der Anwendung nach der Anmeldung.</p><p>Verwende die Symbolleiste für Hilfe und E-Mail-Support.</p>"
+  },
+  "EMAIL": {
+    "SUBJECT": "Anfrage zur Zugriffshilfe",
+    "BODY": "Sehr geehrtes Support-Team,\n\nIch möchte auf Daten in der folgenden Anwendung zugreifen: {{applicationName}}. Bitte helfen Sie mir, dieses Problem zu lösen.\n\nInsbesondere benötige ich Zugriff auf Folgendes:\n[Bitte füllen Sie eine detaillierte Beschreibung aus, auf welche Daten Sie zugreifen möchten]\n\nVielen Dank!"
+  },
+  "BAD_REQUEST": {
+    "title": "Ungültige Anforderung",
+    "message": "Die Anfrage konnte aufgrund fehlerhafter Syntax nicht vom Server verarbeitet werden.<br>Bitte überprüfen Sie die Anfrage und versuchen Sie es erneut. Wenn das Problem weiterhin besteht, kontaktieren Sie den Support um Hilfe."
+  },
+  "UNAUTHORIZED": {
+    "title": "Unberechtigt",
+    "message": "Sie sind nicht berechtigt, diese Aktion auszuführen.<br>Bitte kontaktieren Sie Ihren Administrator für weitere Unterstützung."
+  },
+  "FORBIDDEN": {
+    "title": "Zugriff verweigert",
+    "message": "Sie haben nicht die erforderlichen Berechtigungen, um auf diese Ressource zuzugreifen.<br>Bitte kontaktieren Sie Ihren Administrator für weitere Unterstützung."
+  },
+  "NOT_FOUND": {
+    "title": "Nicht gefunden",
+    "message": "Die angeforderte Ressource konnte auf diesem Server nicht gefunden werden. Bitte überprüfen Sie die URL und versuchen Sie es erneut.<br>Wenn das Problem weiterhin besteht, kontaktieren Sie den Support um Hilfe."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Interner Serverfehler",
+    "message": "Der Server ist auf ein unerwartetes Problem gestoßen, das ihn daran hinderte, die Anfrage zu erfüllen.<br>Bitte versuchen Sie es später erneut.<br>Wenn das Problem weiterhin besteht, kontaktieren Sie den Support um Hilfe."
+  },
+  "BAD_GATEWAY": {
+    "title": "Ungültiges Gateway",
+    "message": "Der Server hat eine ungültige Antwort von einem vorgelagerten Server erhalten, während er versuchte, die Anfrage zu erfüllen.<br>Bitte versuchen Sie es später erneut.<br>Wenn das Problem weiterhin besteht, kontaktieren Sie den Support um Hilfe."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Dienst nicht verfügbar",
+    "message": "Der Server hat derzeit technische Probleme aufgrund vorübergehender Überlastung oder Wartungsarbeiten.<br>Bitte versuchen Sie es später erneut.<br>Wenn das Problem weiterhin besteht, kontaktieren Sie den Support um Hilfe."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Gateway-Zeitüberschreitung",
+    "message": "Verbindungszeitüberschreitung: Es konnte keine Verbindung zum Server hergestellt werden. Dies ist wahrscheinlich vorübergehend.<br>Bitte versuchen Sie es später erneut."
+  },
+  "CONNECTION_LOST": {
+    "title": "Verbindung unterbrochen",
+    "message": "Es scheint, als ob Ihr Gerät die Internetverbindung verloren hat.\nBitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut."
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Verstanden",
+    "CANCEL": "Abbrechen",
+    "CONFIRM": "Bestätigen"
+  },
+  "SUBNAV": {
+    "ARIA": "Chatbot-Bereiche",
+    "OVERVIEW": "Überblick",
+    "CHAT": "Chat",
+    "SUPPORT": "E-Mail-Support"
+  },
+  "GENERAL_ERROR": {
+    "title": "Es tut uns leid, dass die Anwendung abgestürzt ist.",
+    "message": "Bitte kontaktieren Sie den Support, wir würden das Problem gerne lösen.<br>Wie können Sie uns bei der Untersuchung des Problems helfen? Geben Sie Ihren Benutzernamen und den Zeitpunkt des Absturzes der Anwendung an.<br>Danke schön!"
+  },
+  "LANGUAGE": {
+    "LABEL": "Sprache"
+  }
+}

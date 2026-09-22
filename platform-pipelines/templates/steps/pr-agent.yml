@@ -1,0 +1,260 @@
+# PR-Agent AI review.
+#
+# ANY failure leaves the run yellow (non-zero exit + continueOnError). dathq
+# monitors the pipelines tab, so yellow IS the signal that PR-Agent did not
+# review this PR — making an external outage exit 0 would hide that and force him
+# to open every PR to find out. He requeues Bot Review until it comes back green.
+#
+# The classification below therefore only shapes the PR comment's wording — geo
+# vs quota vs 5xx vs "this one is actually your problem" — and decides what is
+# worth retrying. It never suppresses the yellow.
+#
+# One marker-upserted comment either way, so re-queues never pile up threads
+# (PR-Agent's own un-deduped comment is what produced 13 of them).
+#
+# The image is pinned BY DIGEST on purpose: it was `:latest` in 9 pipelines and
+# a newer image silently started publishing its own un-deduped
+# "Failed to review PR" comment (13 of them accumulated on one PR, 2026-09-04).
+# To refresh: docker buildx imagetools inspect pragent/pr-agent:latest
+#
+# `config__is_auto_command=true` below is what stops that comment at its source:
+# the tool publishes it only when that flag is false, and every automated entry
+# point it ships (GitHub Action runner, all webhook servers) sets it true. A
+# pipeline-driven run belongs on the true side; only the CLI path defaults false.
+# It suppresses nothing else here — the "Preparing review..." comment it also
+# gates is already off via publish_output_progress, and enable_ai_metadata
+# defaults false. The failure still reaches the log, which is what we grep.
+parameters:
+  - name: service
+    type: string
+  - name: image
+    type: string
+    # multi-arch index digest resolved 2026-09-04
+    default: 'pragent/pr-agent@sha256:fe5b4a5218e5f9994fb9a1f00f366904467392948157fc23cee62bb9831021cf'
+
+steps:
+  - script: |
+      set -euo pipefail
+      ORG_URL=$(echo "${COLLECTION_URI}" | tr -d '\r' | sed 's#/\+$##')
+      PR_URL="${ORG_URL}/${TEAM_PROJECT_ID}/_git/${REPO_NAME}/pullrequest/${PR_ID}"
+      LOG="${AGENT_TEMPDIRECTORY}/pr-agent.log"
+      MARKER='<!-- bot-review:pr-agent:${{ parameters.service }} -->'
+
+      # One marker thread per service holds the PR-Agent status. Both outcomes
+      # write to it, so a green run clears the red left by the run before it.
+      pr_api_base() {
+        local org_url
+        org_url=$(echo "${SYSTEM_COLLECTIONURI}" | tr -d '\r' | sed 's#/\+$##')
+        echo "${org_url}/${TEAM_PROJECT_ID}/_apis/git/repositories/${BUILD_REPOSITORY_ID}/pullRequests/${PR_ID}"
+      }
+
+      # Sets MARKER_THREAD_ID / MARKER_COMMENT_ID, empty when nothing is posted yet.
+      find_marker_comment() {
+        local base threads_file
+        base="$1"
+        threads_file="${AGENT_TEMPDIRECTORY}/pr-agent-threads.json"
+        curl -fsS "${base}/threads?api-version=7.1" \
+          -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+          -o "$threads_file" || return 1
+
+        MARKER_THREAD_ID=$(jq -r --arg m "$MARKER" '
+          [.value[] | select(.comments[]? | select(.content | strings | contains($m))) | .id][0] // empty
+        ' "$threads_file") || return 1
+        MARKER_COMMENT_ID=$(jq -r --arg m "$MARKER" '
+          [.value[] | . as $t | $t.comments[]? | select(.content | strings | contains($m)) | .id][0] // empty
+        ' "$threads_file") || return 1
+      }
+
+      set_thread_status() {
+        curl -fsS -X PATCH "${1}/threads/${2}?api-version=7.1" \
+          -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "{\"status\": \"${3}\"}" >/dev/null
+      }
+
+      # A green run leaves no comment of its own: PR-Agent publishes the review
+      # itself, and repeating "it passed" beside it would be a second source of
+      # the same truth. It only clears a ❌ an earlier run left behind.
+      resolve_pr_agent_failure_comment() {
+        local base payload
+        base=$(pr_api_base)
+        find_marker_comment "$base" || return 1
+        [[ -n "$MARKER_THREAD_ID" && -n "$MARKER_COMMENT_ID" ]] || return 0
+
+        payload=$(jq -n \
+          --arg marker "$MARKER" \
+          --arg title "Bot review — PR-Agent AI review (${{ parameters.service }})" \
+          '{content: ($marker + "\n\n### " + $title + "\n\n✅ **Reviewed** — the review itself is PR-Agent'"'"'s own comment on this PR.")}'
+        ) || return 1
+
+        curl -fsS -X PATCH "${base}/threads/${MARKER_THREAD_ID}/comments/${MARKER_COMMENT_ID}?api-version=7.1" \
+          -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+          -H "Content-Type: application/json" \
+          -d "$payload" >/dev/null || return 1
+        set_thread_status "$base" "$MARKER_THREAD_ID" fixed || return 1
+        echo "Cleared the previous PR-Agent failure comment on PR #${PR_ID}"
+      }
+
+      upsert_pr_agent_failure_comment() {
+        local exit_code="$1"
+        local reason summary base payload
+        case "$FAILURE_CLASS" in
+          geo)
+            reason='Google AI Studio blocked the build agent region (geo restriction). Not a code defect — no action needed; requeue Bot Review to try another agent region.' ;;
+          quota)
+            reason='Gemini returned 429 RESOURCE_EXHAUSTED (free-tier quota). Not a code defect — no action needed; it clears when the quota window resets.' ;;
+          unavailable)
+            reason='The Gemini models were unavailable (5xx) after retries. Not a code defect — no action needed; requeue Bot Review later.' ;;
+          *)
+            reason="PR-Agent exited with status ${exit_code} for a reason that is not an external outage — this one is worth a look (see log)." ;;
+        esac
+        summary=$(printf '%s\n\n%s' "$reason" 'Mitigations: self-hosted agent in a supported region, Vertex AI Gemini in CI, or another LLM provider.')
+
+        base=$(pr_api_base)
+
+        summary_file="${AGENT_TEMPDIRECTORY}/pr-agent-summary.txt"
+        log_tail_file="${AGENT_TEMPDIRECTORY}/pr-agent-log-tail.txt"
+        printf '%s' "$summary" > "$summary_file"
+        tail -n 80 "$LOG" > "$log_tail_file"
+
+        build_pr_comment_payload() {
+          local mode="$1"
+          jq -n \
+            --arg mode "$mode" \
+            --arg marker "$MARKER" \
+            --arg title "Bot review — PR-Agent AI review (${{ parameters.service }})" \
+            --arg code "$exit_code" \
+            --rawfile summary "$summary_file" \
+            --rawfile log "$log_tail_file" \
+            '
+              (
+                $marker + "\n\n### " + $title + "\n\n❌ **Failed** (exit " + $code + ")\n\n" + $summary +
+                "\n\n<details><summary>Log (last 80 lines)</summary>\n\n```text\n" + $log + "\n```\n</details>"
+              ) as $content |
+              if $mode == "patch" then
+                {content: $content}
+              else
+                {comments: [{parentCommentId: 0, content: $content, commentType: 1}]}
+              end
+            '
+        }
+
+        find_marker_comment "$base" || return 1
+
+        if [[ -n "$MARKER_THREAD_ID" && -n "$MARKER_COMMENT_ID" ]]; then
+          payload=$(build_pr_comment_payload patch) || return 1
+          curl -fsS -X PATCH "${base}/threads/${MARKER_THREAD_ID}/comments/${MARKER_COMMENT_ID}?api-version=7.1" \
+            -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" >/dev/null || return 1
+          # Reopen it if a green run had resolved it.
+          set_thread_status "$base" "$MARKER_THREAD_ID" active || return 1
+          echo "Posted PR-Agent failure summary to PR #${PR_ID} (updated existing thread)"
+        else
+          payload=$(build_pr_comment_payload post) || return 1
+          curl -fsS -X POST "${base}/threads?api-version=7.1" \
+            -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" >/dev/null || return 1
+          echo "Posted PR-Agent failure summary to PR #${PR_ID}"
+        fi
+      }
+
+      # Retry only transient provider errors. Geo and quota are not retryable:
+      # geo is fixed for this agent's egress IP, and a quota window outlives the job.
+      run_pr_agent() {
+        docker run --rm \
+        -e config__git_provider=azure \
+        -e config__publish_output_progress=false \
+        -e config__is_auto_command=true \
+        -e config__custom_reasoning_model=true \
+        -e config__custom_model_max_tokens=262144 \
+        -e config__model=gemini/gemini-flash-latest \
+        -e config__fallback_models=gemini/gemini-flash-lite-latest \
+        -e pr_reviewer__enable_review_labels_effort=false \
+        -e pr_reviewer__enable_review_labels_security=false \
+        -e "azure_devops__org=${ORG_URL}" \
+        -e "azure_devops__pat=${ADO_PAT}" \
+        -e "GOOGLE_AI_STUDIO__GEMINI_API_KEY=${GEMINI_KEY}" \
+        ${{ parameters.image }} \
+          --pr_url="${PR_URL}" \
+          review 2>&1 | tee "$LOG"
+        return "${PIPESTATUS[0]}"
+      }
+
+      classify_failure() {
+        if grep -q 'User location is not supported' "$LOG" 2>/dev/null; then
+          echo geo
+        elif grep -qE 'RESOURCE_EXHAUSTED|exceeded your current quota|"code": 429' "$LOG" 2>/dev/null; then
+          echo quota
+        elif grep -qE 'ServiceUnavailableError|InternalServerError|"code": 5[0-9][0-9]' "$LOG" 2>/dev/null; then
+          echo unavailable
+        else
+          echo actionable
+        fi
+      }
+
+      set +e
+      ATTEMPTS=3
+      for attempt in $(seq 1 "$ATTEMPTS"); do
+        run_pr_agent
+        PR_AGENT_EXIT=$?
+        if [[ "$PR_AGENT_EXIT" -eq 0 ]] && ! grep -qE 'Failed to review PR|Failed to generate prediction with any model' "$LOG" 2>/dev/null; then
+          break
+        fi
+        [[ "$PR_AGENT_EXIT" -eq 0 ]] && PR_AGENT_EXIT=1
+        FAILURE_CLASS=$(classify_failure)
+        if [[ "$FAILURE_CLASS" != "unavailable" ]] || [[ "$attempt" -eq "$ATTEMPTS" ]]; then
+          break
+        fi
+        echo "Transient provider error (attempt ${attempt}/${ATTEMPTS}) — retrying in $((attempt * 20))s"
+        sleep $((attempt * 20))
+      done
+      set -e
+
+      pr_agent_failed=false
+      if [[ "$PR_AGENT_EXIT" -ne 0 ]]; then
+        pr_agent_failed=true
+      elif grep -qE 'Failed to review PR|Failed to generate prediction with any model' "$LOG" 2>/dev/null; then
+        pr_agent_failed=true
+        PR_AGENT_EXIT=1
+      fi
+      FAILURE_CLASS="${FAILURE_CLASS:-$(classify_failure)}"
+
+      if [[ "$PR_ID" =~ ^[0-9]+$ ]] && [[ -n "${SYSTEM_ACCESSTOKEN:-}" ]]; then
+        if [[ "$pr_agent_failed" == true ]]; then
+          if ! upsert_pr_agent_failure_comment "$PR_AGENT_EXIT"; then
+            echo "##[warning]Failed to upsert PR-Agent failure PR comment"
+          fi
+        elif ! resolve_pr_agent_failure_comment; then
+          echo "##[warning]Failed to clear a previous PR-Agent failure comment"
+        fi
+      fi
+
+      if [[ "$pr_agent_failed" == true ]]; then
+        case "$FAILURE_CLASS" in
+          geo|quota|unavailable)
+            # Deliberately still fails: yellow in the pipelines tab is the wanted
+            # signal that this PR was not reviewed. Requeue Bot Review to retry.
+            echo "##[error]PR-Agent unavailable (${FAILURE_CLASS}) — not a code defect; requeue Bot Review. Details in the PR comment." ;;
+          *)
+            echo "##[error]PR-Agent failed (exit ${PR_AGENT_EXIT}, class ${FAILURE_CLASS}) — worth a look, see log" ;;
+        esac
+        exit "$PR_AGENT_EXIT"
+      fi
+    displayName: PR-Agent AI Review
+    env:
+      # Secret names come from the Key Vault-linked platform-bot-review group.
+      GEMINI_KEY: $(bot-review-gemini-key)
+      ADO_PAT: $(bot-review-ado-pat)
+      COLLECTION_URI: $(System.CollectionUri)
+      TEAM_PROJECT_ID: $(System.TeamProjectId)
+      REPO_NAME: $(Build.Repository.Name)
+      PR_ID: $(System.PullRequest.PullRequestId)
+      # Job OAuth for failure-comment upsert — see the job header comment.
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      AGENT_TEMPDIRECTORY: $(Agent.TempDirectory)
+    condition: and(succeeded(), ne(variables['System.PullRequest.PullRequestId'], ''))
+    continueOnError: true

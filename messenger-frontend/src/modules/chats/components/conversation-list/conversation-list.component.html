@@ -1,0 +1,153 @@
+<header
+  class="chats-sidebar-header flex shrink-0 flex-col gap-3 border-b px-3 py-4"
+>
+  <div class="flex items-center justify-between gap-2">
+    <h1
+      class="chats-kicker m-0 text-[0.65rem] font-semibold uppercase tracking-[0.12em]"
+    >
+      {{ "MESSENGER.CHATS.TITLE" | translate }}
+    </h1>
+    <button
+      type="button"
+      class="chats-icon-button flex h-8 w-8 items-center justify-center rounded-lg border transition-colors"
+      [attr.aria-label]="'MESSENGER.CHATS.NEW' | translate"
+      data-testid="compose"
+      (click)="compose.emit()"
+    >
+      <i class="pi pi-pen-to-square text-sm" aria-hidden="true"></i>
+    </button>
+  </div>
+
+  <div class="chats-search relative flex items-center">
+    <i
+      class="chats-search-icon pi pi-search pointer-events-none absolute left-3 text-xs"
+      aria-hidden="true"
+    ></i>
+    <input
+      type="search"
+      class="chats-search-input w-full rounded-lg border py-2 pl-8 pr-3 text-[0.8125rem] outline-none"
+      [attr.aria-label]="'MESSENGER.CHATS.SEARCH' | translate"
+      [attr.placeholder]="'MESSENGER.CHATS.SEARCH' | translate"
+      [value]="query()"
+      (input)="onSearch($event)"
+    />
+  </div>
+</header>
+
+<div
+  class="chats-sidebar-scroll min-h-0 flex-1 overflow-y-auto px-2 py-3"
+  role="list"
+>
+  @if (failed() && rows().length === 0) {
+    <p
+      class="chats-error m-0 px-3 py-8 text-center text-[0.8125rem] leading-snug"
+      data-testid="conversation-list-error"
+    >
+      {{ "MESSENGER.CHATS.LOAD_FAILED" | translate }}
+    </p>
+  } @else if (loading() && rows().length === 0) {
+    <p class="chats-muted m-0 px-3 py-8 text-center text-[0.8125rem]">
+      {{ "MESSENGER.CHATS.LOADING" | translate }}
+    </p>
+  } @else if (filtered().length === 0) {
+    <p
+      class="chats-muted m-0 px-3 py-8 text-center text-[0.8125rem] leading-snug"
+    >
+      @if (query().trim()) {
+        {{ "MESSENGER.CHATS.NO_MATCH" | translate }}
+      } @else {
+        {{ "MESSENGER.CHATS.EMPTY" | translate }}
+      }
+    </p>
+  } @else {
+    @for (row of filtered(); track row.conversation.id) {
+      <!-- The dock button is a sibling of the row, not a child: a button
+           inside a button is invalid and the inner one never receives a
+           click. -->
+      <div class="conversation-row-wrap relative" role="listitem">
+      <button
+        type="button"
+        class="conversation-row flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors"
+        [class.is-active]="row.conversation.id === activeId()"
+        [attr.aria-current]="row.conversation.id === activeId() ? 'true' : null"
+        [attr.data-testid]="'conversation-row'"
+        (click)="select.emit(row.conversation.id)"
+      >
+        <span class="conversation-avatar relative shrink-0" aria-hidden="true">
+          <messenger-avatar-stack [faces]="row.faces" />
+          @if (row.presence !== null) {
+            <span
+              class="presence-dot"
+              [class.is-online]="row.presence === 'online'"
+              [class.is-away]="row.presence === 'away'"
+            ></span>
+          }
+        </span>
+
+        <span class="flex min-w-0 flex-1 flex-col">
+          <span class="flex items-baseline justify-between gap-2">
+            <span
+              class="conversation-title truncate text-[0.8125rem] font-semibold"
+              [class.is-unread]="row.unread"
+              >{{ row.title }}</span
+            >
+            <!-- The time of the newest thing here, which is what the preview
+                 line beneath is describing. Bound to lastMessageAt until
+                 2026-09-16, so a row previewing a call was stamped with an
+                 older message's time. -->
+            <span class="chats-subtle shrink-0 text-[0.6875rem]">{{
+              row.conversation.lastActivityAt | date: "shortTime"
+            }}</span>
+          </span>
+          <span class="flex items-center justify-between gap-2">
+            <span
+              class="chats-muted truncate text-[0.75rem]"
+              [class.is-unread]="row.unread"
+              >{{ row.preview }}</span
+            >
+            @if (row.ongoingCall; as media) {
+              <!-- A live call in this thread. A tinted glyph rather than a
+                   filled badge: the row's own chrome is understated, and a
+                   coloured blob competed with the unread dot beside it. The
+                   glyph matches the thread's row for the same call. -->
+              <i
+                class="conversation-call pi shrink-0"
+                [class.pi-video]="media === 'video'"
+                [class.pi-phone]="media !== 'video'"
+                data-testid="conversation-ongoing-call"
+                [attr.aria-label]="'MESSENGER.CALL.ROW_ONGOING' | translate"
+              ></i>
+            }
+            @if (row.unread) {
+              <span
+                class="unread-dot shrink-0"
+                data-testid="conversation-unread-dot"
+                aria-hidden="true"
+              ></span>
+            }
+          </span>
+        </span>
+      </button>
+
+      <!--
+        Opens this conversation in a docked window.
+
+        Here as well as in the shell's header widget because a remote has to
+        work without the shell: at :4003 the widget does not exist, and a
+        capability reachable only from the host is a capability this product
+        does not have (dathq, 2026-09-15).
+      -->
+      <button
+        type="button"
+        class="conversation-dock chats-icon-button absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-md border"
+        [attr.aria-label]="'MESSENGER.DOCK.OPEN_WINDOW' | translate"
+        [attr.title]="'MESSENGER.DOCK.OPEN_WINDOW' | translate"
+        data-testid="conversation-dock"
+        (click)="dock.emit(row.conversation.id)"
+      >
+        <i class="pi pi-window-minimize text-[0.625rem]" aria-hidden="true"></i>
+      </button>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,69 @@
+<div class="shell-page-root">
+  <div class="shell-page-ambient" aria-hidden="true"></div>
+  <div class="shell-page-noise" aria-hidden="true"></div>
+
+  <div class="shell-page-shell">
+    <header class="shell-page-header datha-glass-sheen">
+      <p class="shell-page-kicker">Datha Platform</p>
+      <h1 class="shell-page-title">{{ "SETTINGS.TITLE" | translate }}</h1>
+      <p class="shell-page-subtitle">{{ "SETTINGS.SUBTITLE" | translate }}</p>
+    </header>
+
+    <div class="shell-card-grid">
+      @for (card of cards; track card.titleKey) {
+        @if (card.control) {
+          <!-- A preference with one control is settled here rather than behind
+               a tap: this card is the only way to reach theme and language on a
+               phone, where the toolbar drops both selects. Not a button — the
+               control inside it is the interactive element. -->
+          <div
+            class="shell-glass-card shell-glass-card--control"
+            [attr.data-testid]="'settings-' + card.control"
+          >
+            <span class="shell-glass-card__icon">
+              <i [class]="'pi ' + card.icon"></i>
+            </span>
+            <span class="shell-glass-card__name">{{ card.titleKey | translate }}</span>
+            <span class="shell-glass-card__desc">{{ card.descriptionKey | translate }}</span>
+            <span class="shell-card-control">
+              @if (card.control === "theme") {
+                <datha-theme-select
+                  inputId="settings-theme"
+                  [selected]="selectedTheme"
+                  (selectedChange)="onThemeChange($event)"
+                />
+              } @else {
+                <datha-lang-select
+                  inputId="settings-lang"
+                  [languages]="languages"
+                  [selected]="selectedLanguage"
+                  (selectedChange)="onLanguageChange($event)"
+                />
+              }
+            </span>
+          </div>
+        } @else {
+          <button
+            type="button"
+            class="shell-glass-card datha-glass-sheen"
+            [class.shell-glass-card--disabled]="!card.route"
+            [disabled]="!card.route"
+            (click)="open(card)"
+            [attr.aria-label]="card.titleKey | translate"
+          >
+            <span class="shell-glass-card__icon">
+              <i [class]="'pi ' + card.icon"></i>
+            </span>
+            <span class="flex w-full items-center justify-between gap-2">
+              <span class="shell-glass-card__name">{{ card.titleKey | translate }}</span>
+              @if (!card.route) {
+                <span class="shell-card-chip">{{ "SETTINGS.COMING_SOON" | translate }}</span>
+              }
+            </span>
+            <span class="shell-glass-card__desc">{{ card.descriptionKey | translate }}</span>
+          </button>
+        }
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+@use "dock" as dock;
+
+/*
+ * One window. The height is **definite** — not `auto` with a max — because the
+ * thread inside is a flex column whose scroller needs something to scroll
+ * against: with an auto height the scroller sizes to its content, the window
+ * grows past the viewport and the composer leaves the screen.
+ */
+:host {
+  width: dock.$width;
+  height: 26rem;
+  max-height: calc(100vh - 6rem);
+  overflow: hidden;
+  border-radius: 1rem 1rem 0 0;
+  border: 1px solid var(--p-content-border-color);
+  border-bottom: none;
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 18%);
+}
+
+/* Collapsed to its bar: the same width, the height of the bar alone. */
+:host(.is-minimised) {
+  height: 2.75rem;
+}
+
+.chat-window-bar {
+  height: 2.75rem;
+}
+
+.chat-window-avatar {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+.chat-window-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--p-primary-color);
+}

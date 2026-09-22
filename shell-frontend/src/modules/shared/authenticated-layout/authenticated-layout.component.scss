@@ -1,0 +1,93 @@
+/**
+ * Prime Aura exposes --p-* variables under `.dark` (see providePrimeNG darkModeSelector).
+ * Tailwind has no built-in `surface-*` / `primary-*` scales here, so those utilities were no-ops.
+ * Chrome uses semantic CSS variables so light/dark track Prime exactly.
+ */
+
+.shell-brand-icon {
+  color: var(--p-primary-600);
+}
+
+/* Liquid glass chrome: material comes from the global .datha-glass-bar class
+   (light + dark). PrimeNG paints its own panel background — flatten it so the
+   glass on the host shows through. */
+.shell-toolbar {
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.shell-toolbar.p-toolbar {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+}
+
+.shell-brand-title {
+  color: var(--p-surface-900);
+}
+
+:host-context(.dark) .shell-brand-title {
+  color: var(--p-surface-0);
+}
+
+.shell-brand-separator {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--p-surface-400);
+}
+
+:host-context(.dark) .shell-brand-separator {
+  background-color: var(--p-surface-500);
+}
+
+.shell-sidebar {
+  position: relative;
+  z-index: 10;
+  border-right: 1px solid var(--datha-glass-edge);
+}
+
+.shell-header-menu-btn {
+  color: var(--p-surface-600);
+}
+
+.shell-header-menu-btn:hover {
+  background-color: var(--p-surface-100);
+  color: var(--p-surface-900);
+}
+
+:host-context(.dark) .shell-header-menu-btn {
+  color: var(--p-surface-300);
+}
+
+:host-context(.dark) .shell-header-menu-btn:hover {
+  background-color: var(--p-surface-800);
+  color: var(--p-surface-0);
+}
+
+/* Chrome tokens are theme-aware in the lib globals, so no :host-context(.dark)
+   duplicate is needed — this recipe and datha-sub-header cannot drift apart. */
+.shell-nav-link {
+  color: var(--datha-chrome-text);
+}
+
+.shell-nav-link:hover {
+  background-color: var(--datha-chrome-hover-bg);
+}
+
+.shell-nav-link.shell-nav-link--active {
+  background-color: var(--datha-chrome-active-bg);
+  color: var(--datha-chrome-text-active);
+  font-weight: 600;
+}
+
+.shell-main {
+  background-color: var(--p-surface-0);
+}
+
+:host-context(.dark) .shell-main {
+  background-color: var(--p-surface-950);
+}

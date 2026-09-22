@@ -1,0 +1,111 @@
+/* Theme tokens, split out of the component sheet: this file declares the
+   light/dark custom properties, the component sheet uses them for layout.
+   It also keeps each sheet inside Angular's 10 kB `anyComponentStyle` budget,
+   which the combined file exceeded. */
+:host {
+  --dlq-bg:
+    radial-gradient(
+      circle at 14% 8%,
+      color-mix(in srgb, var(--p-primary-300) 42%, transparent) 0 20rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--p-primary-900) 18%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    linear-gradient(
+      145deg,
+      var(--p-surface-0) 0%,
+      var(--p-primary-50) 48%,
+      var(--p-surface-50) 100%
+    );
+  --dlq-aurora: conic-gradient(
+    from 215deg at 50% 45%,
+    color-mix(in srgb, var(--p-primary-50) 92%, white) 0deg,
+    color-mix(in srgb, var(--p-primary-300) 62%, white) 76deg,
+    color-mix(in srgb, var(--p-primary-600) 38%, white) 148deg,
+    color-mix(in srgb, var(--p-primary-900) 30%, white) 226deg,
+    color-mix(in srgb, #0546ff 28%, white) 304deg,
+    color-mix(in srgb, var(--p-primary-50) 92%, white) 360deg
+  );
+  --dlq-aurora-opacity: 0.42;
+  --dlq-aurora-blur: 80px;
+  --dlq-noise-opacity: 0.045;
+  --dlq-border: color-mix(
+    in srgb,
+    var(--p-primary-600) 18%,
+    var(--p-surface-200)
+  );
+  --dlq-ink: var(--p-surface-950);
+  --dlq-copy: var(--p-surface-700);
+  --dlq-muted: var(--p-surface-500);
+  --dlq-body-text: var(--p-surface-800);
+  --dlq-meta-label: var(--p-surface-500);
+  --dlq-meta-value: var(--p-surface-900);
+  --dlq-section-title: var(--p-surface-600);
+  --dlq-copy-btn-bg: color-mix(in srgb, var(--p-surface-900) 8%, transparent);
+  --dlq-copy-btn-text: var(--dlq-copy);
+  --dlq-copy-btn-hover-bg: color-mix(
+    in srgb,
+    var(--p-surface-900) 14%,
+    transparent
+  );
+  --dlq-pre-bg: color-mix(in srgb, var(--p-surface-100) 85%, transparent);
+  --dlq-pre-text: var(--dlq-body-text);
+  --dlq-banner-error-border: color-mix(in srgb, #f43f5e 35%, transparent);
+  --dlq-banner-error-bg: color-mix(in srgb, #fecdd3 55%, transparent);
+  --dlq-banner-error-text: #881337;
+  --dlq-banner-success-border: color-mix(in srgb, #22c55e 35%, transparent);
+  --dlq-banner-success-bg: color-mix(in srgb, #bbf7d0 55%, transparent);
+  --dlq-banner-success-text: #14532d;
+}
+
+:host-context(.dark) {
+  --dlq-bg:
+    radial-gradient(
+      circle at 12% 8%,
+      color-mix(in srgb, var(--p-primary-600) 28%, transparent) 0 20rem,
+      transparent 34rem
+    ),
+    radial-gradient(
+      circle at 86% 16%,
+      color-mix(in srgb, #0546ff 20%, transparent) 0 18rem,
+      transparent 32rem
+    ),
+    linear-gradient(145deg, var(--p-surface-950) 0%, #100628 52%, #07111f 100%);
+  --dlq-aurora: conic-gradient(
+    from 215deg at 50% 45%,
+    #0f172a 0deg,
+    #1e1b4b 72deg,
+    #5c44e4 142deg,
+    #8001c6 218deg,
+    #0546ff 300deg,
+    #0f172a 360deg
+  );
+  --dlq-aurora-opacity: 0.86;
+  --dlq-aurora-blur: 76px;
+  --dlq-noise-opacity: 0.08;
+  --dlq-border: color-mix(in srgb, var(--p-surface-0) 14%, transparent);
+  --dlq-ink: var(--p-surface-0);
+  --dlq-copy: var(--p-surface-300);
+  --dlq-muted: var(--p-surface-400);
+  --dlq-body-text: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  --dlq-meta-label: color-mix(in srgb, var(--p-surface-0) 55%, transparent);
+  --dlq-meta-value: color-mix(in srgb, var(--p-surface-0) 92%, transparent);
+  --dlq-section-title: color-mix(in srgb, var(--p-surface-0) 72%, transparent);
+  --dlq-copy-btn-bg: color-mix(in srgb, var(--p-surface-0) 8%, transparent);
+  --dlq-copy-btn-hover-bg: color-mix(
+    in srgb,
+    var(--p-surface-0) 14%,
+    transparent
+  );
+  --dlq-pre-bg: color-mix(in srgb, var(--p-surface-950) 45%, transparent);
+  --dlq-pre-text: color-mix(in srgb, var(--p-surface-0) 90%, transparent);
+  --dlq-banner-error-border: color-mix(in srgb, #f43f5e 45%, transparent);
+  --dlq-banner-error-bg: color-mix(in srgb, #881337 28%, transparent);
+  --dlq-banner-error-text: #fecdd3;
+  --dlq-banner-success-border: color-mix(in srgb, #22c55e 45%, transparent);
+  --dlq-banner-success-bg: color-mix(in srgb, #14532d 35%, transparent);
+  --dlq-banner-success-text: #bbf7d0;
+}

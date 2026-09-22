@@ -1,0 +1,63 @@
+@if (minimised()) {
+  <!-- Collapsed: the title bar and nothing else. Still a live thread — it keeps
+       its subscription, so expanding shows what arrived rather than a spinner. -->
+  <div class="chat-window-bar flex items-center gap-2 px-3">
+    <button
+      type="button"
+      class="flex min-w-0 flex-1 items-center gap-2 text-left"
+      data-testid="dock-expand"
+      [attr.aria-label]="'MESSENGER.DOCK.EXPAND' | translate"
+      (click)="onExpand()"
+    >
+      <span class="chat-window-avatar shrink-0" aria-hidden="true">
+        <messenger-avatar-stack [faces]="view.faces()" />
+      </span>
+      <span
+        class="chat-window-name truncate text-[0.8125rem]"
+        [class.font-semibold]="unread()"
+        data-testid="dock-bar-title"
+        >{{ view.title() }}</span
+      >
+      @if (unread()) {
+        <span class="chat-window-dot shrink-0" aria-hidden="true"></span>
+      }
+    </button>
+    <button
+      type="button"
+      class="chats-icon-button flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border"
+      [attr.aria-label]="'MESSENGER.DOCK.CLOSE' | translate"
+      data-testid="dock-bar-close"
+      (click)="onClose()"
+    >
+      <i class="pi pi-times text-xs" aria-hidden="true"></i>
+    </button>
+  </div>
+} @else {
+  <messenger-thread
+    [windowed]="true"
+    [title]="view.title()"
+    [presence]="view.presence()"
+    [rows]="view.rows()"
+    [loading]="view.loading()"
+    [typists]="view.typists()"
+    [seenBy]="view.seenBy()"
+    [connected]="connected()"
+    [callable]="view.callable()"
+    [videoCallable]="hasCamera()"
+    [faces]="view.faces()"
+    [memberCount]="view.memberCount()"
+    [ongoingCall]="view.ongoingCall()"
+    (send)="onSend($event)"
+    (call)="onStartCall($event)"
+    (joinCall)="onJoinCall($event)"
+    (attach)="onAttach($event)"
+    (open)="onOpenAttachment($event)"
+    (previewExpired)="onPreviewExpired($event)"
+    (typing)="onTyping($event)"
+    (read)="onRead()"
+    (retry)="onRetry($event)"
+    (details)="onDetails()"
+    (minimise)="onMinimise()"
+    (closeWindow)="onClose()"
+  />
+}

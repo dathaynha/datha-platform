@@ -1,0 +1,16 @@
+# Committed explicitly, for the same reason every repo commits an explicit
+# .prettierrc: the MegaLinter container's linter version and bundled config are
+# not the local ones, so without this file "run the linter locally" and "what CI
+# does" quietly disagree.
+#
+# Kept byte-identical in every repo that runs MegaLinter. Do not tune per repo.
+extends: default
+
+rules:
+  # These configs start straight at the keys; MegaLinter's own docs do the same.
+  document-start: disable
+  # FILTER_REGEX_EXCLUDE holds a single regex. YAML folding inserts spaces into
+  # the folded value, which would silently corrupt the pattern, so those lines
+  # cannot be wrapped — the limit accommodates them instead.
+  line-length:
+    max: 140

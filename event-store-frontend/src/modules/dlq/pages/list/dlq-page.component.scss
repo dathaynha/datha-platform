@@ -1,0 +1,291 @@
+@use "table-compact" as compact;
+@use "../../../../styles/ops-toolbar";
+@use "primeng-table-overrides" as overrides;
+@use "table-empty-overlay" as overlay;
+
+@include compact.ops-table(48rem);
+
+/* The page's own responsive scale keys on this element, not on the window —
+   see the matching comment in `events-page.component.scss`. Hosted, the
+   shell's 224px sidebar puts the content a whole step below what the viewport
+   reports. Named, because `.es-table-wrap` is a container too. */
+.dlq-root {
+  container-type: inline-size;
+  container-name: es-page;
+  --ops-toolbar-muted: var(--dlq-muted);
+  --ops-toolbar-border: var(--dlq-border);
+  background: var(--dlq-bg);
+  color: var(--dlq-ink);
+}
+
+.dlq-page-body {
+  padding: 2rem 1.25rem;
+}
+
+.dlq-title {
+  color: var(--dlq-ink);
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+
+.dlq-subtitle {
+  color: var(--dlq-copy);
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+@container es-page (min-width: 40rem) {
+  .dlq-page-body {
+    padding: 2.5rem 2rem;
+  }
+
+  .dlq-title {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+
+  .dlq-subtitle {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@container es-page (min-width: 64rem) {
+  .dlq-page-body {
+    padding-inline: 3rem;
+  }
+}
+
+.dlq-aurora {
+  position: absolute;
+  inset: -40% -20%;
+  background: var(--dlq-aurora);
+  filter: blur(var(--dlq-aurora-blur));
+  opacity: var(--dlq-aurora-opacity);
+  animation: dlq-aurora-shift 18s ease-in-out infinite alternate;
+}
+
+.dlq-noise {
+  position: absolute;
+  inset: 0;
+  opacity: var(--dlq-noise-opacity);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.dlq-filters-card,
+.dlq-results-card {
+  border-radius: 1rem;
+  border: 1px solid var(--dlq-border);
+  background: color-mix(in srgb, var(--p-surface-0) 78%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 20px 60px
+    color-mix(in srgb, var(--p-primary-950) 10%, transparent);
+  overflow: visible;
+}
+
+:host-context(.dark) .dlq-filters-card,
+:host-context(.dark) .dlq-results-card {
+  background: color-mix(in srgb, var(--p-surface-950) 56%, transparent);
+  box-shadow: 0 18px 50px
+    color-mix(in srgb, var(--p-surface-950) 65%, transparent);
+}
+
+.dlq-filters-card {
+  padding: 1rem 1.15rem;
+}
+
+.dlq-results-card {
+  padding: 1.25rem 1.35rem;
+  min-height: 0;
+}
+
+.dlq-table-wrap {
+  min-height: 0;
+}
+
+:host ::ng-deep {
+  @include overrides.primeng-table-overrides;
+  @include overlay.table-empty-overlay;
+}
+
+.dlq-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--dlq-border);
+}
+
+.dlq-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid
+    color-mix(in srgb, var(--p-primary-400) 32%, var(--p-surface-300));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--p-surface-0) 82%, transparent);
+  color: var(--dlq-body-text);
+  font-size: var(--datha-form-font-size);
+  line-height: 1.2;
+  padding: 0.22rem 0.45rem 0.22rem 0.55rem;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dlq-filter-chip:hover {
+  border-color: color-mix(
+    in srgb,
+    var(--p-primary-400) 45%,
+    var(--p-surface-300)
+  );
+  background: color-mix(in srgb, var(--p-primary-100) 55%, var(--p-surface-0));
+}
+
+.dlq-filter-chip__remove {
+  font-size: 0.625rem;
+  opacity: 0.75;
+}
+
+.dlq-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--datha-form-font-size);
+  font-weight: 500;
+}
+
+.dlq-status__dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.dlq-status--replayed {
+  color: #15803d;
+}
+
+.dlq-status--replayed .dlq-status__dot {
+  background: #22c55e;
+}
+
+.dlq-status--pending {
+  color: #b45309;
+}
+
+.dlq-status--pending .dlq-status__dot {
+  background: #f59e0b;
+}
+
+:host-context(.dark) .dlq-status--replayed {
+  color: #86efac;
+}
+
+:host-context(.dark) .dlq-status--pending {
+  color: #fcd34d;
+}
+
+.dlq-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--datha-form-font-size);
+}
+
+.dlq-banner--error {
+  border: 1px solid var(--dlq-banner-error-border);
+  background: var(--dlq-banner-error-bg);
+  color: var(--dlq-banner-error-text);
+}
+
+.dlq-banner--success {
+  border: 1px solid var(--dlq-banner-success-border);
+  background: var(--dlq-banner-success-bg);
+  color: var(--dlq-banner-success-text);
+}
+
+.dlq-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: var(--datha-form-font-size);
+}
+
+.dlq-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 0.375rem;
+  background: var(--dlq-copy-btn-bg);
+  color: var(--dlq-copy-btn-text);
+  padding: 0.2rem 0.35rem;
+  cursor: pointer;
+}
+
+.dlq-copy-btn:hover {
+  background: var(--dlq-copy-btn-hover-bg);
+}
+
+.dlq-pagination-meta {
+  color: var(--dlq-copy);
+  font-size: var(--datha-form-font-size);
+}
+
+.dlq-meta dt {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dlq-meta-label);
+  margin-bottom: 0.25rem;
+}
+
+.dlq-meta dd {
+  margin: 0;
+  color: var(--dlq-meta-value);
+}
+
+.dlq-section-title {
+  font-size: var(--datha-form-font-size);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--dlq-section-title);
+}
+
+.dlq-pre {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--dlq-border);
+  background: var(--dlq-pre-bg);
+  padding: 0.75rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--dlq-pre-text);
+}
+
+@keyframes dlq-aurora-shift {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  100% {
+    transform: rotate(18deg) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dlq-aurora {
+    animation: none;
+  }
+}

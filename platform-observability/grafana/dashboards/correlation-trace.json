@@ -1,0 +1,96 @@
+{
+ "uid": "correlation-trace",
+ "title": "Correlation Trace",
+ "tags": [
+  "platform",
+  "logs"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "panels": [
+  {
+   "id": 501,
+   "type": "timeseries",
+   "title": "Log lines per service for this id",
+   "gridPos": {
+    "h": 6,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "none"
+    },
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     },
+     "expr": "sum by (service_name) (count_over_time({service_name=~\".+\"} | json | attributes_correlation_id=\"$correlation_id\" [$__auto]))",
+     "legendFormat": "{{service_name}}"
+    }
+   ]
+  },
+  {
+   "id": 502,
+   "type": "logs",
+   "title": "All services \u2014 one correlation id",
+   "gridPos": {
+    "h": 14,
+    "w": 24,
+    "x": 0,
+    "y": 6
+   },
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{service_name=~\".+\"} | json | attributes_correlation_id=\"$correlation_id\"",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  }
+ ],
+ "templating": {
+  "list": [
+   {
+    "name": "correlation_id",
+    "label": "Correlation ID",
+    "type": "textbox",
+    "query": "",
+    "current": {
+     "text": "",
+     "value": ""
+    },
+    "hide": 0
+   }
+  ]
+ }
+}

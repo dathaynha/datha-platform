@@ -1,0 +1,151 @@
+/**
+ * Liquid Glass utilities (v0.3.0) — web approximation of Apple's material:
+ * background blur + saturation boost, translucent tint, hairline edge, and a
+ * top specular highlight. Tokens live in _tokens.scss (light + .dark values).
+ *
+ * Layering rules (Apple guidance, enforced by convention):
+ *   - Chrome/navigation layer only: toolbars, sidebars, popovers, dialogs, controls.
+ *   - Never on the content layer; never stack glass on glass.
+ *   - Blur scale: surface 14px, overlay 10px, control 8px.
+ */
+
+@mixin datha-glass-material($blur-var, $bg-var, $radius-var) {
+  -webkit-backdrop-filter: blur(var(#{$blur-var})) saturate(var(--datha-glass-saturation))
+    brightness(var(--datha-glass-brightness));
+  backdrop-filter: blur(var(#{$blur-var})) saturate(var(--datha-glass-saturation))
+    brightness(var(--datha-glass-brightness));
+  background-color: var(#{$bg-var});
+  border: 1px solid var(--datha-glass-edge);
+  border-radius: var(#{$radius-var});
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    var(--datha-glass-shadow);
+}
+
+/* Kept for consumers that only need the blur (pre-0.3.0 behavior). */
+@mixin datha-glass($blur-var) {
+  -webkit-backdrop-filter: blur(var(#{$blur-var})) saturate(var(--datha-glass-saturation))
+    brightness(var(--datha-glass-brightness));
+  backdrop-filter: blur(var(#{$blur-var})) saturate(var(--datha-glass-saturation))
+    brightness(var(--datha-glass-brightness));
+}
+
+.datha-glass {
+  @include datha-glass-material(
+    --datha-glass-blur-surface,
+    --datha-glass-bg-surface,
+    --datha-glass-radius-surface
+  );
+}
+
+.datha-glass-overlay {
+  @include datha-glass-material(
+    --datha-glass-blur-overlay,
+    --datha-glass-bg-overlay,
+    --datha-glass-radius-overlay
+  );
+}
+
+.datha-glass-control {
+  @include datha-glass-material(
+    --datha-glass-blur-control,
+    --datha-glass-bg-control,
+    --datha-glass-radius-control
+  );
+}
+
+/* Square-cornered variants for full-bleed chrome (toolbar, sidebar) where a
+   radius would break against the viewport edge. */
+.datha-glass-bar {
+  @include datha-glass-material(
+    --datha-glass-blur-surface,
+    --datha-glass-bg-surface,
+    --datha-glass-radius-surface
+  );
+  border-radius: 0;
+  border-width: 0;
+  box-shadow: inset 0 -1px 0 var(--datha-glass-edge);
+}
+
+/* Glossy top reflection — the pseudo-element that makes a surface read as
+   glass. Opt-in: pair with a .datha-glass* material class. */
+.datha-glass-sheen {
+  position: relative;
+  overflow: hidden;
+}
+
+.datha-glass-sheen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--datha-glass-sheen);
+  pointer-events: none;
+}
+
+/* Absolutely-positioned pseudos paint above static children — lift direct
+   children so text/controls stay crisp above the sheen and shine layers. */
+.datha-glass-sheen > *,
+.datha-glass-shine > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Moving light sweep. Hero surfaces only (login card, marketing panels) —
+   never chrome bars: it animates forever. */
+.datha-glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.datha-glass-shine::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 60%;
+  height: 220%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--datha-glass-shine-color),
+    transparent
+  );
+  transform: rotate(18deg);
+  animation: datha-glass-shine-sweep 7s linear infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .datha-glass-shine::after {
+    animation: none;
+    display: none;
+  }
+}
+
+@keyframes datha-glass-shine-sweep {
+  from {
+    left: -80%;
+  }
+
+  to {
+    left: 160%;
+  }
+}
+
+/* Accessibility: users opting out of transparency get solid panels
+   (Apple's own Liquid Glass fallback behavior). */
+@media (prefers-reduced-transparency: reduce) {
+  .datha-glass,
+  .datha-glass-overlay,
+  .datha-glass-control,
+  .datha-glass-bar {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: var(--datha-glass-bg-solid);
+  }
+
+  .datha-glass-sheen::before,
+  .datha-glass-shine::after {
+    display: none;
+  }
+}

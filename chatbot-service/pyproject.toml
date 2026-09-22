@@ -1,0 +1,11 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = ["app"]
+known_local_folder = ["tests"]
+# Match MegaLinter default: third-party before first-party, no extra blank lines.
+lines_between_types = 0

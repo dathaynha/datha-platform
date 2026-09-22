@@ -1,0 +1,47 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/shell-frontend",
+    "paths": {
+      "@services/*": ["src/services/*"],
+      "@constants/*": ["src/constants/*"],
+      "@guards/*": ["src/guards/*"],
+      "@factories/*": ["src/factories/*"],
+      "@models/*": ["src/models/*"],
+      "@helper/*": ["src/helper/*"],
+      "@modules/*": ["src/modules/*"],
+      "@directives": ["src/directives/"],
+      "@directives/*": ["src/directives/*"],
+      "@pipes": ["src/pipes/"],
+      "@pipes/*": ["src/pipes/*"],
+      "@animations/*": ["src/animations/*"],
+      "@styles/*": ["src/styles/*"]
+    },
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "esModuleInterop": false,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "useDefineForClassFields": false,
+    "lib": ["ES2022", "dom"]
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

@@ -1,0 +1,238 @@
+// PrimeNG p-table internals — import inside `:host ::ng-deep` on ops list pages (MF-safe).
+//
+// A mixin, not bare rules: the ops list pages include this **inside**
+// `:host ::ng-deep`, and `@use` cannot be nested the way `@import` could.
+// Including at the call site also keeps the emit point exactly where the old
+// `@import` put it, which matters — these rules are meant to win on source
+// order against `ops-table()` above them.
+
+@mixin primeng-table-overrides {
+  .es-table-wrap {
+    /* The compact rules ask "how much room does the table have", not "how wide is
+       the window" — the two stop agreeing the moment a layout puts anything
+       beside it. Hosted in the shell a 667px viewport leaves the table 334px, so
+       a viewport breakpoint at 640px never fired and a landscape phone got six
+       desktop columns in a third of the width (measured 2026-09-18).
+       `position: relative` was already here, so containment changes no
+       containing block. */
+    container-type: inline-size;
+    position: relative;
+    flex: 1 1 0;
+    align-self: stretch;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .es-table.p-datatable {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    --es-table-head-height: 2.75rem;
+  }
+
+  .es-table--scroll.p-datatable-scrollable {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .es-table--scroll .p-datatable-table-container {
+    flex: 1 1 0;
+    min-height: 0;
+  }
+
+  .es-table--scroll .p-datatable-thead > tr > th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: color-mix(in srgb, var(--p-surface-0) 92%, transparent);
+  }
+
+  .dark .es-table--scroll .p-datatable-thead > tr > th {
+    background: color-mix(in srgb, var(--p-surface-950) 92%, transparent);
+  }
+
+  .es-table .p-datatable-mask.p-overlay-mask {
+    background: color-mix(in srgb, var(--p-surface-0) 62%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--p-surface-500);
+  }
+
+  .dark .es-table .p-datatable-mask.p-overlay-mask {
+    background: color-mix(in srgb, var(--p-surface-950) 62%, transparent);
+    color: var(--p-surface-400);
+  }
+
+  .es-table .p-datatable-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .es-table .p-datatable-thead > tr > th {
+    /* Read from a property rather than stated outright, so the frozen column
+       can give its own header a surface. This rule is (0,3,2) and a class on
+       the cell is (0,1,0), so it can never be out-specified — the same reason
+       `--es-cell-ink` exists a few rules down. Transparent stays the default,
+       which is what every other header cell wants. */
+    background: var(--es-head-cell-bg, transparent);
+    /* Every header cell is already `position: sticky; z-index: 1` from the
+       `--scroll` rule above, so a frozen *column* header ties with the ones
+       scrolling past it and DOM order decides — later siblings paint on top.
+       Handed over as a property for the same reason as the background: this
+       rule is (0,3,2) and a class on the cell cannot reach it. */
+    z-index: var(--es-head-cell-z, 1);
+    color: var(--p-surface-700);
+    font-size: var(--datha-form-font-size);
+    font-weight: 600;
+    letter-spacing: normal;
+    text-transform: none;
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--p-primary-600) 18%, var(--p-surface-200));
+    padding: 0.5rem 0.65rem 0.55rem;
+  }
+
+  .dark .es-table .p-datatable-thead > tr > th {
+    color: color-mix(in srgb, var(--p-surface-0) 78%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--p-surface-0) 14%, transparent);
+  }
+
+  .es-table .p-datatable-sort-icon,
+  .es-table .p-datatable-sort-badge,
+  .es-table p-sorticon,
+  .es-table p-sortIcon {
+    flex-shrink: 0;
+    font-size: 0.6875rem;
+    margin-inline-start: 0.25rem;
+    color: var(--p-surface-500);
+  }
+
+  .dark .es-table .p-datatable-sort-icon,
+  .dark .es-table p-sorticon,
+  .dark .es-table p-sortIcon {
+    color: var(--p-surface-400);
+  }
+
+  .es-table .p-datatable-column-sorted .p-datatable-sort-icon,
+  .es-table th.p-datatable-column-sorted p-sorticon svg,
+  .es-table th.p-datatable-column-sorted p-sortIcon svg {
+    color: var(--p-primary-600);
+  }
+
+  .dark .es-table .p-datatable-column-sorted .p-datatable-sort-icon,
+  .dark .es-table th.p-datatable-column-sorted p-sorticon svg,
+  .dark .es-table th.p-datatable-column-sorted p-sortIcon svg {
+    color: var(--p-primary-400);
+  }
+
+  /* The default cell ink, published as a property rather than set on the cell.
+     A column class (`.es-table__primary`, `.es-table__secondary`) is a single
+     class on the `td` and cannot outrank this rule's (0,3,2) — so setting
+     `color` here silently flattened the list's whole hierarchy, in the shell and
+     standalone alike (measured 2026-09-18: every cell `rgb(30, 41, 59)`).
+     Declaring the value on `.es-table` instead lets it inherit down, and a class
+     on the cell overrides it with no specificity fight — the same seam as
+     `--es-table-min-width`. */
+  .es-table {
+    --es-cell-ink: var(--p-surface-800);
+  }
+
+  .dark .es-table {
+    --es-cell-ink: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+  }
+
+  .es-table .p-datatable-tbody > tr > td {
+    border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--p-primary-600) 12%, var(--p-surface-200));
+    color: var(--es-cell-ink);
+    font-size: var(--datha-form-font-size);
+    vertical-align: top;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .dark .es-table .p-datatable-tbody > tr > td {
+    border-bottom-color: color-mix(in srgb, var(--p-surface-0) 9%, transparent);
+  }
+
+  .es-table .p-datatable-tbody > tr:last-child > td {
+    border-bottom: none;
+  }
+
+  .es-table .p-datatable-tbody > tr:hover {
+    background: color-mix(in srgb, var(--p-primary-200) 45%, transparent);
+  }
+
+  .dark .es-table .p-datatable-tbody > tr:hover {
+    background: color-mix(in srgb, var(--p-primary-500) 8%, transparent);
+  }
+
+  .es-table-wrap > p-table {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .es-table-wrap > p-table .p-datatable {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Short viewports — a landscape phone, not a narrow one.
+     `.es-table-wrap` above is `flex: 1 1 0`, which divides the space left over
+     after the heading and filters. At 667x375 there is none, so the table
+     measured 0px tall and sat below the fold with `overflow: hidden` above it:
+     present, correct and unreachable (measured 2026-09-18). A definite height
+     is the fix — the "one axis must be definite" rule applies to height too.
+     Paired with `.ops-page-body { overflow-y: auto }` in `_table-compact`, which
+     is what makes the rest of the page reachable at all. */
+  @media (max-height: 30rem) {
+    .es-table-wrap {
+      flex: 0 0 auto;
+      min-height: 12rem;
+    }
+
+    .es-table.es-table--scroll,
+    .es-table--scroll .p-datatable-table-container {
+      flex: 0 0 auto;
+      max-height: 12rem;
+    }
+  }
+
+  /* A phone in portrait: tall enough that the height query never fires, narrow
+     enough that the fill-the-viewport model has nothing left to give the table.
+     Measured hosted at 375x667 on 2026-09-20 — see `_table-compact`.
+
+     Deliberately **not** the same declarations as the short-viewport rule
+     above, though both start from "stop dividing the leftover space". A short
+     viewport has no vertical room at all, so the table has to be capped and
+     scrolled inside. A narrow one has all the room it wants once the page
+     scrolls — capping it there would show three rows of fifty inside a second,
+     nested scroller, which on a touch screen is the worse of the two. So the
+     table takes its natural height and the page does the only scrolling. */
+  /* Guarded on height as well, because a landscape phone is narrow *and*
+     short and would otherwise match this and undo the cap above — it sits
+     later in the file at the same specificity, so it would simply win. The two
+     situations want opposite things: with vertical room, scroll the page and
+     let the table be as tall as it likes; without it, cap the table and scroll
+     inside. Caught by the landscape guard in the shell's suite, which failed
+     `Expected: > 100, Received: 76.39` when this rule was unguarded. */
+  @media (min-height: 30rem) {
+    @container es-page (max-width: 40rem) {
+      .es-table-wrap {
+        flex: 0 0 auto;
+        min-height: 0;
+      }
+
+      .es-table.es-table--scroll,
+      .es-table--scroll .p-datatable-table-container {
+        flex: 0 0 auto;
+        max-height: none;
+      }
+    }
+  }
+}

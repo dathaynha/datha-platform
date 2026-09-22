@@ -1,0 +1,34 @@
+<div
+  class="es-table-empty"
+  role="status"
+  [attr.aria-busy]="loading()"
+  [attr.aria-live]="loading() ? 'polite' : null"
+>
+  @if (loading()) {
+    <span
+      class="pi pi-spin pi-spinner es-table-empty__icon es-table-empty__icon--loading"
+      aria-hidden="true"
+    ></span>
+  } @else {
+    <span
+      class="pi es-table-empty__icon {{ icon() }}"
+      aria-hidden="true"
+    ></span>
+  }
+
+  <p class="es-table-empty__title">{{ titleKey() | translate }}</p>
+
+  @if (!loading() && hintKey()) {
+    <p class="es-table-empty__hint">{{ hintKey()! | translate }}</p>
+  }
+
+  @if (!loading() && showClearAction()) {
+    <p-button
+      type="button"
+      [label]="clearLabelKey() | translate"
+      [text]="true"
+      icon="pi pi-filter-slash"
+      (onClick)="clearAction.emit()"
+    />
+  }
+</div>

@@ -1,0 +1,57 @@
+# Bot Review — Python services on pytest.
+#
+# No knip step: that is a TypeScript tool. MegaLinter runs the Python image;
+# black/isort come from the consuming repo's requirements-dev.txt.
+parameters:
+  - name: service
+    type: string
+  - name: pythonVersion
+    type: string
+    default: '3.11'
+  - name: requirementsFile
+    type: string
+    default: 'requirements-dev.txt'
+  - name: megalinterImage
+    type: string
+    default: 'oxsecurity/megalinter-python:v8'
+  - name: preSteps
+    type: stepList
+    default: []
+  - name: extraSteps
+    type: stepList
+    default: []
+
+jobs:
+  - job: BotReview
+    displayName: Bot Review — ${{ parameters.service }}
+    # SYSTEM_ACCESSTOKEN: job OAuth for Git/PR REST API. YAML enables it via step env: below — not the Classic
+    # Agent-job "Allow scripts to access the OAuth token" checkbox. Masked in logs; never echo value; curl -fsS.
+    # MegaLinter -e pass-through required for AZURE_COMMENT_REPORTER. PR-Agent uses ADO_PAT,
+    # sourced from the Key Vault-linked platform-bot-review variable group. See bot-review-pipelines.md.
+    steps:
+      - checkout: self
+        fetchDepth: 0
+
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: ${{ parameters.pythonVersion }}
+        displayName: Use Python ${{ parameters.pythonVersion }}
+
+      - ${{ parameters.preSteps }}
+
+      - template: steps/unit-tests.yml
+        parameters:
+          service: ${{ parameters.service }}
+          bootstrapShell: 'python -m pip install --upgrade pip; pip install -r ${{ parameters.requirementsFile }}'
+          testCommand: 'pytest --junitxml="$JUNIT"'
+          publishTitle: 'pytest unit tests (${{ parameters.service }})'
+
+      - ${{ parameters.extraSteps }}
+
+      - template: steps/megalinter.yml
+        parameters:
+          image: ${{ parameters.megalinterImage }}
+
+      - template: steps/pr-agent.yml
+        parameters:
+          service: ${{ parameters.service }}

@@ -1,0 +1,7 @@
+<datha-login-card
+  [busyProvider]="busyProvider()"
+  [busyEntraPool]="loggingInEntraPool()"
+  [errorKey]="loginError()"
+  (googleLogin)="loginWithGoogle()"
+  (entraLogin)="loginWithEntra($event)"
+/>

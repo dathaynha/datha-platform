@@ -1,0 +1,26 @@
+# Dependencies and build output — reinstall/rebuild rather than clone
+node_modules/
+.pnpm-store/
+vendor/
+.venv/
+__pycache__/
+*.pyc
+dist/
+out-tsc/
+.angular/
+coverage/
+htmlcov/
+test-results/
+playwright-report/
+
+# Local config and secrets — never committed
+.env
+.env.*
+!.env.example
+**/src/environments/environment.dev.ts
+**/src/environments/environment.local.ts
+
+# Scratch
+.claude/tmp/
+*.log
+.DS_Store

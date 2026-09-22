@@ -1,0 +1,250 @@
+:host {
+  display: flex;
+  flex: 1;
+  min-height: 100%;
+}
+
+.login-root {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.login-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      100% 70% at 15% 12%,
+      color-mix(in srgb, var(--p-primary-400) 58%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      80% 65% at 85% 78%,
+      color-mix(in srgb, #0546ff 48%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      55% 45% at 60% 40%,
+      color-mix(in srgb, #ff8fd8 40%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      45% 40% at 35% 75%,
+      color-mix(in srgb, #5edfff 52%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      165deg,
+      var(--p-primary-50) 0%,
+      var(--p-surface-100) 45%,
+      var(--p-primary-50) 100%
+    );
+  pointer-events: none;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 28rem;
+  padding: clamp(1.75rem, 4vw, 2.5rem);
+  border-radius: var(--datha-glass-radius-surface);
+  border: 1px solid var(--datha-glass-edge);
+  background: var(--datha-glass-bg-surface);
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+  backdrop-filter: blur(var(--datha-glass-blur-surface))
+    saturate(var(--datha-glass-saturation));
+  box-shadow:
+    inset 0 1px 0 var(--datha-glass-highlight),
+    var(--datha-glass-shadow);
+}
+
+.login-brand {
+  position: relative;
+  z-index: 2;
+  margin-bottom: 1.75rem;
+}
+
+.login-mark {
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--p-primary-color);
+}
+
+.login-mark datha-brand-mark {
+  width: 100%;
+  height: 100%;
+}
+
+.login-kicker {
+  margin: 0 0 0.6rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--p-surface-500);
+}
+
+.login-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--p-surface-900);
+}
+
+.login-subtitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--p-surface-600);
+}
+
+.login-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.login-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--p-surface-800);
+  background: var(--datha-glass-bg-control);
+  border: 1px solid var(--datha-glass-control-edge);
+  border-radius: var(--datha-glass-radius-control);
+  box-shadow: inset 0 1px 0 var(--datha-glass-highlight);
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.login-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--p-surface-500) 70%, transparent);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--p-surface-950) 8%, transparent);
+}
+
+.login-btn:focus-visible {
+  outline: 2px solid var(--p-primary-color);
+  outline-offset: 2px;
+}
+
+.login-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.login-btn__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
+.login-btn__spinner {
+  width: 1.15rem;
+  height: 1.15rem;
+  border: 2px solid color-mix(in srgb, var(--p-surface-400) 45%, transparent);
+  border-top-color: var(--p-primary-color);
+  border-radius: 50%;
+  animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.login-error {
+  position: relative;
+  z-index: 2;
+  margin: 1rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--p-red-500);
+}
+
+.login-footnote {
+  position: relative;
+  z-index: 2;
+  margin: 1.25rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--p-surface-500);
+}
+
+/**
+ * Dark (Midnight) overrides. Raw --p-surface-N primitives do not darken under
+ * `.dark` (Aura only swaps slate→zinc), so each consumer re-points them —
+ * same pattern as the layout components.
+ */
+:host-context(.dark) {
+  .login-backdrop {
+    background:
+      radial-gradient(
+        120% 80% at 15% 10%,
+        color-mix(in srgb, var(--p-primary-600) 30%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        90% 70% at 85% 80%,
+        color-mix(in srgb, #0546ff 22%, transparent),
+        transparent 55%
+      ),
+      radial-gradient(
+        60% 50% at 55% 45%,
+        color-mix(in srgb, #8001c6 14%, transparent),
+        transparent 60%
+      ),
+      linear-gradient(165deg, var(--p-surface-950) 0%, #100628 45%, #07111f 100%);
+  }
+
+  .login-kicker,
+  .login-footnote {
+    color: var(--p-surface-400);
+  }
+
+  .login-title {
+    color: var(--p-surface-50);
+  }
+
+  .login-subtitle {
+    color: var(--p-surface-300);
+  }
+
+  .login-btn {
+    color: var(--p-surface-100);
+  }
+
+  .login-btn:hover:not(:disabled) {
+    border-color: color-mix(in srgb, var(--p-surface-0) 32%, transparent);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--p-surface-950) 60%, transparent);
+  }
+
+  .login-btn__spinner {
+    border-color: color-mix(in srgb, var(--p-surface-0) 25%, transparent);
+    border-top-color: var(--p-primary-color);
+  }
+
+  .login-error {
+    color: var(--p-red-400);
+  }
+}

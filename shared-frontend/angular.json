@@ -1,0 +1,45 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "cli": {
+    "packageManager": "pnpm"
+  },
+  "newProjectRoot": "projects",
+  "schematics": {
+    "@schematics/angular:application": {
+      "testRunner": "karma"
+    },
+    "@schematics/angular:library": {
+      "testRunner": "karma"
+    }
+  },
+  "projects": {
+    "platform-ui": {
+      "projectType": "library",
+      "root": "projects/platform-ui",
+      "sourceRoot": "projects/platform-ui/src",
+      "prefix": "datha",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/platform-ui/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/platform-ui/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "karmaConfig": "karma.conf.js",
+            "tsConfig": "projects/platform-ui/tsconfig.spec.json"
+          }
+        }
+      }
+    }
+  }
+}

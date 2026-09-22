@@ -1,0 +1,335 @@
+{
+ "uid": "realtime-red",
+ "title": "Realtime Service \u2014 Sockets & Calls",
+ "tags": [
+  "platform",
+  "realtime-service"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-1h",
+  "to": "now"
+ },
+ "panels": [
+  {
+   "id": 501,
+   "type": "timeseries",
+   "title": "Open WebSocket connections",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 0
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(realtime_service_ws_connections)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "connections"
+    }
+   ],
+   "description": "Per-instance gauge, summed. One browser tab holds one socket."
+  },
+  {
+   "id": 502,
+   "type": "timeseries",
+   "title": "Call setup by outcome",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 0
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_call_setup_total[5m])) by (outcome)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{outcome}}"
+    }
+   ],
+   "description": "connected / failed / timeout / declined. A timeout means nobody answered inside the ring window; a failure means the call was accepted and the media never came up."
+  },
+  {
+   "id": 503,
+   "type": "timeseries",
+   "title": "Calls reaped, and ICE failures",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(increase(realtime_service_calls_reaped_total[1h]))",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "reaped (1h)"
+    },
+    {
+     "refId": "B",
+     "expr": "sum(increase(realtime_service_ice_failures_total[1h]))",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "ICE failures (1h)"
+    }
+   ],
+   "description": "Both should sit at zero. A rising reap line means instances are dying mid-call and the orphan reaper is closing rooms the dead process owned. A rising ICE line is usually a TURN gap: the relay is unreachable and symmetric-NAT peers cannot connect."
+  },
+  {
+   "id": 504,
+   "type": "timeseries",
+   "title": "Frames in by type",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 8
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_ws_frames_total{direction=\"in\"}[5m])) by (type)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{type}}"
+    }
+   ]
+  },
+  {
+   "id": 505,
+   "type": "timeseries",
+   "title": "Frames out by type",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 16
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_ws_frames_total{direction=\"out\"}[5m])) by (type)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{type}}"
+    }
+   ]
+  },
+  {
+   "id": 506,
+   "type": "timeseries",
+   "title": "Signalling relay by outcome",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 16
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_signaling_relay_total[5m])) by (outcome)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{outcome}}"
+    }
+   ],
+   "description": "Every mesh frame names a target and is checked against the call's invited set. A refused outcome is an authorization failure, not a network one \u2014 it means a client addressed somebody who is not in the call."
+  },
+  {
+   "id": 507,
+   "type": "timeseries",
+   "title": "conversation.open by outcome",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 24
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_conversation_open_total[5m])) by (outcome)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{outcome}}"
+    }
+   ],
+   "description": "Membership is checked once per open rather than per keystroke, and each open draws on the tighter rate-limit bucket (burst 5). A rising refused line means either a real authorization problem or a client opening more threads than it should."
+  },
+  {
+   "id": 508,
+   "type": "timeseries",
+   "title": "TURN credentials by outcome",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 24
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_turn_credentials_issued_total[5m])) by (outcome)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{outcome}}"
+    }
+   ],
+   "description": "`stun_only` means no relay is configured, which is fine locally and is the thing to look at first when calls fail across networks."
+  },
+  {
+   "id": 509,
+   "type": "timeseries",
+   "title": "Presence heartbeats by outcome",
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 32
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "sum(rate(realtime_service_presence_beats_total[5m])) by (outcome)",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "legendFormat": "{{outcome}}"
+    }
+   ],
+   "description": "Written to Redis. Errors here mean presence dots go stale and, because instance liveness rides the same path, that the call reaper may start closing live calls."
+  },
+  {
+   "id": 510,
+   "type": "logs",
+   "title": "Logs",
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 40
+   },
+   "datasource": {
+    "type": "loki",
+    "uid": "loki"
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true
+   },
+   "targets": [
+    {
+     "refId": "A",
+     "expr": "{service_name=\"realtime-service\"} | json",
+     "datasource": {
+      "type": "loki",
+      "uid": "loki"
+     }
+    }
+   ]
+  }
+ ]
+}

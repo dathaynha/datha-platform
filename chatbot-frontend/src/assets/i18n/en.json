@@ -1,0 +1,357 @@
+{
+  "THEME": {
+    "LABEL": "Theme",
+    "STARLIGHT": "Starlight",
+    "MIDNIGHT": "Midnight"
+  },
+  "LANDING": {
+    "HERO_TITLE": "Chatbot playground",
+    "HERO_DESC": "Production-style chat built with Angular 21 and a Go API gateway: OAuth at the edge, async Gemini streaming over SSE, file attachments via Azure Blob, a searchable model picker, and durable threads you can rename or delete. Postgres is the source of truth; Redis carries live chunks; NATS coordinates orphan file cleanup when a conversation goes away.",
+    "STACK_INTRO": "Tech we use",
+    "STACK_GROUP_CLIENT": "In the browser",
+    "STACK_GROUP_SERVICES": "Service layer",
+    "STACK_GROUP_DATA": "Data & models",
+    "CARD_ANGULAR": "Angular 21 with signals, strict TypeScript, Module Federation into the shell, and split chat clients (`MessageService`, `MessageStreamService`, `ConversationService`, `ChatModelService`) aligned to gateway routes.",
+    "CARD_PRIMENG": "PrimeNG 21 + Aura for shell layout, dialogs, and confirmations; chat uses a Claude-style composer with a custom searchable model menu (not a stock `p-select` overlay).",
+    "CARD_AUTH": "angular-oauth2-oidc with PKCE; Google and Microsoft sign-in via the Go gateway, which issues short-lived internal JWTs — the browser never holds `client_secret`.",
+    "CARD_API": "chatbot-service (FastAPI): Postgres-first messages, Redis queue + SSE streams, `GET /models`, JetStream `chatbot.message.sent` (and outbox retry), `DELETE /conversations` with orphan-safe `conversation.deleted`.",
+    "CARD_POSTGRES": "chatbot-service Postgres: conversations, messages, `message_files`, `event_outbox`. file-service Postgres: blob metadata per owner. Alembic owns schema in each service.",
+    "CARD_REDIS": "Job queue (`chatbot:jobs`) and per-job streams (`chatbot:events:{job_id}`) so any API replica can replay SSE; clients resume with `Last-Event-ID`.",
+    "CARD_GEMINI": "Worker calls the model from your picker (`streamGenerateContent`); sidebar titles use Gemini Flash Lite. Optional `CHAT_MODEL_ALLOWLIST`; API key only on chatbot-service.",
+    "CARD_I18N": "@ngx-translate JSON catalogs (en/de); locale maps to `Accept-Language` on every gateway-proxied API call.",
+    "CARD_GATEWAY": "Go API gateway: OAuth token exchange, internal JWT, `stream_token` on `POST /messages`, reverse proxy to chatbot, files, and event-store APIs.",
+    "CARD_FILE_SERVICE": "Fastify: SAS prepare → browser PUT to Azure → confirm in Postgres; publishes `file.uploaded`; consumes `conversation.deleted` for orphan blob cleanup.",
+    "CARD_EVENT_STORE": "TypeScript service: pull ingest from JetStream `EVENTS` into Postgres — `chatbot.message.sent`, `file.uploaded`, `conversation.deleted`, and related platform subjects.",
+    "CARD_AZURE_BLOB": "Attachment bytes in Azure Blob; SAS URLs for browser upload and server-side delete. chatbot-service stores `file_id` refs only — never proxies file bytes.",
+    "CARD_NATS": "JetStream stream `EVENTS`: `file.uploaded`, `chatbot.message.sent`, `conversation.deleted` (and `file.deleted`). Topology from platform-nats; outbox when publish fails.",
+    "FLOWS": {
+      "SECTION_TITLE": "Architecture flows",
+      "PICKER_ARIA": "Choose which flow diagram to explore",
+      "TAB_MESSAGE": "Send a message",
+      "TAB_DELETE": "Delete a chat"
+    },
+    "FLOW": {
+      "TITLE": "How a message moves",
+      "SUBTITLE": "Click a block for detail. Happy path: attach files (optional) via SAS into Azure Blob → pick a Gemini model → send. Platform events (`file.uploaded`, `chatbot.message.sent`) go to JetStream for audit; chat latency stays on Postgres + Redis + SSE.",
+      "DIAGRAM_ARIA": "Chatbot architecture flow: select a step to read details",
+      "LINK_HTTP": "HTTP · SSE",
+      "LINK_BLOB": "SAS prepare · direct PUT",
+      "LINK_EVENTS": "JetStream · platform events",
+      "LINK_INGEST": "event-store ingest",
+      "EVENTS_NOTE": "NATS publishes are async and non-blocking — failed publishes land in each service's Postgres outbox until the broker is back.",
+      "LINK_BRANCH": "Persist · queue · streams",
+      "LINK_QUEUE": "Worker streams · titles on Lite",
+      "LINK_GATEWAY": "Route · validate JWT · files",
+      "LOOP_NOTE": "FastAPI uses XREAD on the Redis Stream `chatbot:events:{job_id}` and forwards chunks as SSE — safe with multiple API replicas because the stream is shared Redis state, not stuck in one process.",
+      "DELIVERY_KICKER": "Ship it",
+      "PANEL_KICKER": "Inside this block",
+      "PANEL_EMPTY": "Tap a step: Angular, gateway, chatbot-service, file-service, Azure Blob, NATS, event-store, Postgres, Redis, worker, or Azure DevOps.",
+      "ANGULAR": {
+        "TITLE": "Angular 21 (browser)",
+        "DESC": "Login, home, and chat UI — HttpClient + EventSource for streamed replies; can run standalone or as a shell remote.",
+        "D1": "Strict TypeScript, standalone components, signals for local UI state.",
+        "D2": "@ngx-translate; locale → Accept-Language on API calls.",
+        "D3": "PrimeNG 21 + Aura: toolbar, cards, confirmation dialogs, theme tokens.",
+        "D4": "angular-oauth2-oidc with PKCE; token exchange only via the Go gateway.",
+        "D5": "Route guards + APP_INITIALIZER so OIDC finishes before protected routes.",
+        "D6": "Chat API clients grouped by route: messages, streams, conversations, models.",
+        "D7": "Composer: SAS file attachments, Claude-style input card, searchable model picker (localStorage preference).",
+        "D8": "Sidebar: paginated history, rename, delete with confirm, open thread."
+      },
+      "FASTAPI": {
+        "TITLE": "FastAPI (chatbot-service)",
+        "DESC": "HTTP boundary for chat and models — auth and CORS live at the gateway.",
+        "D1": "Routers for conversations, messages, stream, and `GET /models`.",
+        "D2": "Postgres first: persist the user message (and file refs) before enqueueing.",
+        "D3": "Push job to Redis with owner, model id, correlation id, and attachment descriptors.",
+        "D4": "SSE handler XREADs the job stream; enriches `done` with conversation title from Postgres.",
+        "D5": "JWT + `X-Owner-ID` from the gateway — no Google credentials in this service.",
+        "D6": "User messages store `file_id` references only — bytes stay in Azure Blob via file-service.",
+        "D7": "`GET /models` proxies Google `models.list` (filtered) for the UI picker.",
+        "D8": "After the durable user write: publish `events.chatbot.message.sent` (`type`: `chatbot.message.sent`, role user).",
+        "D9": "Failed JetStream publish → `event_outbox` row; API drain retries to stream `EVENTS`."
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "System of record for conversations, message rows, and completed assistant text + metadata (or failure state).",
+        "D1": "Relational model for threads and ordered messages; migrations for schema evolution.",
+        "D2": "Assistant completion written when the stream ends — Redis chunks are not the sole truth.",
+        "D3": "Async SQLAlchemy (or equivalent) from the same service codebase as the API."
+      },
+      "REDIS": {
+        "TITLE": "Redis",
+        "DESC": "Decouple long model runs from the HTTP request: queue jobs via BLPOP and deliver live chunks over Redis Streams.",
+        "D1": "Job queue (`chatbot:jobs`): BLPOP so POST /messages returns quickly after the durable Postgres write.",
+        "D2": "Redis Streams (`chatbot:events:{job_id}`): worker XADDs chunks; FastAPI XREADs and forwards to SSE clients.",
+        "D3": "Last-Event-ID reconnect: each SSE event carries the stream entry ID; XREAD resumes from that ID on reconnect — no data loss."
+      },
+      "WORKER": {
+        "TITLE": "Worker + Google AI",
+        "DESC": "Background process: stream the selected Gemini model and publish chunks to Redis.",
+        "D1": "Separate process from Uvicorn — scale and deploy independently.",
+        "D2": "`streamGenerateContent` with the job's model id (your picker choice).",
+        "D3": "XADD incremental chunks; persist full assistant text to Postgres on completion.",
+        "D4": "Loads attachment bytes from file-service (Azure Blob behind SAS download) for multimodal turns.",
+        "D5": "Sidebar titles via `generateContent` on Gemini Flash Lite after the first reply.",
+        "D6": "Enqueues `chatbot.message.sent` (assistant) to outbox after persisting the full reply — same subject as the API user event."
+      },
+      "ADO": {
+        "TITLE": "Azure DevOps",
+        "DESC": "Each service is its own repo with YAML pipelines (build, test, bot-review with Gemini).",
+        "D1": "Separate ADO repos: gateway, chatbot-service, file-service, frontends, platform-nats, event-store.",
+        "D2": "PR pipelines: unit tests, MegaLinter, optional PR-Agent review.",
+        "D3": "Variable groups for secrets; deploy order respects NATS topology before consumers."
+      },
+      "GATEWAY": {
+        "TITLE": "API Gateway (Go)",
+        "DESC": "Single browser entry point: OAuth, JWT, proxy, and stream tokens.",
+        "D1": "Google OAuth exchange — holds `client_secret`; browser never sends it downstream.",
+        "D2": "Issues internal JWTs for the browser after OAuth; downstream services never verify JWT.",
+        "D3": "Validates Bearer JWT at the edge and injects `X-Owner-ID` on every proxied route.",
+        "D4": "Adds `stream_token` to `POST /messages` for scoped SSE access.",
+        "D5": "Proxies `/api/chatbot/v1/*`, `/api/files/*`, and related platform routes."
+      },
+      "FILE_SERVICE": {
+        "TITLE": "File Service (Fastify)",
+        "DESC": "Orchestrates chat attachments: Postgres metadata, Azure Blob bytes, gateway auth.",
+        "D1": "`POST /files/prepare` returns a `file_id` and short-lived SAS URL for upload.",
+        "D2": "`POST /files/confirm` persists name, size, MIME, owner, and blob path after the PUT succeeds.",
+        "D3": "Chat `POST /messages` sends `file_id` references — not raw file bytes.",
+        "D4": "Trusted `X-Owner-ID` from the gateway on prepare, confirm, and download.",
+        "D5": "Serves SAS download to the worker when Gemini needs inline attachment data.",
+        "D6": "On confirm: publish `events.file.file.uploaded` (`type`: `file.uploaded`) with standard envelope."
+      },
+      "AZURE_BLOB": {
+        "TITLE": "Azure Blob Storage",
+        "DESC": "Where attachment bytes live — browser uploads directly; services read back through file-service.",
+        "D1": "Composer upload: browser PUTs to the SAS URL from prepare (no byte proxy through chatbot-service).",
+        "D2": "Blob container and path are stored on the file row at confirm time.",
+        "D3": "Worker multimodal path reads the same object via file-service — Gemini never gets long-lived SAS URLs."
+      },
+      "NATS": {
+        "TITLE": "NATS JetStream",
+        "DESC": "Shared `EVENTS` stream for cross-service audit — chat UX does not wait on these publishes.",
+        "D1": "`events.file.file.uploaded` from file-service after a successful confirm.",
+        "D2": "`events.chatbot.message.sent` from chatbot-service API after the user message is in Postgres.",
+        "D3": "`events.chatbot.message.sent` again from the worker (assistant role) after the stream completes — often via outbox enqueue.",
+        "D4": "Standard envelope on every subject: `type`, `service`, `entity_id`, `owner_id`, `correlation_id`, `payload`."
+      },
+      "EVENT_STORE": {
+        "TITLE": "Event Store",
+        "DESC": "Pull consumer ingests `events.chatbot.>` and `events.file.>` from JetStream into Postgres for query and replay.",
+        "D1": "Ingests `file.uploaded` and `chatbot.message.sent` alongside other platform subjects.",
+        "D2": "Retention and query APIs are separate from chatbot-service operational tables.",
+        "D3": "DLQ traffic (`events.dlq.>`) is not stored as normal business events."
+      }
+    },
+    "DELETE_FLOW": {
+      "TITLE": "How delete works",
+      "SUBTITLE": "Deleting a chat is synchronous for Postgres and the HTTP response; Azure Blob cleanup is async. Only file IDs that no other conversation still references are published — attachments shared across threads stay intact.",
+      "DIAGRAM_ARIA": "Conversation delete flow: select a step to read details",
+      "LINK_DELETE": "DELETE · confirm",
+      "LINK_GATEWAY": "Proxy · JWT · owner",
+      "LINK_COMMIT": "Orphan query · cascade delete",
+      "LINK_PUBLISH": "Commit · JetStream publish",
+      "LINK_ASYNC": "Async · parallel consumers",
+      "LINK_BLOB": "Postgres row · Azure blob",
+      "NOTE": "The API returns 204 as soon as Postgres commits. file-service soft-deletes metadata, removes bytes from Azure Blob Storage, and event-store ingests the envelope in the background; failed publishes can drain from the outbox later.",
+      "PANEL_KICKER": "Inside this step",
+      "PANEL_EMPTY": "Tap a step: Angular confirm, gateway, chatbot-service, Postgres, NATS, file-service, Azure Blob, or event-store.",
+      "ANGULAR": {
+        "TITLE": "Angular 21 (browser)",
+        "DESC": "Chat UI issues delete after confirm; the browser does not wait for Azure Blob or NATS cleanup.",
+        "D1": "Delete chat control on the active thread (sidebar menu / trash).",
+        "D2": "PrimeNG confirmation dialog before any network call.",
+        "D3": "`ConversationService.delete(id)` → `DELETE /api/chatbot/v1/conversations/{id}` via the gateway.",
+        "D4": "On 204, remove the thread from local state and navigate away if it was open."
+      },
+      "GATEWAY": {
+        "TITLE": "API Gateway (Go)",
+        "DESC": "Forwards the delete with the same JWT and owner headers as every other chat route.",
+        "D1": "Validates internal JWT on the proxied DELETE.",
+        "D2": "Injects `X-Owner-ID` and `X-Correlation-ID` for orphan scoping and tracing.",
+        "D3": "Reverse-proxies to chatbot-service; no conversation rows live in the gateway."
+      },
+      "FASTAPI": {
+        "TITLE": "FastAPI (chatbot-service)",
+        "DESC": "Owns the delete transaction, orphan `file_id` list, and NATS publish (or outbox).",
+        "D1": "Before delete: SQL finds `file_id`s on this thread not referenced by any other conversation for the same owner (`NOT EXISTS`).",
+        "D2": "Deletes the conversation; cascade removes messages and `message_files` rows, then commits.",
+        "D3": "After commit: publish `events.chatbot.conversation.deleted` with standard envelope + `payload.file_ids` (orphans only).",
+        "D4": "If JetStream is down: row goes to Postgres `event_outbox`; API drain retries later.",
+        "D5": "Responds 204 immediately — never blocks on file-service or blob deletion."
+      },
+      "POSTGRES": {
+        "TITLE": "PostgreSQL",
+        "DESC": "Authoritative removal of the thread; publish only happens after a successful commit.",
+        "D1": "`message_files` links messages to `file_id`s used for orphan detection.",
+        "D2": "FK cascade drops messages and links when the conversation row goes away.",
+        "D3": "Failed deletes roll back — no NATS event on error."
+      },
+      "NATS": {
+        "TITLE": "NATS JetStream",
+        "DESC": "Carries the platform event so file-service and event-store can react without coupling HTTP.",
+        "D1": "Subject `events.chatbot.conversation.deleted` on stream `EVENTS`.",
+        "D2": "Envelope: `type`, `service`, `entity_id`, `owner_id`, `correlation_id`, `payload.file_ids[]`.",
+        "D3": "Empty `file_ids` is valid when the thread had no attachments or every file is still used elsewhere."
+      },
+      "FILE_SERVICE": {
+        "TITLE": "File Service (Fastify)",
+        "DESC": "Pull consumer orchestrates orphan cleanup: Postgres metadata first, then Azure Blob bytes.",
+        "D1": "Durable consumer `file-service-conversation-cleanup` on `events.chatbot.conversation.deleted`.",
+        "D2": "For each `file_id`: match envelope `owner_id` to the file row in file-service Postgres.",
+        "D3": "Soft-delete the metadata row after ownership checks pass.",
+        "D4": "Call Azure Blob Storage SDK to delete the object at the stored blob path.",
+        "D5": "Emits `events.file.file.deleted` per successful removal; duplicate delivery → log and ack."
+      },
+      "AZURE_BLOB": {
+        "TITLE": "Azure Blob Storage",
+        "DESC": "Attachment bytes live here — upload uses SAS from the browser; delete is server-side from file-service.",
+        "D1": "Each confirmed file row stores the blob container/path used at upload time.",
+        "D2": "Orphan cleanup removes the object after the Postgres soft-delete succeeds.",
+        "D3": "Upload path never proxies bytes through chatbot-service; delete path never blocks the user's 204."
+      },
+      "EVENT_STORE": {
+        "TITLE": "Event Store",
+        "DESC": "Ingests the same JetStream message for audit and replay — does not drive user-visible delete.",
+        "D1": "Pull ingest from `EVENTS` per platform topology.",
+        "D2": "Stores the envelope for operators and downstream analytics.",
+        "D3": "DLQ subjects are not ingested as normal business events."
+      }
+    }
+  },
+  "CHAT": {
+    "TITLE": "Chat",
+    "SUBTITLE": "AI assistant powered by Google Gemini Flash",
+    "EMPTY": "Send a message to start the thread. Replies land here as you iterate.",
+    "PLACEHOLDER": "Write a message…",
+    "SEND": "Send",
+    "LOADING": "Model is thinking…",
+    "PENDING_QUEUED": "Queued",
+    "PENDING_RETRYING": "Service busy — retrying ({{attempt}}/{{max}})",
+    "PENDING_WORDS": ["Thinking", "Reasoning", "Writing"],
+    "COMPOSER_HINT": "Enter to send · Shift+Enter for new line",
+    "NEW_CHAT": "New chat",
+    "RENAME_SAVE": "Save",
+    "RENAME_CANCEL": "Cancel",
+    "HISTORY_TITLE": "Chats",
+    "HISTORY_LOAD_MORE": "Load more chats",
+    "HISTORY_ALL_LOADED": "All chats in this list are shown.",
+    "HISTORY_MORE_FAILED": "Couldn't load more chats.",
+    "HISTORY_EMPTY": "No conversations yet",
+    "HISTORY_LOAD_FAILED": "Could not load chats",
+    "THREAD_LOAD_FAILED": "Could not load messages",
+    "MESSAGES_COUNT": "{{count}} messages",
+    "RETRY": "Try again",
+    "UNNAMED_CHAT": "Untitled chat",
+    "EDIT_TITLE": "Edit chat title",
+    "RENAME_ERROR": "Could not save the title",
+    "DELETE_TITLE": "Delete chat",
+    "DELETE_CONFIRM": "Delete this chat and all its messages permanently?",
+    "DELETE_ERROR": "Could not delete chat",
+    "ATTACH_FILES": "Attach files",
+    "ATTACHMENTS_LIMIT": "You can attach up to {{max}} files per message.",
+    "REMOVE_ATTACHMENT": "Remove attachment",
+    "ATTACHMENT_TOO_LARGE": "Each attachment must be at most {{maxMb}} MB.",
+    "ATTACHMENT_UPLOAD_FAILED": "Could not upload attachment",
+    "OPEN_FILE_ATTACHMENT": "Open file",
+    "ATTACHMENTS_GROUP": "Attachments",
+    "ATTACHMENT_UNAVAILABLE": "Unavailable",
+    "OLDER_MESSAGES_FAILED": "Couldn't load older messages.",
+    "OLDER_MESSAGES_RETRY": "Retry",
+    "THREAD_NEWEST_HINT": "Latest messages — scroll up for older.",
+    "MODEL_LABEL": "Model",
+    "MODEL_SEARCH": "Search models",
+    "MODEL_SEARCH_EMPTY": "No matches",
+    "JUMP_TO_BOTTOM": "Scroll to latest message",
+    "HISTORY_OPEN": "Show chats",
+    "HISTORY_BACK": "Back to the chat"
+  },
+  "LOGIN": {
+    "KICKER": "Sign in",
+    "TITLE": "Chatbot",
+    "SUBTITLE": "Use Google, your work or school Microsoft account, or a personal Microsoft account to continue.",
+    "CONTINUE_GOOGLE": "Continue with Google",
+    "MICROSOFT_WORK_SCHOOL": "Continue with Microsoft (Work / School)",
+    "MICROSOFT_PERSONAL": "Continue with Microsoft (Personal)",
+    "SIGNING_IN": "Signing in…",
+    "FOOTNOTE": "By continuing, you agree to your organization's access policies for this app.",
+    "ERROR_GENERIC": "Sign-in didn't complete. Try again or contact your administrator."
+  },
+  "PROFILE": {
+    "MENU_ARIA": "Account menu",
+    "TITLE": "Signed in as",
+    "SIGN_IN_METHOD": "Sign-in method",
+    "NAME": "Name",
+    "EMAIL": "Email",
+    "USERNAME": "Username",
+    "METHOD_GOOGLE": "Google",
+    "METHOD_MICROSOFT": "Microsoft Entra ID",
+    "METHOD_UNKNOWN": "Unknown",
+    "FIELD_EMPTY": "—",
+    "LOG_OUT": "Log out"
+  },
+  "DASHBOARD": {
+    "TITLE": "Home",
+    "HELP": "<p>This is the main area of the application after you sign in.</p><p>Use the toolbar for help and email support.</p>"
+  },
+  "EMAIL": {
+    "SUBJECT": "Request for Access Assistance",
+    "BODY": "Dear Support Team,\n\nI would like to access data in the following application: {{applicationName}}. Please assist me in resolving this matter.\n\nSpecifically I need access to the following:\n[Please fill in a detailed description of which data you need access to]\n\nThank you!"
+  },
+  "BAD_REQUEST": {
+    "title": "Bad Request",
+    "message": "The request could not be processed by the server due to malformed syntax.<br>Please verify the request and try again. If the problem persists, contact support for assistance."
+  },
+  "UNAUTHORIZED": {
+    "title": "Unauthorized",
+    "message": "You are not authorized to perform this action.<br>Please contact your administrator for further assistance."
+  },
+  "FORBIDDEN": {
+    "title": "Forbidden",
+    "message": "You do not have the necessary permissions to access this resource.<br>Please contact your administrator for further assistance."
+  },
+  "NOT_FOUND": {
+    "title": "Not Found",
+    "message": "The requested resource could not be found on this server. Please check the URL and try again.<br>If the issue persists, contact support for further assistance."
+  },
+  "INTERNAL_SERVER_ERROR": {
+    "title": "Internal Server Error",
+    "message": "The server encountered an unexpected condition that prevented it from fulfilling the request.<br>Please try again later.<br>If the problem continues, contact support for further assistance."
+  },
+  "BAD_GATEWAY": {
+    "title": "Bad Gateway",
+    "message": "The server received an invalid response from an upstream server while attempting to fulfill the request.<br>Please try again later.<br>If the issue persists, contact support for further assistance."
+  },
+  "SERVICE_UNAVAILABLE": {
+    "title": "Service Unavailable",
+    "message": "The server is currently experiencing technical difficulties due to temporary overloading or maintenance.<br>Please try again later.<br>If the problem continues, contact support for further assistance."
+  },
+  "GATEWAY_TIMEOUT": {
+    "title": "Gateway Timeout",
+    "message": "Connection Timeout: We couldn't connect to the server at this time. This is likely temporary.<br>Please try again later."
+  },
+  "CONNECTION_LOST": {
+    "title": "Connection Lost",
+    "message": "It seems like your device has lost internet connectivity.<br>Please check your connection and try again."
+  },
+  "DIALOG": {
+    "OK": "OK",
+    "GOT_IT": "Got it",
+    "CANCEL": "Cancel",
+    "CONFIRM": "Confirm"
+  },
+  "SUBNAV": {
+    "ARIA": "Chatbot sections",
+    "OVERVIEW": "Overview",
+    "CHAT": "Chat",
+    "SUPPORT": "Email Support"
+  },
+  "GENERAL_ERROR": {
+    "title": "We are sorry that the application crashed.",
+    "message": "Please contact support, we would like to solve the issue.<br>How to help us with investigating the issue? Report your user name and the time the application crashed.<br>Thank you!"
+  },
+  "LANGUAGE": {
+    "LABEL": "Language"
+  }
+}

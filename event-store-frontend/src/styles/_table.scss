@@ -1,0 +1,72 @@
+// Global table helpers (standalone bootstrap). PrimeNG internals: primeng-table-overrides (+ ::ng-deep on list pages for MF).
+
+@use "primeng-table-overrides" as overrides;
+
+@include overrides.primeng-table-overrides;
+
+.es-table-wrap {
+  position: relative;
+  flex: 1 1 0;
+  align-self: stretch;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* `.es-table__primary` / `.es-table__secondary` deliberately do NOT live here.
+   They are applied in the two list components' own markup, which renders inside
+   the shell as well as standalone, and a Module Federation host never loads
+   this file. They are part of `ops-table()` in `_table-compact.scss` instead,
+   so they compile into each component's bundle and hold in both hosts. */
+
+/* Below `sm` a six-column table shows two columns and hides the rest off the
+   right edge, with nothing to say so — measured 2026-09-17 at 390px, where
+   `scrollWidth - clientWidth` still read 0 because the overflow is inside the
+   table's own scroller.
+
+   The secondary columns are dropped rather than scrolled to: these lists are a
+   scan surface, every row opens a detail page that carries the full payload,
+   and a horizontal scrollbar inside a page that also scrolls vertically is the
+   worse of the two. `th` and `td` share the class, so the columns stay
+   aligned — hiding one without the other shifts every cell after it. */
+.es-table__action-col {
+  width: 2rem;
+}
+
+.es-table__action {
+  text-align: right;
+  vertical-align: middle !important;
+}
+
+.es-table__chevron {
+  color: var(--p-surface-500);
+  font-size: 0.6875rem;
+  opacity: 0.65;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.dark .es-table__chevron {
+  color: var(--p-surface-400);
+}
+
+.es-table__row:hover .es-table__chevron,
+.es-table__row:focus-visible .es-table__chevron {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.es-table__row:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--p-primary-400) 70%, transparent);
+  outline-offset: -2px;
+}
+
+.es-table__empty {
+  text-align: center;
+  padding: 1.5rem 0.75rem !important;
+  color: var(--p-surface-500);
+}
+
+.dark .es-table__empty {
+  color: var(--p-surface-400);
+}

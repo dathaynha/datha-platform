@@ -1,0 +1,27 @@
+// Opt-in: styleClass="es-checkbox" on p-checkbox (compact, frosted field alignment).
+
+.es-checkbox.p-checkbox .p-checkbox-box {
+  width: 1rem;
+  height: 1rem;
+  border-color: color-mix(in srgb, var(--p-primary-400) 32%, var(--p-surface-300));
+  background: color-mix(in srgb, var(--p-surface-0) 82%, transparent);
+}
+
+.dark .es-checkbox.p-checkbox .p-checkbox-box {
+  border-color: color-mix(in srgb, var(--p-surface-0) 16%, transparent);
+  background: color-mix(in srgb, var(--p-surface-950) 48%, transparent);
+}
+
+.es-checkbox.p-checkbox .p-checkbox-icon {
+  font-size: 0.625rem;
+}
+
+.es-checkbox.p-checkbox .p-checkbox-label {
+  font-size: var(--datha-form-font-size);
+  line-height: var(--datha-form-line-height);
+  color: var(--p-surface-800);
+}
+
+.dark .es-checkbox.p-checkbox .p-checkbox-label {
+  color: color-mix(in srgb, var(--p-surface-0) 88%, transparent);
+}

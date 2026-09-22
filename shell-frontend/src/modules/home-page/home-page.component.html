@@ -1,0 +1,35 @@
+<div class="shell-page-root">
+  <div class="shell-page-ambient" aria-hidden="true"></div>
+  <div class="shell-page-noise" aria-hidden="true"></div>
+
+  <div class="shell-page-shell">
+    <header class="shell-page-header datha-glass-sheen">
+      <p class="shell-page-kicker">Datha Platform</p>
+      <h1 class="shell-page-title">{{ "HOME.TITLE" | translate }}</h1>
+      <p class="shell-page-subtitle">{{ "HOME.SUBTITLE" | translate }}</p>
+    </header>
+
+    <div class="shell-card-grid">
+      @for (app of apps; track app.remoteName) {
+        <button
+          type="button"
+          class="shell-glass-card datha-glass-sheen"
+          (click)="openApp(app)"
+          [attr.aria-label]="nameKey(app) | translate"
+        >
+          <span class="shell-glass-card__icon">
+            <i [class]="'pi ' + app.icon"></i>
+          </span>
+          <span class="shell-glass-card__name">{{
+            nameKey(app) | translate
+          }}</span>
+          <span class="shell-glass-card__desc">{{
+            descriptionKey(app) | translate
+          }}</span>
+        </button>
+      } @empty {
+        <p class="shell-card-grid__empty">{{ "HOME.NO_APPS" | translate }}</p>
+      }
+    </div>
+  </div>
+</div>

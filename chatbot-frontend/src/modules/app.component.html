@@ -1,0 +1,16 @@
+@if (isLoading) {
+  <div
+    class="fixed inset-0 z-[10000] flex items-center justify-center bg-surface-950/15 backdrop-blur-sm"
+    @fade
+  >
+    <p-progress-spinner
+      strokeWidth="4"
+      [style.width.px]="100"
+      [style.height.px]="100"
+    />
+  </div>
+}
+
+<div [class]="themeClass" [attr.data-shell-theme]="themeId">
+  <router-outlet />
+</div>

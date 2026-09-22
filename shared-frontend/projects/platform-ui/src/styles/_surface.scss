@@ -1,0 +1,15 @@
+.datha-surface-card {
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--p-primary-600) 18%, var(--p-surface-200));
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--p-surface-0) 78%, transparent);
+  box-shadow: 0 20px 60px color-mix(in srgb, var(--p-primary-950) 10%, transparent);
+  -webkit-backdrop-filter: blur(var(--datha-glass-blur-surface));
+  backdrop-filter: blur(var(--datha-glass-blur-surface));
+}
+
+.dark .datha-surface-card {
+  border-color: color-mix(in srgb, var(--p-surface-0) 14%, transparent);
+  background: color-mix(in srgb, var(--p-surface-950) 56%, transparent);
+  box-shadow: 0 18px 50px color-mix(in srgb, var(--p-surface-950) 65%, transparent);
+}

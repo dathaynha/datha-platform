@@ -1,0 +1,64 @@
+# Bot Review — Node services on pnpm + vitest.
+#
+# Named for the toolchain and test runner, not the framework: nothing in here is
+# Fastify-specific, so any pnpm+vitest service fits. Stacks are split by job
+# SHAPE (toolchain + runner + result format), which is why there are two Node
+# stacks — this one and stack-angular-karma.
+#
+# Consumed via `extends`, so the consuming repo keeps its own pipeline
+# definition (and therefore its branch-policy build ID) and only supplies
+# parameters. Team-specific steps go through preSteps/extraSteps rather than by
+# copying this file — see README.
+parameters:
+  - name: service
+    type: string
+  - name: nodeVersion
+    type: string
+    default: '24.x'
+  - name: npmAuth
+    type: boolean
+    default: false
+  - name: knip
+    type: boolean
+    default: true
+  # Extension hooks: add steps without forking the template.
+  - name: preSteps
+    type: stepList
+    default: []
+  - name: extraSteps
+    type: stepList
+    default: []
+
+jobs:
+  - job: BotReview
+    displayName: Bot Review — ${{ parameters.service }}
+    # SYSTEM_ACCESSTOKEN: job OAuth for Git/PR REST API. YAML enables it via step env: below — not the Classic
+    # Agent-job "Allow scripts to access the OAuth token" checkbox. Masked in logs; never echo value; curl -fsS.
+    # MegaLinter -e pass-through required for AZURE_COMMENT_REPORTER. PR-Agent uses ADO_PAT,
+    # sourced from the Key Vault-linked platform-bot-review variable group. See bot-review-pipelines.md.
+    steps:
+      - template: steps/setup.yml
+        parameters:
+          nodeVersion: ${{ parameters.nodeVersion }}
+          npmAuth: ${{ parameters.npmAuth }}
+
+      - ${{ parameters.preSteps }}
+
+      - template: steps/unit-tests.yml
+        parameters:
+          service: ${{ parameters.service }}
+          testCommand: 'pnpm exec vitest run --reporter=default --reporter=junit --outputFile="$JUNIT"'
+          publishTitle: 'Vitest unit tests (${{ parameters.service }})'
+
+      - template: steps/typecheck-tests.yml
+
+      - ${{ if parameters.knip }}:
+          - template: steps/knip.yml
+
+      - ${{ parameters.extraSteps }}
+
+      - template: steps/megalinter.yml
+
+      - template: steps/pr-agent.yml
+        parameters:
+          service: ${{ parameters.service }}

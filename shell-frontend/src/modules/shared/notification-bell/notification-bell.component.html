@@ -1,0 +1,197 @@
+<p-toast key="shell-notifications" position="top-right" />
+
+<div class="relative">
+  <p-button
+    type="button"
+    icon="pi pi-bell"
+    [rounded]="true"
+    [outlined]="true"
+    styleClass="datha-profile-trigger"
+    [ariaLabel]="'NOTIFICATIONS.MENU_ARIA' | translate"
+    (onClick)="openDrawer()"
+  />
+  @if (notificationsService.unreadCount() > 0) {
+    <span
+      class="shell-bell-badge pointer-events-none absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[0.6rem] font-bold"
+      aria-hidden="true"
+    >
+      {{ notificationsService.unreadCount() > 99 ? "99+" : notificationsService.unreadCount() }}
+    </span>
+  }
+</div>
+
+<p-drawer
+  [visible]="drawerVisible()"
+  (visibleChange)="drawerVisible.set($event)"
+  position="right"
+  styleClass="shell-notification-drawer"
+  appendTo="body"
+  [blockScroll]="true"
+>
+  <ng-template pTemplate="header">
+    <div class="flex w-full items-center justify-between gap-3 pr-2">
+      <h2 class="datha-text-strong m-0 flex-1 text-base font-semibold">
+        {{ "NOTIFICATIONS.TITLE" | translate }}
+      </h2>
+      @if (notificationsService.unreadCount() > 0) {
+        <p-button
+          type="button"
+          [text]="true"
+          size="small"
+          icon="pi pi-check-circle"
+          styleClass="shell-mark-all-read"
+          [label]="'NOTIFICATIONS.MARK_ALL_READ' | translate"
+          (onClick)="markAllRead()"
+        />
+      }
+      <!-- Settings stays outermost so mark-all appearing never shifts it. -->
+      <p-button
+        type="button"
+        [text]="true"
+        size="small"
+        icon="pi pi-cog"
+        [ariaLabel]="'NOTIFICATIONS.SETTINGS_ARIA' | translate"
+        (onClick)="openSettings()"
+      />
+    </div>
+  </ng-template>
+
+  <div class="flex h-full flex-col gap-3">
+    <div class="shell-drawer-tabs flex w-full" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="!notificationsService.unreadOnly()"
+        class="shell-drawer-tab flex-1 pb-2.5 pt-1 text-center text-sm font-medium transition-colors"
+        [class.shell-drawer-tab--active]="!notificationsService.unreadOnly()"
+        (click)="setFilter(false)"
+      >
+        {{ "NOTIFICATIONS.FILTER_ALL" | translate }}
+      </button>
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="notificationsService.unreadOnly()"
+        class="shell-drawer-tab flex-1 pb-2.5 pt-1 text-center text-sm font-medium transition-colors"
+        [class.shell-drawer-tab--active]="notificationsService.unreadOnly()"
+        (click)="setFilter(true)"
+      >
+        <span class="inline-flex items-center gap-1.5">
+          {{ "NOTIFICATIONS.FILTER_UNREAD" | translate }}
+          @if (notificationsService.unreadCount() > 0) {
+            <span class="shell-drawer-tab-badge rounded-full px-1.5 py-0.5 text-[0.65rem] font-bold leading-none">
+              {{ notificationsService.unreadCount() > 99 ? "99+" : notificationsService.unreadCount() }}
+            </span>
+          }
+        </span>
+      </button>
+    </div>
+
+    @if (notificationsService.loadError()) {
+      <div class="shell-drawer-error flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm">
+        <span class="flex items-center gap-2">
+          <i class="pi pi-exclamation-triangle"></i>
+          {{ "NOTIFICATIONS.LOAD_ERROR" | translate }}
+        </span>
+        <p-button
+          type="button"
+          [text]="true"
+          size="small"
+          icon="pi pi-refresh"
+          [label]="'NOTIFICATIONS.RETRY' | translate"
+          (onClick)="retryLoad()"
+        />
+      </div>
+    }
+
+    @if (notificationsService.loading() && notificationsService.notifications().length === 0) {
+      <p class="datha-text-muted py-8 text-center text-sm">
+        {{ "NOTIFICATIONS.LOADING" | translate }}
+      </p>
+    } @else if (notificationsService.notifications().length === 0) {
+      @if (!notificationsService.loadError()) {
+        <div class="datha-text-muted flex flex-col items-center gap-2 py-10 text-center text-sm">
+          <i
+            class="text-2xl"
+            [class]="notificationsService.unreadOnly() ? 'pi pi-check-circle' : 'pi pi-bell-slash'"
+          ></i>
+          {{
+            (notificationsService.unreadOnly()
+              ? "NOTIFICATIONS.EMPTY_UNREAD"
+              : "NOTIFICATIONS.EMPTY"
+            ) | translate
+          }}
+        </div>
+      }
+    } @else {
+      <ul class="m-0 flex min-h-0 flex-1 list-none flex-col gap-2 overflow-y-auto p-0">
+        @for (notification of notificationsService.notifications(); track notification.id) {
+          <li>
+            <article
+              class="shell-notification-card cursor-pointer rounded-xl p-3 transition-colors"
+              [class.shell-notification-card--unread]="!notification.readAt"
+              [attr.data-severity]="notification.severity"
+              (click)="onNotificationClick(notification)"
+            >
+              <header class="mb-1 flex items-start justify-between gap-2">
+                <h3 class="datha-text-strong m-0 min-w-0 flex-1 break-words text-sm font-semibold">
+                  {{ notification.titleKey | translate: notification.params }}
+                  @if (notification.link) {
+                    <i class="pi pi-arrow-up-right ml-1 text-[0.65rem]" aria-hidden="true"></i>
+                  }
+                </h3>
+                <span
+                  class="shell-severity-chip shrink-0 rounded-full px-2 py-0.5 text-[0.65rem] font-semibold uppercase"
+                  [attr.data-severity]="notification.severity"
+                >
+                  {{ severityLabelKey(notification) | translate }}
+                </span>
+              </header>
+
+              <p class="datha-text-muted m-0 break-words text-sm">
+                {{ notification.bodyKey | translate: notification.params }}
+              </p>
+
+              <footer class="mt-2 flex items-center justify-between gap-2">
+                <span class="datha-text-muted flex min-w-0 items-center gap-2 text-[0.7rem]">
+                  <span class="shell-notification-source truncate rounded px-1.5 py-0.5">
+                    {{ notification.sourceService }}
+                  </span>
+                  <span [title]="notification.createdAt | date: 'medium'">
+                    {{ notification.createdAt | relativeTime }}
+                  </span>
+                </span>
+                <p-button
+                  type="button"
+                  [text]="true"
+                  size="small"
+                  [icon]="notification.readAt ? 'pi pi-envelope' : 'pi pi-check'"
+                  [label]="
+                    (notification.readAt
+                      ? 'NOTIFICATIONS.MARK_UNREAD'
+                      : 'NOTIFICATIONS.MARK_READ'
+                    ) | translate
+                  "
+                  (onClick)="toggleReadState($event, notification)"
+                />
+              </footer>
+            </article>
+          </li>
+        }
+      </ul>
+
+      @if (notificationsService.hasMore()) {
+        <p-button
+          type="button"
+          class="self-center"
+          [outlined]="true"
+          size="small"
+          icon="pi pi-chevron-down"
+          [loading]="notificationsService.loading()"
+          [label]="'NOTIFICATIONS.SHOW_MORE' | translate"
+          (onClick)="showMore()"
+        />
+      }
+    }
+  </div>
+</p-drawer>

@@ -1,0 +1,165 @@
+# Unit tests + the PR comment upsert.
+#
+# The upsert bash lives here ONCE for every stack. It posts one comment per
+# marker and PATCHes it on later runs, so re-queues (and main moving under an
+# open PR) never accumulate threads. Runner-specific bits are parameters:
+# the command, and how to grep a summary out of its log.
+parameters:
+  - name: service
+    type: string
+  # Dependency bootstrap for this stack's toolchain — runs before anything else.
+  - name: bootstrapShell
+    type: string
+    default: 'corepack enable; corepack prepare pnpm@10.33.2 --activate; pnpm install --frozen-lockfile'
+  - name: testCommand
+    type: string
+  # Single-line only. A multi-line value injected into the script block below
+  # keeps its own indentation and mangles the surrounding bash.
+  - name: preTestShell
+    type: string
+    default: ':'
+  - name: publishTitle
+    type: string
+  # Cosmetic heading in the PR comment: Go reports packages, the rest report a summary.
+  - name: summaryLabel
+    type: string
+    default: 'Summary'
+  # Single-line command whose stdout is appended to the summary — e.g. a coverage
+  # footer. Must print nothing when it has nothing to add.
+  - name: summaryExtraShell
+    type: string
+    default: 'true'
+  - name: junitFiles
+    type: string
+    default: '$(Agent.TempDirectory)/junit.xml'
+
+steps:
+  - script: |
+      set -euo pipefail
+      ${{ parameters.bootstrapShell }}
+
+      MARKER='<!-- bot-review:unit-tests:${{ parameters.service }} -->'
+
+      upsert_pr_test_comment() {
+        local status_emoji="$1"
+        local summary="$2"
+        local org_url base threads_file thread_id comment_id payload
+        local summary_file log_tail_file
+        org_url=$(echo "${SYSTEM_COLLECTIONURI}" | tr -d '\r' | sed 's#/\+$##')
+        base="${org_url}/${TEAM_PROJECT_ID}/_apis/git/repositories/${BUILD_REPOSITORY_ID}/pullRequests/${PR_ID}"
+
+        summary_file="${AGENT_TEMPDIRECTORY}/pr-comment-summary.txt"
+        log_tail_file="${AGENT_TEMPDIRECTORY}/pr-comment-log-tail.txt"
+        printf '%s' "$summary" > "$summary_file"
+        tail -n 60 "$LOG" > "$log_tail_file"
+
+        build_pr_comment_payload() {
+          local mode="$1"
+          jq -n \
+            --arg mode "$mode" \
+            --arg marker "$MARKER" \
+            --arg title "Bot review — unit tests (${{ parameters.service }})" \
+            --arg status "$status_emoji" \
+            --rawfile summary "$summary_file" \
+            --rawfile log "$log_tail_file" \
+            '
+              (
+                $marker + "\n\n### " + $title + "\n\n" + $status +
+                "\n\n**${{ parameters.summaryLabel }}**\n\n```text\n" + $summary + "\n```\n\n" +
+                "<details><summary>Log (last 60 lines)</summary>\n\n```text\n" + $log + "\n```\n</details>"
+              ) as $content |
+              if $mode == "patch" then
+                {content: $content}
+              else
+                {comments: [{parentCommentId: 0, content: $content, commentType: 1}]}
+              end
+            '
+        }
+
+        threads_file="${AGENT_TEMPDIRECTORY}/pr-threads.json"
+        curl -fsS "${base}/threads?api-version=7.1" \
+          -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+          -o "$threads_file" || return 1
+
+        thread_id=$(jq -r --arg m "$MARKER" '
+          [.value[] | select(.comments[]? | select(.content | strings | contains($m))) | .id][0] // empty
+        ' "$threads_file") || return 1
+        comment_id=$(jq -r --arg m "$MARKER" '
+          [.value[] | . as $t | $t.comments[]? | select(.content | strings | contains($m)) | .id][0] // empty
+        ' "$threads_file") || return 1
+
+        if [[ -n "$thread_id" && -n "$comment_id" ]]; then
+          payload=$(build_pr_comment_payload patch) || return 1
+          curl -fsS -X PATCH "${base}/threads/${thread_id}/comments/${comment_id}?api-version=7.1" \
+            -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" >/dev/null || return 1
+          echo "Updated unit test summary on PR #${PR_ID}"
+        else
+          payload=$(build_pr_comment_payload post) || return 1
+          curl -fsS -X POST "${base}/threads?api-version=7.1" \
+            -H "Authorization: Bearer ${SYSTEM_ACCESSTOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "$payload" >/dev/null || return 1
+          echo "Posted unit test summary to PR #${PR_ID}"
+        fi
+      }
+
+      JUNIT="${AGENT_TEMPDIRECTORY}/junit.xml"
+      LOG="${AGENT_TEMPDIRECTORY}/test.log"
+      ${{ parameters.preTestShell }}
+
+      set +e
+      ${{ parameters.testCommand }} 2>&1 | tee "$LOG"
+      TEST_EXIT=${PIPESTATUS[0]}
+      set -e
+
+      if [[ "$PR_ID" =~ ^[0-9]+$ ]] && [[ -n "${SYSTEM_ACCESSTOKEN:-}" ]]; then
+        if [[ "$TEST_EXIT" -eq 0 ]]; then
+          # Union of the vitest, karma, pytest and gotestsum summary lines. All four
+          # write junit.xml, so the fallback below covers any of them going quiet.
+          summary="$(grep -E '^(TOTAL|Executed|Chrome|ok |tests/)|(Test Files|Tests|passed|Duration|passed in|PASSED)' "$LOG" | tail -n 20 || true)"
+          if [[ -z "$summary" ]] && [[ -f "$JUNIT" ]]; then
+            summary="$(grep -oE 'tests="[0-9]+"' "$JUNIT" | head -1 | sed 's/tests="/Tests: /;s/"//') $(grep -oE 'failures="[0-9]+"' "$JUNIT" | head -1 | sed 's/failures="/Failures: /;s/"//')"
+          fi
+          SUMMARY_EXTRA="$(${{ parameters.summaryExtraShell }})"
+          if [[ -n "$SUMMARY_EXTRA" ]]; then
+            summary="${summary}"$'\n\n'"${SUMMARY_EXTRA}"
+          fi
+          if ! upsert_pr_test_comment "✅ **Passed**" "$summary"; then
+            echo "##[warning]Failed to upsert unit test PR comment (tests still passed)"
+          fi
+        else
+          fail_summary="$(grep -E '^(TOTAL|Executed|Chrome|FAILED|tests/)|(FAIL|failed|Error|ERROR|Test Files|Tests|failed in)' "$LOG" | tail -n 30 || true)"
+          SUMMARY_EXTRA="$(${{ parameters.summaryExtraShell }})"
+          if [[ -n "$SUMMARY_EXTRA" ]]; then
+            fail_summary="${fail_summary}"$'\n\n'"${SUMMARY_EXTRA}"
+          fi
+          if ! upsert_pr_test_comment "❌ **Failed**" "$fail_summary"; then
+            echo "##[warning]Failed to upsert unit test PR comment"
+          fi
+        fi
+      else
+        echo "Skipping PR test comment (not a PR build or OAuth token unavailable)"
+      fi
+
+      exit "$TEST_EXIT"
+    displayName: Unit tests
+    env:
+      # Job-scoped OAuth — see the job header comment; not a secret-handling defect.
+      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      SYSTEM_COLLECTIONURI: $(System.CollectionUri)
+      TEAM_PROJECT_ID: $(System.TeamProjectId)
+      BUILD_REPOSITORY_ID: $(Build.Repository.ID)
+      PR_ID: $(System.PullRequest.PullRequestId)
+      AGENT_TEMPDIRECTORY: $(Agent.TempDirectory)
+
+  - task: PublishTestResults@2
+    displayName: Publish unit test results
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFormat: JUnit
+      testResultsFiles: ${{ parameters.junitFiles }}
+      testRunTitle: ${{ parameters.publishTitle }}
+      mergeTestResults: true
+      failTaskOnFailedTests: false

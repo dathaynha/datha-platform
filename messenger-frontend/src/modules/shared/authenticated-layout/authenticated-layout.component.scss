@@ -1,0 +1,56 @@
+/**
+ * Prime Aura exposes --p-* variables under `.dark` (see providePrimeNG darkModeSelector).
+ * Chrome material, tokens and the sub-header bar come from @datha/platform-ui;
+ * only the product-specific layout shell lives here.
+ */
+@use "@datha/platform-ui/styles/chrome" as chrome;
+
+.messenger-layout {
+  color: var(--p-surface-800);
+}
+
+:host-context(.dark) .messenger-layout {
+  color: var(--p-surface-0);
+}
+
+/*
+ * The page container both routes size themselves against.
+ *
+ * A viewport breakpoint cannot see that the shell holds 224px for its sidebar,
+ * so hosted at /messenger every `sm:` / `lg:` / `xl:` / `2xl:` rule fired
+ * exactly one step too early: 443px of room took the 640px tier at 667x375,
+ * 610px took it at 834x1112 and 1056px took the 1280px tier (measured
+ * 2026-09-21). Standalone at :4003 the two widths are the same, which is why
+ * nothing ever caught it.
+ *
+ * Declared here rather than on each page root because `.chats-root` carries
+ * layout of its own (`gap`, `padding`) that has to respond too, and an
+ * element cannot query the container it declares.
+ *
+ * Named, so the containers inside this tree — `ms-chats` below, and the call
+ * dock's own `container-type: size` — cannot capture these queries.
+ * `.messenger-content` is already `position: relative`, so the containing
+ * block that `container-type` establishes for absolute descendants is the one
+ * they had.
+ */
+.messenger-content {
+  container-type: inline-size;
+  container-name: ms-page;
+
+  @include chrome.content-surface;
+}
+
+:host-context(.dark) .messenger-content {
+  @include chrome.content-surface-dark;
+}
+
+/* Ambient backdrop — glass chrome is invisible over flat backgrounds. Mixed in
+   from the lib rather than a global class: the remote's global stylesheet never
+   loads in hosted mode, component styles ship with the MF module. */
+.messenger-layout {
+  @include chrome.ambient;
+}
+
+:host-context(.dark) .messenger-layout {
+  @include chrome.ambient-dark;
+}

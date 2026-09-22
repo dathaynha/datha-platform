@@ -1,0 +1,39 @@
+// Chat page: staggered typing dots (keyframes + reduced motion).
+@keyframes chat-typing-dot {
+  0%,
+  70%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+
+  35% {
+    transform: translateY(-0.28rem);
+    opacity: 1;
+  }
+}
+
+.chat-typing {
+  > span {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.8); // slate-400 — visible on dark bg
+    animation: chat-typing-dot 1.15s ease-in-out infinite both;
+
+    &:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    &:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing > span {
+    animation: none;
+    opacity: 0.55;
+  }
+}

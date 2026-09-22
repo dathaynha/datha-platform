@@ -1,0 +1,48 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "baseUrl": "./",
+    "outDir": "./dist/event-store-frontend",
+    "paths": {
+      "@services/*": ["src/services/*"],
+      "@constants/*": ["src/constants/*"],
+      "@guards/*": ["src/guards/*"],
+      "@factories/*": ["src/factories/*"],
+      "@models/*": ["src/models/*"],
+      "@helper/*": ["src/helper/*"],
+      "@modules/*": ["src/modules/*"],
+      "@resolves/*": ["src/resolves/*"],
+      "@animations/*": ["src/animations/*"],
+      "@events/*": ["src/events/*"],
+      "@styles/*": ["src/styles/*"]
+    },
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "sourceMap": true,
+    "declaration": false,
+    "experimentalDecorators": true,
+    "moduleResolution": "bundler",
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "lib": ["ES2022", "DOM"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "useDefineForClassFields": false,
+    "strictPropertyInitialization": false,
+    "isolatedModules": true
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  }
+}

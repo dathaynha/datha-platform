@@ -1,0 +1,224 @@
+<!-- Appended to body so the mask escapes `.messenger-content`, which sets
+     `position: relative; z-index: 1` and so establishes a stacking context:
+       inside it the mask's own z-index only competes with its siblings, and the
+       whole dialog painted under the app header (z-index 10) no matter how high
+       it went. Same family as the call dock's `backdrop-filter` containing
+       block — see `.claude/rules/working-agreement.md`. -->
+<p-dialog
+  appendTo="body"
+  [visible]="visible()"
+  [modal]="true"
+  [dismissableMask]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: 'min(28rem, 92vw)', maxHeight: 'min(40rem, 85dvh)' }"
+  [contentStyle]="{
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    overflow: 'hidden',
+  }"
+  [header]="'MESSENGER.GROUP.DETAILS' | translate"
+  (visibleChange)="!$event && close.emit()"
+>
+  <!-- One scroll region, not three: this panel stacks a rename row, a member
+       list, an add-people list and the way out, and nesting scrollers inside a
+       capped dialog gives you a scrollbar that moves the wrong thing. -->
+  <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
+    @if (admin()) {
+      <div class="flex flex-col gap-2">
+        <label class="group-label text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+          {{ "MESSENGER.GROUP.TITLE_LABEL" | translate }}
+        </label>
+        <div class="flex items-center gap-2">
+          <input
+            type="text"
+            class="group-input min-w-0 flex-1 rounded-lg border px-3 py-2 text-[0.8125rem] outline-none"
+            data-testid="group-rename-input"
+            maxlength="200"
+            [attr.aria-label]="'MESSENGER.GROUP.TITLE_LABEL' | translate"
+            [attr.placeholder]="'MESSENGER.GROUP.TITLE_PLACEHOLDER' | translate"
+            [value]="draftTitle()"
+            (input)="onTitleInput($event)"
+          />
+          <button
+            type="button"
+            class="group-cta shrink-0 rounded-lg px-3 py-2 text-[0.75rem] font-semibold"
+            data-testid="group-rename-save"
+            [disabled]="!titleChanged() || busy()"
+            (click)="onRename()"
+          >
+            {{ "MESSENGER.GROUP.SAVE" | translate }}
+          </button>
+        </div>
+      </div>
+    }
+
+    <div class="flex flex-col gap-2">
+      <span class="group-label text-[0.6875rem] font-semibold uppercase tracking-[0.08em]">
+        {{ "MESSENGER.GROUP.MEMBER_COUNT" | translate: { count: members().length } }}
+      </span>
+      <ul class="m-0 flex list-none flex-col gap-1 p-0" role="list">
+        @for (member of members(); track member.ownerId) {
+          <li
+            class="member-row flex items-center gap-3 rounded-xl px-2 py-1.5"
+            data-testid="group-member"
+          >
+            <span class="member-avatar shrink-0" aria-hidden="true">
+              <messenger-avatar
+                [url]="member.avatarUrl"
+                [name]="member.name"
+                [initialOverride]="member.initial"
+              />
+            </span>
+            <span class="min-w-0 flex-1 truncate text-[0.8125rem]">
+              {{ member.name }}
+              @if (member.self) {
+                <span class="group-muted text-[0.6875rem]">{{
+                  "MESSENGER.GROUP.YOU" | translate
+                }}</span>
+              }
+            </span>
+            @if (member.admin) {
+              <span class="member-badge shrink-0 rounded-full px-2 py-0.5 text-[0.625rem] font-semibold">{{
+                "MESSENGER.GROUP.ADMIN" | translate
+              }}</span>
+            }
+          </li>
+        }
+      </ul>
+    </div>
+
+    @if (admin()) {
+      @if (!adding()) {
+        <button
+          type="button"
+          class="group-secondary flex items-center gap-2 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold"
+          data-testid="group-add-open"
+          (click)="startAdding()"
+        >
+          <i class="pi pi-user-plus text-sm" aria-hidden="true"></i>
+          {{ "MESSENGER.GROUP.ADD_PEOPLE" | translate }}
+        </button>
+      } @else {
+        <div class="flex flex-col gap-2">
+          <!-- The same chips as creating a group: adding people is the same
+               act, and this panel shipped without them (dathq, 2026-09-14) —
+               selection was only a row highlight, so who you had picked was
+               invisible the moment you scrolled the list. -->
+          <messenger-person-chips
+            [people]="selectedList()"
+            (remove)="toggle($event)"
+          />
+
+          <input
+            type="search"
+            class="group-input w-full rounded-lg border px-3 py-2 text-[0.8125rem] outline-none"
+            data-testid="group-add-search"
+            [attr.aria-label]="'MESSENGER.NEW.SEARCH' | translate"
+            [attr.placeholder]="'MESSENGER.NEW.SEARCH_PLACEHOLDER' | translate"
+            [value]="query()"
+            (input)="onSearchInput($event)"
+          />
+
+          @if (searching()) {
+            <p class="group-muted m-0 py-2 text-center text-[0.8125rem]">
+              {{ "MESSENGER.CHATS.LOADING" | translate }}
+            </p>
+          } @else if (query().trim() && addable().length === 0) {
+            <p class="group-muted m-0 py-2 text-center text-[0.8125rem]">
+              {{ "MESSENGER.NEW.NO_RESULTS" | translate }}
+            </p>
+          } @else {
+            <ul class="m-0 flex list-none flex-col gap-1 p-0" role="list">
+              @for (person of addable(); track person.ownerId) {
+                <li>
+                  <button
+                    type="button"
+                    class="member-row flex w-full items-center gap-3 rounded-xl px-2 py-1.5 text-left"
+                    data-testid="group-add-result"
+                    [class.is-selected]="isSelected(person.ownerId)"
+                    [attr.aria-pressed]="isSelected(person.ownerId)"
+                    (click)="toggle(person)"
+                  >
+                    <span class="member-avatar shrink-0" aria-hidden="true">
+                      <messenger-avatar
+                        [url]="person.pictureUrl"
+                        [name]="person.displayName"
+                      />
+                    </span>
+                    <span class="min-w-0 flex-1 truncate text-[0.8125rem]">{{
+                      person.displayName
+                    }}</span>
+                    @if (isSelected(person.ownerId)) {
+                      <i class="pi pi-check-circle shrink-0 text-sm" aria-hidden="true"></i>
+                    }
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          <button
+            type="button"
+            class="group-cta rounded-lg px-3 py-2 text-[0.8125rem] font-semibold"
+            data-testid="group-add-confirm"
+            [disabled]="selectedList().length === 0 || busy()"
+            (click)="onAdd()"
+          >
+            @if (selectedList().length === 0) {
+              {{ "MESSENGER.GROUP.ADD_PEOPLE" | translate }}
+            } @else {
+              {{
+                "MESSENGER.GROUP.ADD_CONFIRM"
+                  | translate: { count: selectedList().length }
+              }}
+            }
+          </button>
+        </div>
+      }
+    }
+
+    @if (!confirmingLeave()) {
+      <button
+        type="button"
+        class="group-danger flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-[0.8125rem] font-semibold"
+        data-testid="group-leave"
+        [disabled]="busy()"
+        (click)="askLeave()"
+      >
+        <i class="pi pi-sign-out text-sm" aria-hidden="true"></i>
+        {{ "MESSENGER.GROUP.LEAVE" | translate }}
+      </button>
+    } @else {
+      <!-- Confirmed in place rather than in a second modal over this one: the
+           question is about the thing already on screen, and every mainstream
+           messenger asks it with a named action and a way out, never with a
+           second press of the same button. -->
+      <div class="leave-confirm flex flex-col gap-2 rounded-lg p-3">
+        <p class="m-0 text-[0.8125rem]" data-testid="group-leave-prompt">
+          {{ "MESSENGER.GROUP.LEAVE_PROMPT" | translate }}
+        </p>
+        <div class="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            class="group-secondary rounded-lg px-3 py-1.5 text-[0.75rem] font-semibold"
+            data-testid="group-leave-cancel"
+            (click)="cancelLeave()"
+          >
+            {{ "MESSENGER.GROUP.CANCEL" | translate }}
+          </button>
+          <button
+            type="button"
+            class="group-danger-solid rounded-lg px-3 py-1.5 text-[0.75rem] font-semibold"
+            data-testid="group-leave-confirm"
+            [disabled]="busy()"
+            (click)="confirmLeave()"
+          >
+            {{ "MESSENGER.GROUP.LEAVE" | translate }}
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</p-dialog>

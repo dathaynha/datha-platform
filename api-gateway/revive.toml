@@ -1,0 +1,14 @@
+# Optional local revive config (MegaLinter disables GO_REVIVE — use golangci-lint in CI).
+# Do not set enableAllRules = true; it flags line-length, complexity, magic numbers, etc.
+
+ignoreGeneratedHeader = true
+severity = "error"
+confidence = 0.8
+errorCode = 1
+warningCode = 0
+
+[rule.error-return]
+[rule.error-strings]
+[rule.error-naming]
+[rule.exported]
+[rule.var-naming]

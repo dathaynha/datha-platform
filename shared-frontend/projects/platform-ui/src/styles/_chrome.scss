@@ -1,0 +1,75 @@
+// Chrome mixins (v0.5.0) — emit nothing on their own.
+//
+// Why mixins and not utility classes: a hosted Module Federation remote never
+// loads its own global stylesheet, so shared chrome CSS has to compile INTO the
+// remote's component styles. `@use` from a component SCSS does that; a global
+// class cannot.
+//
+//   @use "@datha/platform-ui/styles/chrome" as chrome;
+//
+//   .my-layout { @include chrome.ambient; }
+//   :host-context(.dark) .my-layout { @include chrome.ambient-dark; }
+
+/// Ambient backdrop for a chrome layer. Glass is invisible over flat
+/// backgrounds — chrome needs a colourful wash behind it to refract.
+@mixin ambient {
+  background:
+    radial-gradient(
+      circle at 16% 0%,
+      color-mix(in srgb, var(--p-primary-400) 32%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      color-mix(in srgb, #0546ff 26%, transparent) 0 14rem,
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 0% 14%,
+      color-mix(in srgb, #ff8fd8 24%, transparent) 0 10rem,
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 0% 45%,
+      color-mix(in srgb, #5edfff 34%, transparent) 0 14rem,
+      transparent 30rem
+    ),
+    linear-gradient(
+      145deg,
+      var(--p-primary-50) 0%,
+      var(--p-primary-50) 40%,
+      var(--p-surface-50) 100%
+    );
+}
+
+@mixin ambient-dark {
+  background:
+    radial-gradient(
+      circle at 16% 0%,
+      color-mix(in srgb, var(--p-primary-600) 26%, transparent) 0 16rem,
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 88% 0%,
+      color-mix(in srgb, #0546ff 20%, transparent) 0 14rem,
+      transparent 28rem
+    ),
+    radial-gradient(
+      circle at 0% 45%,
+      color-mix(in srgb, #8001c6 16%, transparent) 0 14rem,
+      transparent 30rem
+    ),
+    linear-gradient(145deg, var(--p-surface-950) 0%, #100628 50%, #07111f 100%);
+}
+
+/// Content surface that sits under a chrome bar. Opaque on purpose: the ambient
+/// wash belongs to the chrome layer only, never behind page content.
+@mixin content-surface {
+  position: relative;
+  z-index: 1;
+  background-color: var(--p-surface-0);
+}
+
+@mixin content-surface-dark {
+  background-color: var(--p-surface-950);
+}

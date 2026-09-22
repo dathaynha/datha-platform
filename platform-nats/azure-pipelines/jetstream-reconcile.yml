@@ -1,0 +1,31 @@
+# platform-nats — JetStream topology reconcile
+# Register in ADO: path /azure-pipelines/jetstream-reconcile.yml
+# Variable group (example): platform-nats-dev — NATS_URL, NATS_CONSUMER_MAX_DELIVER
+
+trigger:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-24.04
+
+variables:
+  - name: NATS_CONSUMER_MAX_DELIVER
+    value: '3'
+
+steps:
+  - task: NodeTool@0
+    displayName: Use Node.js 24
+    inputs:
+      versionSpec: '24.x'
+
+  - script: |
+      corepack enable
+      pnpm install --frozen-lockfile
+      pnpm reconcile
+    displayName: JetStream reconcile (streams + durables)
+    workingDirectory: $(Build.SourcesDirectory)
+    env:
+      NATS_URL: $(NATS_URL)
+      NATS_CONSUMER_MAX_DELIVER: $(NATS_CONSUMER_MAX_DELIVER)

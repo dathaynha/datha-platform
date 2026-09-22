@@ -1,0 +1,16 @@
+# Environment
+.env
+
+# Local notes and scratch files
+_local/
+
+# Build output
+/bin/
+/dist/
+
+# Go toolchain
+*.test
+*.out
+
+# Local dependency cache (like node_modules — regenerate with: go mod vendor)
+vendor/
