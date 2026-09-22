@@ -8,24 +8,6 @@
       "Bash(git pull *)",
       "Bash(git tag *)",
       "Bash(git push *)"
-    ],
-    "deny": [
-      "Read(**/.env)",
-      "Edit(**/.env)",
-      "Write(**/.env)"
-    ]
-  },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/prettier-check.sh"
-          }
-        ]
-      }
     ]
   }
 }
