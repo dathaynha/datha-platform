@@ -12,6 +12,11 @@ service that is kept true.
 > so the whole platform can be read in one place. Nothing here is deployed from
 > here — **but it all still runs locally**, and the steps below are the ones I
 > actually use.
+>
+> **Snapshot taken 22 September 2026. Nothing syncs it.** Development continues
+> in the Azure DevOps repos, so treat anything here as true of that date and no
+> later. There is no automation and no schedule — the mirror is refreshed by
+> hand, when it is worth refreshing.
 
 ## What's in it
 
@@ -187,3 +192,16 @@ pytest                         # chatbot-service
   included so you can see how they are set up.
 - **Deployment configuration and secrets are not in this mirror.** The values in
   `_local/docker-compose.yml` are local-only placeholders bound to localhost.
+
+## Freshness
+
+This repository is a **point-in-time copy**, not a live fork. It has a single
+commit and no upstream link, so nothing here updates when the real repositories
+do — if a date matters to you, the commit date is the one to trust, not the
+contents of any document.
+
+Refreshing it means re-exporting every repository's tracked files and committing
+the result. Two things make that safe to repeat rather than fiddly: only
+**git-tracked** files are copied, so `.env`, `node_modules` and build output stay
+out by construction; and the frontends' `environment.dev.ts` is excluded on top
+of that, because it carries real OAuth client ids.
