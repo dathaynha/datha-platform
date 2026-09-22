@@ -2,12 +2,10 @@
 
 Personal platform workspace: microservices + microfrontends sharing a core, each product individual. Every top-level folder is its own git/ADO repo — this is **NOT a monorepo**, and a commit here never spans two of them.
 
-
 > **This is a read-only public mirror.** The sixteen repositories are combined
 > here into one so the platform can be read in one place; upstream they are
 > separate, each with its own pipeline and PR history. Running it locally: see
 > `README.md`.
-
 
 **Running it locally? See `README.md`** — infrastructure via Docker Compose, then each service in its own project.
 

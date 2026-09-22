@@ -13,7 +13,7 @@ service that is kept true.
 > here — **but it all still runs locally**, and the steps below are the ones I
 > actually use.
 >
-> **Snapshot taken 22 September 2026. Nothing syncs it.** Development continues
+> **Snapshot taken 23 September 2026. Nothing syncs it.** Development continues
 > in the Azure DevOps repos, so treat anything here as true of that date and no
 > later. There is no automation and no schedule — the mirror is refreshed by
 > hand, when it is worth refreshing.
@@ -60,6 +60,14 @@ service that is kept true.
 - **`.claude/docs/`** — the architecture single source of truth. One doc per
   service, plus platform-wide ones for the NATS topology and the event envelope.
   These are written to be read.
+- **`.claude/rules/working-agreement.md`** — the engineering rules, each one
+  carrying the incident that produced it: the error message, the wrong fix that
+  shipped first, the test that passed while the product was broken. It reads as
+  a defect log with rules attached, which is the only reason it changes anything.
+- **`.claude/hooks/` + `settings.local.json`** — the rules that are *enforced*
+  rather than stated. `.env` is denied at the tool level, and a `PostToolUse`
+  hook keeps scripted edits prettier-clean, because no test suite can see
+  formatting and the PR linter fails on it.
 - **`platform-nats/`** — one repo owns every stream and consumer. No service
   creates its own topology on startup, which is what stops two services
   disagreeing about a durable name.

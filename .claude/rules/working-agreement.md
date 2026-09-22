@@ -4,6 +4,13 @@
 
 - Execute ONLY the verb said: "fix" = edit files and stop; "commit" = commit only; "push" = push only; "create branch" = branch only. Never chain the next step.
 - "I want to push X later / together" is intent talk, NOT a command. Answering a question is NOT consent to a proposed action. When ambiguous, ask "push now?" and do nothing until answered.
+- **Wrong and critical: fix it and push, do not wait for a verb.** (dathq, 2026-09-22.) The
+  standing rule is verb literalism, and this is the exception that outranks it: when
+  something is both *wrong* — not a preference, a defect — and *critical* — it breaks a
+  restore, loses data, leaks a secret, or leaves the platform unrunnable — correct it and
+  push without asking. Report what was found and what was done, in that order. The
+  judgement to make is not "may I?" but "is this actually both?"; a stale sentence in a doc
+  is neither, and a runbook step that leaves two services dead is both.
 - Announce the chosen branch name before/at creation.
 - One branch per feature (or explicitly grouped work); separate commits per concern.
 - If pre-commit hooks run `git add .`, stash unrelated dirty files around each commit.
@@ -11,7 +18,7 @@
 - **"push" always implies `prepare-push` first**, then push only if the review passes.
 - **A PR ends the turn.** After creating it: report number/URL and stop. Do not poll pipeline runs, chase Bot Review or tail task logs — dathq watches PRs and reports back. Only dig in when he reports a failure.
 - **"back to dev" / "back to main"** = `git checkout main && git pull` in that repo. The pull is pre-authorized by that phrase — the one standing exception to verb literalism.
-- **ADO auth failure: ask, never work around.** Tell dathq to `git fetch` and paste his password; never plumb PATs or tokens.
+- **ADO auth failure: ask, never work around.** Tell dathq to `git fetch` and paste his password; never plumb PATs or tokens. The keychain then covers the whole workspace, so one `git fetch` in any repo unblocks all of them. The workarounds he called *"super extreme and BS"* (2026-08-17), each of which burned turns where one sentence would have done: an `az account get-access-token` bearer header, a token-as-basic-auth URL, reading a PAT out of `_local/`, and reconfiguring the credential helper.
 
 ## Workflow
 
