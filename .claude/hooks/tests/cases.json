@@ -1,0 +1,94 @@
+[
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "real Co-Authored-By trailer on its own line",
+    "command": "git commit -m \"feat: x\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>\"",
+    "expect": 2,
+    "why": "critical-behaviors #9 — the trailer a system reminder actively asks for"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "real Generated-with trailer",
+    "command": "git commit -m \"fix: y\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\"",
+    "expect": 2,
+    "why": "same rule, the other trailer shape"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "clean commit message",
+    "command": "git commit -m \"docs: a normal message\"",
+    "expect": 0,
+    "why": "the common case must never be blocked"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "clean heredoc commit",
+    "command": "git commit -F - <<MSG\nfix: something real\nMSG",
+    "expect": 0,
+    "why": "heredoc is how most commits in this workspace are written"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "prose mentioning a trailer, no commit invoked",
+    "command": "grep -r \"Co-Authored-By\" .claude/",
+    "expect": 0,
+    "why": "REGRESSION 2026-09-23: v1 matched any command that merely mentioned it, and blocked the commit documenting the rule"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "documenting the rule while committing it",
+    "command": "python3 - <<'PY'\n# the hook blocks any git commit whose message has a Co-Authored-By: Claude line\nPY",
+    "expect": 0,
+    "why": "REGRESSION 2026-09-23: this exact shape blocked the fix for itself"
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "commit whose message discusses attribution without carrying it",
+    "command": "git commit -m \"feat: reject attribution trailers\n\nThe guard rejects a `Co-Authored-By: Claude` trailer and the Generated with line. Before it existed the rule was checked by hand after every commit.\"",
+    "expect": 0,
+    "why": "THE anchoring case, and it needs the verbatim shape: prose containing `Co-Authored-By: Claude` inside a real commit message. Without the ^ anchor the hook blocks every commit that documents the rule it enforces — which is what 254b969 was. The command-position cases do not cover this; they exit before the trailer check runs."
+  },
+  {
+    "hook": "pre-commit-guard.sh",
+    "name": "empty input",
+    "command": "",
+    "expect": 0,
+    "why": "must not crash on a tool call with no command"
+  },
+  {
+    "hook": "prettier-check.sh",
+    "name": "unformatted TypeScript",
+    "file_content": "const x   =  {a:1,b:2}\n   export default x\n",
+    "file_name": "hooktest.ts",
+    "in_repo": "shell-frontend/src",
+    "expect": 2,
+    "why": "MegaLinter fails the PR on this and no test suite can see it"
+  },
+  {
+    "hook": "prettier-check.sh",
+    "name": "formatted TypeScript",
+    "file_content": "const x = { a: 1, b: 2 };\nexport default x;\n",
+    "file_name": "hooktest.ts",
+    "in_repo": "shell-frontend/src",
+    "expect": 0,
+    "why": "the common case must be silent"
+  },
+  {
+    "hook": "prettier-check.sh",
+    "name": "unformatted SCSS is not checked",
+    "file_content": ".a{color:red}\n",
+    "file_name": "hooktest.scss",
+    "in_repo": "shell-frontend/src",
+    "expect": 0,
+    "why": ".mega-linter.yml does not enable an SCSS linter, so neither does this hook"
+  },
+  {
+    "hook": "prettier-check.sh",
+    "name": "file outside any prettier repo",
+    "file_content": "const y=1\n",
+    "file_name": "loose.ts",
+    "in_repo": "",
+    "expect": 0,
+    "why": "must not fail on a path with no toolchain to check it with"
+  }
+]

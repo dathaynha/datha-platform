@@ -200,6 +200,7 @@ Real directories under `.claude/skills/` — edit them directly (no symlinks sin
 - `suggesting-skills` — propose an existing skill when a workflow is being done by hand (not user-invocable)
 
 - `suggesting-hooks` — propose a hook when a rule is being enforced by hand (not user-invocable)
+- `hook-doctor` — audit the hooks: registration, wiring, and whether their tests are load-bearing (`.claude/hooks/tests/run.sh` is the suite)
 
 Dropped with Cursor on 2026-08-17: `suggesting-cursor-rules`, `suggesting-cursor-hooks`. This file claimed until 2026-09-23 that they were kept in `.claude/_retired/` — that directory has never existed and was never tracked. Their Claude Code counterpart went unwritten for five weeks, which is why enforcement stayed advisory; `suggesting-hooks` replaces the second of them.
 
